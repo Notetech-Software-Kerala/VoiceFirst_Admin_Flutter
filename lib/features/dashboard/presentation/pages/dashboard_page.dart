@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/pages/view_business_activity.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -347,26 +348,37 @@ class _GridMenuSection extends StatelessWidget {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: 1.5,
-            children: const [
+            children: [
               _MenuButton(
                 icon: Icons.storage,
                 color: Colors.indigo,
                 label: "Master Data",
+                onTap: (context) {},
               ),
               _MenuButton(
                 icon: Icons.apartment,
-                color: Color(0xFF0D7FF2),
+                color: const Color(0xFF0D7FF2),
                 label: "Branches & Sections",
+                onTap: (context) {},
               ),
               _MenuButton(
                 icon: Icons.admin_panel_settings,
                 color: Colors.orange,
                 label: "Roles & Users",
+                onTap: (context) {},
               ),
               _MenuButton(
-                icon: Icons.receipt_long,
-                color: Colors.grey,
-                label: "Audit Logs",
+                icon: Icons.business,
+                color: Colors.teal,
+                label: "Business Activity",
+                onTap: (context) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ViewBusinessActivityPage(),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -380,18 +392,20 @@ class _MenuButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String label;
+  final Function(BuildContext) onTap;
 
   const _MenuButton({
     required this.icon,
     required this.color,
     required this.label,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () {},
+      onTap: () => onTap(context),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
