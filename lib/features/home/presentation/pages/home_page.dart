@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
           DashboardPage(),
           Center(child: Text("Org Setup Page Placeholder")),
           Center(child: Text("Users Page Placeholder")),
-          SettingsPage(),
+          ProfilePage(),
         ],
       ),
       extendBody: true,
@@ -47,7 +47,7 @@ class _CustomBottomNav extends StatelessWidget {
       height: 80,
       padding: const EdgeInsets.only(top: 8, bottom: 20),
       decoration: BoxDecoration(
-        color: theme.cardColor.withOpacity(0.95),
+        color: theme.cardColor.withValues(alpha: 0.95),
         border: Border(top: BorderSide(color: theme.dividerColor)),
       ),
       child: Row(

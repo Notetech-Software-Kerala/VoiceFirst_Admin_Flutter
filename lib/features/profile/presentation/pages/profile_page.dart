@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/profile_provider.dart';
 
-class SettingsPage extends ConsumerWidget {
-  const SettingsPage({super.key});
+class ProfilePage extends ConsumerWidget {
+  const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,7 +23,7 @@ class SettingsPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor.withOpacity(0.95),
+              color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
               border: Border(bottom: BorderSide(color: theme.dividerColor)),
             ),
             child: Row(
@@ -151,7 +151,9 @@ class SettingsPage extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: theme.primaryColor.withOpacity(0.1),
+                                color: theme.primaryColor.withValues(
+                                  alpha: 0.1,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -208,7 +210,7 @@ class SettingsPage extends ConsumerWidget {
                         title: "Push Notifications",
                         trailing: Switch.adaptive(
                           value: profileState.pushNotifications,
-                          activeColor: theme.primaryColor,
+                          activeTrackColor: theme.primaryColor,
                           onChanged: (v) =>
                               profileNotifier.togglePushNotifications(),
                         ),
@@ -220,7 +222,7 @@ class SettingsPage extends ConsumerWidget {
                         title: "Email Alerts",
                         trailing: Switch.adaptive(
                           value: profileState.emailAlerts,
-                          activeColor: theme.primaryColor,
+                          activeTrackColor: theme.primaryColor,
                           onChanged: (v) => profileNotifier.toggleEmailAlerts(),
                         ),
                         isLast: true,
@@ -359,7 +361,9 @@ class SettingsPage extends ConsumerWidget {
         border: isLast
             ? null
             : Border(
-                bottom: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+                bottom: BorderSide(
+                  color: theme.dividerColor.withValues(alpha: 0.5),
+                ),
               ),
       ),
       child: Row(
@@ -368,7 +372,7 @@ class SettingsPage extends ConsumerWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, size: 18, color: iconColor),
