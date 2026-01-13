@@ -17,8 +17,8 @@ class BusinessActivityDialog extends StatefulWidget {
 
 class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
   late TextEditingController _nameController;
-  late bool _isForCompany;
-  late bool _isForBranch;
+  // late bool _isForCompany;
+  // late bool _isForBranch;
 
   @override
   void initState() {
@@ -26,8 +26,8 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
     _nameController = TextEditingController(
       text: widget.activity?.activityName ?? '',
     );
-    _isForCompany = widget.activity?.isForCompany ?? true;
-    _isForBranch = widget.activity?.isForBranch ?? false;
+    // _isForCompany = widget.activity?.isForCompany ?? true;
+    // _isForBranch = widget.activity?.isForBranch ?? false;
   }
 
   @override
@@ -49,13 +49,13 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
           widget.activity?.id ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       activityName: _nameController.text,
-      isForCompany: _isForCompany,
-      isForBranch: _isForBranch,
+      // isForCompany: _isForCompany,
+      // isForBranch: _isForBranch,
       status: widget.activity?.status ?? true,
     );
 
     widget.onSave(activity);
-    Navigator.pop(context);
+    // Navigator.pop(context);
   }
 
   @override
@@ -76,20 +76,20 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
               ),
             ),
             const SizedBox(height: 16),
-            CheckboxListTile(
-              title: const Text('For Company'),
-              value: _isForCompany,
-              onChanged: (val) {
-                setState(() => _isForCompany = val ?? false);
-              },
-            ),
-            CheckboxListTile(
-              title: const Text('For Branch'),
-              value: _isForBranch,
-              onChanged: (val) {
-                setState(() => _isForBranch = val ?? false);
-              },
-            ),
+            // CheckboxListTile(
+            //   title: const Text('For Company'),
+            //   value: _isForCompany,
+            //   onChanged: (val) {
+            //     setState(() => _isForCompany = val ?? false);
+            //   },
+            // ),
+            // CheckboxListTile(
+            //   title: const Text('For Branch'),
+            //   value: _isForBranch,
+            //   onChanged: (val) {
+            //     setState(() => _isForBranch = val ?? false);
+            //   },
+            // ),
           ],
         ),
       ),

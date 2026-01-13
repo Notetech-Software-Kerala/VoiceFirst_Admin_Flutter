@@ -7,39 +7,69 @@ import '../dialogs/delete_activity_dialog.dart';
 import '../widgets/custom_snackbar.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
-  final BusinessActivity activity;
+  final String activityId;
+  // final BusinessActivity activity;
 
-  const ActivityDetailPage({super.key, required this.activity});
+  const ActivityDetailPage({
+    super.key,
+    required this.activityId,
+    // required this.activity,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final primaryColor = const Color(0xFF0D7FF2);
 
+    final state = ref.watch(businessActivityProvider);
+
+    final activity = state.activities
+        .where((a) => a.id == activityId)
+        .cast<BusinessActivity?>()
+        .firstOrNull;
+
+    /// ✅ SAFETY GUARD
+    if (activity == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Activity Details'),
+          backgroundColor: primaryColor,
+        ),
+        body: const Center(child: Text('Activity not found')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Activity Details'),
+        title: const Text(
+          'Activity Details',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: primaryColor,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => EditActivityDialog.show(context, ref, activity),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () async {
-              DeleteActivityDialog.show(
-                context,
-                ref,
-                activity.id,
-                activity.activityName,
-              );
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        // actions: [
+        // IconButton(
+        //   icon: const Icon(Icons.edit),
+        //   onPressed: () => EditActivityDialog.show(context, ref, activity),
+        // ),
+        //   IconButton(
+        //     icon: const Icon(Icons.delete, color: Color.fromARGB(255, 0, 0, 0)),
+        //     onPressed: () async {
+        //       DeleteActivityDialog.show(
+        //         context,
+        //         ref,
+        //         activity.id,
+        //         activity.activityName,
+        //       );
+        //       if (context.mounted) {
+        //         Navigator.pop(context);
+        //       }
+        //     },
+        //   ),
+        // ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -55,15 +85,15 @@ class ActivityDetailPage extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.business, size: 40, color: primaryColor),
-                  ),
+                  // Container(
+                  //   width: 80,
+                  //   height: 80,
+                  //   decoration: BoxDecoration(
+                  //     color: primaryColor.withOpacity(0.2),
+                  //     shape: BoxShape.circle,
+                  //   ),
+                  //   child: Icon(Icons.business, size: 40, color: primaryColor),
+                  // ),
                   const SizedBox(width: 20),
                   Expanded(
                     child: Column(
@@ -115,11 +145,11 @@ class ActivityDetailPage extends ConsumerWidget {
                     title: 'Settings',
                     primaryColor: primaryColor,
                     children: [
-                      _DetailItem(
-                        label: 'Activity ID',
-                        value: activity.id,
-                        primaryColor: primaryColor,
-                      ),
+                      // _DetailItem(
+                      //   label: 'Activity ID',
+                      //   value: activity.id,
+                      //   primaryColor: primaryColor,
+                      // ),
                       _DetailItem(
                         label: 'Activity Name',
                         value: activity.activityName,
@@ -134,36 +164,71 @@ class ActivityDetailPage extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _DetailSection(
-                    title: 'Configuration',
-                    primaryColor: primaryColor,
-                    children: [
-                      _ToggleItem(
-                        label: 'For Company',
-                        value: activity.isForCompany,
-                      ),
-                      _ToggleItem(
-                        label: 'For Branch',
-                        value: activity.isForBranch,
-                      ),
-                    ],
-                  ),
+                  // _DetailSection(
+                  //   title: 'Configuration',
+                  //   primaryColor: primaryColor,
+                  //   children: [
+                  //     // _ToggleItem(
+                  //     //   label: 'For Company',
+                  //     //   value: activity.isForCompany,
+                  //     // ),
+                  //     // _ToggleItem(
+                  //     //   label: 'For Branch',
+                  //     //   value: activity.isForBranch,
+                  //     // ),
+                  //   ],
+                  // ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () =>
-                          EditActivityDialog.show(context, ref, activity),
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Edit Activity'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                  Row(
+                    children: [
+                      /// ✏️ Edit Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () =>
+                              EditActivityDialog.show(context, ref, activity),
+                          icon: const Icon(Icons.edit, color: Colors.white),
+                          label: const Text(
+                            'Edit Activity',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+
+                      const SizedBox(width: 12),
+
+                      /// 🗑 Delete Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => DeleteActivityDialog.show(
+                            context,
+                            ref,
+                            activity.id,
+                            activity.activityName,
+                          ),
+
+                          icon: const Icon(Icons.delete, color: Colors.white),
+                          label: const Text(
+                            'Delete Activity',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade600,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

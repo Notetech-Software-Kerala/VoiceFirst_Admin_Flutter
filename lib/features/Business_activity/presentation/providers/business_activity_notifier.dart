@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 import 'business_activity_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class BusinessActivityNotifier extends StateNotifier<BusinessActivityState> {
   BusinessActivityNotifier() : super(BusinessActivityState.initial()) {
@@ -13,15 +14,15 @@ class BusinessActivityNotifier extends StateNotifier<BusinessActivityState> {
       BusinessActivity(
         id: '1',
         activityName: 'Sales',
-        isForCompany: true,
-        isForBranch: true,
+        // isForCompany: true,
+        // isForBranch: true,
         status: true,
       ),
       BusinessActivity(
         id: '2',
         activityName: 'Marketing',
-        isForCompany: true,
-        isForBranch: false,
+        // isForCompany: true,
+        // isForBranch: false,
         status: true,
       ),
     ];
@@ -111,4 +112,22 @@ class BusinessActivityNotifier extends StateNotifier<BusinessActivityState> {
         )
         .toList();
   }
+
+  void enterSelectionMode({bool selectAll = false}) {
+    final selected = <String>{};
+
+    if (selectAll) {
+      selected.addAll(state.filtered.map((e) => e.id));
+    }
+
+    state = state.copyWith(isMultiSelect: true, selectedIds: selected);
+  }
+
+  void exitSelectionMode() {
+    state = state.copyWith(isMultiSelect: false, selectedIds: {});
+  }
+
+  bool get allVisibleSelected =>
+      state.filtered.isNotEmpty &&
+      state.selectedIds.length == state.filtered.length;
 }
