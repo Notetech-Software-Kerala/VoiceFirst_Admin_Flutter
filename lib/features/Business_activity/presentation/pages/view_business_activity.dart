@@ -236,12 +236,7 @@ class ViewBusinessActivityPage extends ConsumerWidget {
                                         type: SnackBarType.info,
                                       );
                                     },
-                                    activeThumbColor: const Color.fromARGB(
-                                      255,
-                                      57,
-                                      71,
-                                      57,
-                                    ),
+                                    activeColor: Colors.green.shade600,
                                     inactiveThumbColor: Colors.grey.shade400,
                                     materialTapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
