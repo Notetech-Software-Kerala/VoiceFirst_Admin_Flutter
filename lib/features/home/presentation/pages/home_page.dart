@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:voice_first_admin/features/profile/presentation/pages/profile_page.dart';
+import 'package:voice_first_admin/features/roles/presentation/pages/roles_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,9 +18,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [
+        children: [
           DashboardPage(),
-          Center(child: Text("Org Setup Page Placeholder")),
+          RolesPage(),
           Center(child: Text("Users Page Placeholder")),
           ProfilePage(),
         ],
