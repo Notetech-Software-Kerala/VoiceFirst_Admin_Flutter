@@ -20,24 +20,67 @@ class ViewBusinessActivityPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
+          style: TextStyle(color: Colors.white),
           state.isMultiSelect
               ? '${state.selectedIds.length} selected'
               : 'Business Activities',
         ),
         backgroundColor: primaryColor,
         elevation: 0,
-        actions: state.isMultiSelect
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => BulkDeleteDialog.show(
-                    context,
-                    ref,
-                    state.selectedIds.length,
-                  ),
-                ),
-              ]
-            : [],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          // onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (state.isMultiSelect) {
+              notifier.exitSelectionMode(); // ✅ same as old Cancel
+            } else {
+              Navigator.pop(context);
+            }
+          },
+        ),
+        // actions: state.isMultiSelect
+        //     ? [
+        //         IconButton(
+        //           icon: const Icon(Icons.delete),
+        //           onPressed: () => BulkDeleteDialog.show(
+        //             context,
+        //             ref,
+        //             state.selectedIds.length,
+        //           ),
+        //         ),
+        //       ]
+        //     : [],
+        actions: [
+          /// BEFORE long-press → Select
+          if (!state.isMultiSelect)
+            TextButton(
+              onPressed: () => notifier.enterSelectionMode(),
+              child: const Text(
+                'Select',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+
+          /// AFTER long-press → Select All / Clear All
+          if (state.isMultiSelect)
+            TextButton(
+              onPressed: () => notifier.enterSelectionMode(
+                selectAll: !notifier.allVisibleSelected,
+              ),
+              child: Text(
+                notifier.allVisibleSelected ? 'Clear All' : 'Select All',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+
+          /// Bulk delete
+          if (state.isMultiSelect)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.white),
+              onPressed: () =>
+                  BulkDeleteDialog.show(context, ref, state.selectedIds.length),
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -126,6 +169,9 @@ class ViewBusinessActivityPage extends ConsumerWidget {
                         child: Material(
                           color: Colors.transparent,
                           child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                               side: BorderSide(
@@ -138,20 +184,7 @@ class ViewBusinessActivityPage extends ConsumerWidget {
                             tileColor: selected
                                 ? primaryColor.withOpacity(0.08)
                                 : Colors.white,
-                            title: Text(
-                              a.activityName,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade800,
-                              ),
-                            ),
-                            // subtitle: Text(
-                            //   'ID: ${a.id}',
-                            //   style: TextStyle(
-                            //     fontSize: 12,
-                            //     color: Colors.grey.shade500,
-                            //   ),
-                            // ),
+
                             leading: state.isMultiSelect
                                 ? Checkbox(
                                     value: selected,
@@ -160,105 +193,86 @@ class ViewBusinessActivityPage extends ConsumerWidget {
                                     activeColor: primaryColor,
                                   )
                                 : null,
+
+                            title: Text(
+                              a.activityName,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: primaryColor.withOpacity(0.2),
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: primaryColor.withOpacity(0.08),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                /// 👁 Eye
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.remove_red_eye_outlined,
+                                    color: primaryColor,
+                                    // size: 27,
                                   ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 56,
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        child: Transform.scale(
-                                          scale: 0.85,
-                                          child: Switch(
-                                            value: a.status,
-                                            onChanged: (val) {
-                                              notifier.toggleStatus(a.id, val);
-                                              CustomSnackbar.show(
-                                                context,
-                                                message:
-                                                    '${a.activityName} ${val ? 'enabled' : 'disabled'}',
-                                                type: SnackBarType.info,
-                                              );
-                                            },
-                                            activeColor: Colors.green.shade600,
-                                            inactiveThumbColor:
-                                                Colors.grey.shade400,
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 1.5,
-                                        height: 28,
-                                        color: primaryColor.withOpacity(0.2),
-                                      ),
-                                      Container(
-                                        width: 48,
-                                        height: 48,
-                                        decoration: BoxDecoration(
-                                          borderRadius: const BorderRadius.only(
-                                            topRight: Radius.circular(11),
-                                            bottomRight: Radius.circular(11),
-                                          ),
-                                          color: Colors.red.shade50,
-                                        ),
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.delete_rounded,
-                                            color: Colors.red.shade600,
-                                            size: 20,
-                                          ),
-                                          padding: EdgeInsets.zero,
-                                          onPressed: () =>
-                                              DeleteActivityDialog.show(
-                                                context,
-                                                ref,
-                                                a.id,
-                                                a.activityName,
-                                              ),
-                                          splashColor: Colors.red.withOpacity(
-                                            0.2,
-                                          ),
-                                          highlightColor: Colors.red
-                                              .withOpacity(0.1),
-                                        ),
-                                      ),
-                                    ],
+                                  iconSize: 27,
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ActivityDetailPage(activityId: a.id),
+                                    ),
+                                  ),
+                                ),
+
+                                /// 🔀 Toggle
+                                Transform.scale(
+                                  scale: 0.8,
+                                  child: Switch(
+                                    value: a.status,
+                                    onChanged: (val) {
+                                      notifier.toggleStatus(a.id, val);
+                                      CustomSnackbar.show(
+                                        context,
+                                        message:
+                                            '${a.activityName} ${val ? 'enabled' : 'disabled'}',
+                                        type: SnackBarType.info,
+                                      );
+                                    },
+                                    activeThumbColor: const Color.fromARGB(
+                                      255,
+                                      57,
+                                      71,
+                                      57,
+                                    ),
+                                    inactiveThumbColor: Colors.grey.shade400,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+
+                                /// 🗑 Delete
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.delete_rounded,
+                                    color: Colors.red.shade600,
+                                    // size: 27,
+                                  ),
+                                  iconSize: 22,
+                                  onPressed: () => DeleteActivityDialog.show(
+                                    context,
+                                    ref,
+                                    a.id,
+                                    a.activityName,
                                   ),
                                 ),
                               ],
                             ),
+
                             onLongPress: () => notifier.toggleSelection(a.id),
-                            onTap: state.isMultiSelect
-                                ? null
-                                : () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          ActivityDetailPage(activity: a),
-                                    ),
-                                  ),
+                            // onTap: state.isMultiSelect ? null : () {},
+                            onTap: () {
+                              if (state.isMultiSelect) {
+                                notifier.toggleSelection(a.id);
+                              }
+                            },
                           ),
                         ),
                       );
