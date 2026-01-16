@@ -7,6 +7,7 @@ import '../dialogs/delete_activity_dialog.dart';
 import '../dialogs/bulk_delete_dialog.dart';
 import '../widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
+import 'package:voice_first_admin/core/widgets/app_drawer.dart';
 
 class ViewBusinessActivityPage extends ConsumerWidget {
   const ViewBusinessActivityPage({super.key});
@@ -18,6 +19,8 @@ class ViewBusinessActivityPage extends ConsumerWidget {
     final primaryColor = const Color(0xFF0D7FF2);
 
     return Scaffold(
+      backgroundColor: Colors.white,
+
       appBar: AppBar(
         title: Text(
           style: TextStyle(color: Colors.white),
@@ -32,7 +35,7 @@ class ViewBusinessActivityPage extends ConsumerWidget {
           // onPressed: () => Navigator.pop(context),
           onPressed: () {
             if (state.isMultiSelect) {
-              notifier.exitSelectionMode(); // ✅ same as old Cancel
+              notifier.exitSelectionMode();
             } else {
               Navigator.pop(context);
             }
@@ -276,6 +279,7 @@ class ViewBusinessActivityPage extends ConsumerWidget {
           ),
         ],
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () => AddActivityDialog.show(context, ref),
         backgroundColor: primaryColor,
