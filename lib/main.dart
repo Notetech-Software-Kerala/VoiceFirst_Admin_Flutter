@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/theme/app_theme.dart';
-import 'package:voice_first_admin/features/Country%20Management/country/presentation/pages/view_country.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/pages/view_program_action.dart';
-import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:voice_first_admin/features/home/presentation/pages/home_page.dart';
 
 void main() {
@@ -20,7 +17,7 @@ class VoiceFirstAdminApp extends StatelessWidget {
       themeMode: ThemeMode.system,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const ProgramActionView(),
+      home: const HomePage(),
     );
   }
 }

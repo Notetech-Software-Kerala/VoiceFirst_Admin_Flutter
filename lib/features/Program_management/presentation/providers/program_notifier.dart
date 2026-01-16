@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voice_first_admin/features/Program_management/models/program_model.dart';
+import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_mockdata.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_state.dart';
 
@@ -12,6 +12,16 @@ class ProgramNotifier extends StateNotifier<ProgramState> {
   void _load() {
     state = state.copyWith(all: mockPrograms, filtered: mockPrograms);
   }
+
+  // void _load() {
+  //   // Build ProgramManagementModel list from SysProgram mock data.
+  //   // For now, initial action ids are empty and will be filled when adding.
+  //   final List<ProgramManagementModel> combined = mockPrograms
+  //       .map((prog) => ProgramManagementModel.fromProgram(prog, const []))
+  //       .toList();
+
+  //   state = state.copyWith(all: combined, filtered: combined);
+  // }
 
   void search(String query) {
     final newState = state.copyWith(search: query);
@@ -28,12 +38,38 @@ class ProgramNotifier extends StateNotifier<ProgramState> {
     state = state.copyWith(filtered: _applyFilter(state.all));
   }
 
-  void add(SysProgram program) {
+  // void add(ProgramManagementModel program) {
+  //   final list = [...state.all, program];
+  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
+  // }
+
+  void add(ProgramManagementModel program) {
+    if (program.programName.trim().isEmpty) {
+      throw Exception('Program name is required');
+    }
+
+    if (program.labelName.trim().isEmpty) {
+      throw Exception('Label name is required');
+    }
+
+    if (program.programRoute.trim().isEmpty) {
+      throw Exception('Program route is required');
+    }
+
+    if (program.applicationId == 0) {
+      throw Exception('Application is required');
+    }
+
+    // ⚠️ IMPORTANT
+    if (program.programActionIds.isEmpty) {
+      throw Exception('At least one action must be assigned');
+    }
+
     final list = [...state.all, program];
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
-  void update(SysProgram updated) {
+  void update(ProgramManagementModel updated) {
     final list = state.all
         .map((p) => p.sysProgramId == updated.sysProgramId ? updated : p)
         .toList();
@@ -87,7 +123,9 @@ class ProgramNotifier extends StateNotifier<ProgramState> {
       state.selectedIds.length ==
           state.filtered.where((p) => p.sysProgramId != null).length;
 
-  List<SysProgram> _applyFilter(List<SysProgram> source) {
+  List<ProgramManagementModel> _applyFilter(
+    List<ProgramManagementModel> source,
+  ) {
     var list = source;
 
     // Filter by application
