@@ -1,0 +1,50 @@
+class DivisionTwoModel {
+  final String id;
+  final String divisionOneId;
+  final String name;
+  final bool status;
+  final String? divisionThreeLabel;
+
+  DivisionTwoModel({
+    required this.id,
+    required this.divisionOneId,
+    required this.name,
+    required this.status,
+    this.divisionThreeLabel,
+  });
+
+  DivisionTwoModel copyWith({
+    String? id,
+    String? divisionOneId,
+    String? name,
+    bool? status,
+    String? divisionThreeLabel,
+  }) {
+    return DivisionTwoModel(
+      id: id ?? this.id,
+      divisionOneId: divisionOneId ?? this.divisionOneId,
+      name: name ?? this.name,
+      status: status ?? this.status,
+      divisionThreeLabel: divisionThreeLabel ?? this.divisionThreeLabel,
+    );
+  }
+
+  factory DivisionTwoModel.fromJson(Map<String, dynamic> json, {String? divisionThreeLabel}) {
+    return DivisionTwoModel(
+      id: json['id'],
+      divisionOneId: json['divisionOneId'],
+      name: json['divisionTwo'],
+      status: json['status'],
+      divisionThreeLabel: divisionThreeLabel,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'divisionOneId': divisionOneId,
+      'divisionTwo': name,
+      'status': status,
+    };
+  }
+}
