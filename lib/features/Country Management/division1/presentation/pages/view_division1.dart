@@ -8,7 +8,6 @@ import 'package:voice_first_admin/features/Country%20Management/division1/presen
 import 'package:voice_first_admin/features/Country%20Management/division1/presentation/dialogs/edit_division1_dialog.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/presentation/providers/division_one_provider.dart';
 import 'package:voice_first_admin/features/Country%20Management/division2/presentation/pages/view_division2.dart';
-import 'package:voice_first_admin/core/widgets/app_drawer.dart';
 
 class DivisionOneView extends ConsumerWidget {
   final CountryModel country;
@@ -25,7 +24,7 @@ class DivisionOneView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: const AppDrawer(),
+     
 
       appBar: AppBar(
         backgroundColor: primaryColor,

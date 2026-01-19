@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/widgets/app_drawer.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
@@ -30,7 +29,6 @@ class DivisionThreeView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: const AppDrawer(),
 
       appBar: AppBar(
         backgroundColor: primaryColor,
