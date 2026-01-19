@@ -5,7 +5,6 @@ import 'package:voice_first_admin/features/Country%20Management/country/models/c
 import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division2/models/DivisionTwoModel';
 import 'package:voice_first_admin/features/Country%20Management/division3/presentation/pages/view_division3.dart';
-import 'package:voice_first_admin/core/widgets/app_drawer.dart';
 import '../providers/division_two_provider.dart';
 import '../dialogs/delete_division2_dialog.dart';
 import '../dialogs/edit_division2_dialog.dart';
@@ -29,7 +28,6 @@ class DivisionTwoView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: const AppDrawer(),
 
       // ───────────────── AppBar ─────────────────
       appBar: AppBar(

@@ -5,7 +5,6 @@ import 'package:voice_first_admin/features/Program_Action/presentation/providers
 import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/add_program_action_dialog.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/edit_program_action_dialog.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/delete_program_action_dialog.dart';
-import 'package:voice_first_admin/core/widgets/app_drawer.dart';
 
 class ProgramActionView extends ConsumerWidget {
   const ProgramActionView({super.key});
@@ -19,7 +18,6 @@ class ProgramActionView extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      drawer: const AppDrawer(),
 
       appBar: AppBar(
         backgroundColor: primaryColor,
