@@ -414,7 +414,7 @@ class _MenuButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.cardColor,
             border: Border.all(color: theme.dividerColor),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16), 
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
