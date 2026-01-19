@@ -42,11 +42,17 @@ class _StickyHeader extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final profile = ref.watch(profileProvider);
+    final isDesktop = MediaQuery.of(context).size.width > 900;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 12,
+        16,
+        12,
+      ),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor.withOpacity(0.95),
+        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
         border: Border(bottom: BorderSide(color: theme.dividerColor)),
       ),
       child: Row(
@@ -54,6 +60,26 @@ class _StickyHeader extends ConsumerWidget {
         children: [
           Row(
             children: [
+              if (!isDesktop) ...[
+                InkWell(
+                  onTap: () => Scaffold.of(context).openDrawer(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      border: Border.all(color: theme.dividerColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.menu_rounded,
+                      size: 20,
+                      color: theme.iconTheme.color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
               Stack(
                 children: [
                   Container(
@@ -66,7 +92,7 @@ class _StickyHeader extends ConsumerWidget {
                         fit: BoxFit.cover,
                       ),
                       border: Border.all(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -235,7 +261,7 @@ class _StatusCard extends StatelessWidget {
         border: Border.all(color: theme.dividerColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -246,7 +272,11 @@ class _StatusCard extends StatelessWidget {
           Positioned(
             right: -10,
             top: -10,
-            child: Icon(icon, size: 80, color: iconColor.withOpacity(0.1)),
+            child: Icon(
+              icon,
+              size: 80,
+              color: iconColor.withValues(alpha: 0.1),
+            ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,8 +307,8 @@ class _StatusCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? badgeColor.withOpacity(0.2)
-                          : badgeColor.withOpacity(0.1),
+                          ? badgeColor.withValues(alpha: 0.2)
+                          : badgeColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: Row(
@@ -289,7 +319,7 @@ class _StatusCard extends StatelessWidget {
                             badgeIcon,
                             size: 14,
                             color: isDark
-                                ? badgeColor.withOpacity(0.8)
+                                ? badgeColor.withValues(alpha: 0.8)
                                 : badgeColor,
                           ),
                         Text(
@@ -298,7 +328,7 @@ class _StatusCard extends StatelessWidget {
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: isDark
-                                ? badgeColor.withOpacity(0.8)
+                                ? badgeColor.withValues(alpha: 0.8)
                                 : badgeColor,
                           ),
                         ),
@@ -420,7 +450,7 @@ class _MenuButton extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color),
@@ -543,7 +573,9 @@ class _ActivityItem extends StatelessWidget {
         border: isLast
             ? null
             : Border(
-                bottom: BorderSide(color: theme.dividerColor.withOpacity(0.5)),
+                bottom: BorderSide(
+                  color: theme.dividerColor.withValues(alpha: 0.5),
+                ),
               ),
       ),
       child: Row(
@@ -553,13 +585,13 @@ class _ActivityItem extends StatelessWidget {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isDark
-                  ? iconColor.withOpacity(0.2)
-                  : iconColor.withOpacity(0.1),
+                  ? iconColor.withValues(alpha: 0.2)
+                  : iconColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              color: isDark ? iconColor.withOpacity(0.8) : iconColor,
+              color: isDark ? iconColor.withValues(alpha: 0.8) : iconColor,
               size: 20,
             ),
           ),
@@ -585,8 +617,8 @@ class _ActivityItem extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? statusColor.withOpacity(0.2)
-                            : statusColor.withOpacity(0.1),
+                            ? statusColor.withValues(alpha: 0.2)
+                            : statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -595,7 +627,7 @@ class _ActivityItem extends StatelessWidget {
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: isDark
-                              ? statusColor.withOpacity(0.9)
+                              ? statusColor.withValues(alpha: 0.9)
                               : statusColor,
                         ),
                       ),

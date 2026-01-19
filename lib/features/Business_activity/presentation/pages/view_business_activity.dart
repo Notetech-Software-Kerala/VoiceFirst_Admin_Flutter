@@ -44,7 +44,7 @@ class ViewBusinessActivityPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.08),
+              color: primaryColor.withValues(alpha: 0.08),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),

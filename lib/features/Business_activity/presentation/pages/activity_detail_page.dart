@@ -47,7 +47,7 @@ class ActivityDetailPage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.08),
+                color: primaryColor.withValues(alpha: 0.08),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
