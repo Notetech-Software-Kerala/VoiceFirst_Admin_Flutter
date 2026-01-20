@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:voice_first_admin/features/profile/presentation/pages/profile_page.dart';
 import 'package:voice_first_admin/features/roles/presentation/pages/roles_page.dart';
+import '../../../../core/widgets/app_drawer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,17 +16,59 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Responsive Layout Check
+    final isDesktop = MediaQuery.of(context).size.width > 900;
+
+    final content = IndexedStack(
+      index: _selectedIndex,
+      children: [
+        DashboardPage(),
+        RolesPage(),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(Icons.group, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text(
+                "Users Page Coming Soon",
+                style: TextStyle(fontSize: 18, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        ProfilePage(),
+      ],
+    );
+
+    if (isDesktop) {
+      return Scaffold(
+        body: Row(
+          children: [
+            SidebarWidget(
+              currentIndex: _selectedIndex,
+              onNavigate: (i) => setState(() => _selectedIndex = i),
+            ),
+            Expanded(child: content),
+          ],
+        ),
+      );
+    }
+
+    // Mobile/Tablet Layout
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          DashboardPage(),
-          RolesPage(),
-          Center(child: Text("Users Page Placeholder")),
-          ProfilePage(),
-        ],
+      drawer: Drawer(
+        width: 280,
+        backgroundColor: Theme.of(context).cardColor,
+        child: SidebarWidget(
+          currentIndex: _selectedIndex,
+          onNavigate: (i) => setState(() {
+            _selectedIndex = i;
+            Navigator.pop(context); // Close drawer
+          }),
+        ),
       ),
-      extendBody: true,
+      body: content,
       bottomNavigationBar: _CustomBottomNav(
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
