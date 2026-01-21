@@ -1,47 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
-import '../providers/business_activity_provider.dart';
-import '../dialogs/edit_activity_dialog.dart';
-import '../dialogs/delete_activity_dialog.dart';
+import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
+import '../providers/program_action_provider.dart';
+import '../dialogs/edit_program_action_dialog.dart';
+import '../dialogs/delete_program_action_dialog.dart';
 
-class ActivityDetailPage extends ConsumerWidget {
-  final int activityId;
-  // final BusinessActivity activity;
+class ProgramActionDetailView extends ConsumerWidget {
+  final int actionId;
 
-  const ActivityDetailPage({
-    super.key,
-    required this.activityId,
-    // required this.activity,
-  });
+  const ProgramActionDetailView({super.key, required this.actionId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final primaryColor = const Color(0xFF0D7FF2);
 
-    final state = ref.watch(businessActivityProvider);
+    final state = ref.watch(programActionProvider);
 
-    final activity = state.activities
-        .where((a) => a.id == activityId)
-        .cast<BusinessActivity?>()
+    final action = state.actions
+        .where((a) => a.actionId == actionId)
+        .cast<ProgramActionModel?>()
         .firstOrNull;
 
     // SAFETY GUARD
-    if (activity == null) {
+    if (action == null) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Activity Details'),
+          title: const Text(
+            'Action Details',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: primaryColor,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-        body: const Center(child: Text('Activity not found')),
+        body: const Center(child: Text('Action not found')),
       );
     }
+
+    // Determine if action is deleted
+    final isDeleted = action.deleted;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Activity Details',
+          'Program Action Details',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: primaryColor,
@@ -71,7 +76,7 @@ class ActivityDetailPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          activity.name,
+                          action.actionName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -85,17 +90,17 @@ class ActivityDetailPage extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: activity.active
+                            color: action.active
                                 ? Colors.green.withAlpha(38)
                                 : Colors.red.withAlpha(38),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            activity.active ? 'Active' : 'Inactive',
+                            action.active ? 'Active' : 'Inactive',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: activity.active
+                              color: action.active
                                   ? Colors.green.shade700
                                   : Colors.red.shade700,
                             ),
@@ -117,79 +122,90 @@ class ActivityDetailPage extends ConsumerWidget {
                     primaryColor: primaryColor,
                     children: [
                       _DetailItem(
-                        label: 'Activity Name',
-                        value: activity.name,
+                        label: 'Action ID',
+                        value: action.actionId.toString(),
+                        primaryColor: primaryColor,
+                      ),
+                      _DetailItem(
+                        label: 'Action Name',
+                        value: action.actionName,
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
                         label: 'Active Status',
-                        value: activity.active ? 'Active' : 'Inactive',
+                        value: action.active ? 'Active' : 'Inactive',
                         primaryColor: primaryColor,
-                        valueColor: activity.active ? Colors.green : Colors.red,
+                        valueColor: action.active ? Colors.green : Colors.red,
                       ),
                       _DetailItem(
                         label: 'Delete Status',
-                        value: activity.isDeleted ? 'Deleted' : 'Not Deleted',
+                        value: isDeleted ? 'Deleted' : 'Not Deleted',
                         primaryColor: primaryColor,
-                        valueColor: activity.isDeleted
-                            ? Colors.red
-                            : Colors.green,
+                        valueColor: isDeleted ? Colors.red : Colors.green,
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  _DetailSection(
-                    title: 'Created Information',
-                    primaryColor: primaryColor,
-                    children: [
-                      _DetailItem(
-                        label: 'Created By',
-                        value: activity.createdUser,
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Created Date',
-                        value: _formatDateTime(activity.createdDate),
-                        primaryColor: primaryColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _DetailSection(
-                    title: 'Modified Information',
-                    primaryColor: primaryColor,
-                    children: [
-                      _DetailItem(
-                        label: 'Modified By',
-                        value: activity.modifiedUser ?? 'N/A',
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Modified Date',
-                        value: activity.modifiedDate != null
-                            ? _formatDateTime(activity.modifiedDate!)
-                            : 'Not modified',
-                        primaryColor: primaryColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (activity.isDeleted) ...[
+                  if (action.createdUser != null ||
+                      action.createdDate != null) ...[
+                    _DetailSection(
+                      title: 'Created Information',
+                      primaryColor: primaryColor,
+                      children: [
+                        _DetailItem(
+                          label: 'Created By',
+                          value: action.createdUser ?? 'N/A',
+                          primaryColor: primaryColor,
+                        ),
+                        _DetailItem(
+                          label: 'Created Date',
+                          value: action.createdDate != null
+                              ? _formatDateTime(action.createdDate!)
+                              : 'N/A',
+                          primaryColor: primaryColor,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (action.modifiedUser != null ||
+                      action.modifiedDate != null) ...[
+                    _DetailSection(
+                      title: 'Modified Information',
+                      primaryColor: primaryColor,
+                      children: [
+                        _DetailItem(
+                          label: 'Modified By',
+                          value: action.modifiedUser ?? 'N/A',
+                          primaryColor: primaryColor,
+                        ),
+                        _DetailItem(
+                          label: 'Modified Date',
+                          value: action.modifiedDate != null
+                              ? _formatDateTime(action.modifiedDate!)
+                              : 'Not modified',
+                          primaryColor: primaryColor,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (isDeleted) ...[
                     _DetailSection(
                       title: 'Deleted Information',
                       primaryColor: primaryColor,
                       children: [
                         _DetailItem(
                           label: 'Deleted By',
-                          value: activity.deletedUser?.isEmpty ?? true
+                          value: action.deletedUser?.isEmpty ?? true
                               ? 'N/A'
-                              : activity.deletedUser!,
+                              : action.deletedUser!,
                           primaryColor: primaryColor,
                         ),
                         _DetailItem(
                           label: 'Deleted Date',
-                          value: activity.deletedDate != null
-                              ? _formatDateTime(activity.deletedDate!)
+                          value: action.deletedDate != null
+                              ? _formatDateTime(action.deletedDate!)
                               : 'N/A',
                           primaryColor: primaryColor,
                         ),
@@ -199,66 +215,16 @@ class ActivityDetailPage extends ConsumerWidget {
                   ],
                   const SizedBox(height: 8),
 
-                  // Row(
-                  //   children: [
-                  //     /// ✏️ Edit Button
-                  //     Expanded(
-                  //       child: ElevatedButton.icon(
-                  //         onPressed: () =>
-                  //             EditActivityDialog.show(context, ref, activity),
-                  //         icon: const Icon(Icons.edit, color: Colors.white),
-                  //         label: const Text(
-                  //           'Edit Activity',
-                  //           style: TextStyle(color: Colors.white),
-                  //         ),
-                  //         style: ElevatedButton.styleFrom(
-                  //           backgroundColor: primaryColor,
-                  //           padding: const EdgeInsets.symmetric(vertical: 14),
-                  //           shape: RoundedRectangleBorder(
-                  //             borderRadius: BorderRadius.circular(12),
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-
-                  //     const SizedBox(width: 12),
-
-                  //     /// 🗑 Delete Button
-                  //     Expanded(
-                  //       child: ElevatedButton.icon(
-                  //         onPressed: () => DeleteActivityDialog.show(
-                  //           context,
-                  //           ref,
-                  //           activity.id,
-                  //           activity.name,
-                  //         ),
-
-                  //         icon: const Icon(Icons.delete, color: Colors.white),
-                  //         label: const Text(
-                  //           'Delete Activity',
-                  //           style: TextStyle(color: Colors.white),
-                  //         ),
-                  //         style: ElevatedButton.styleFrom(
-                  //           backgroundColor: Colors.red.shade600,
-                  //           padding: const EdgeInsets.symmetric(vertical: 14),
-                  //           shape: RoundedRectangleBorder(
-                  //             borderRadius: BorderRadius.circular(12),
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
                   Row(
                     children: [
-                      if (activity.isDeleted)
+                      if (isDeleted)
                         /// ♻️ RECOVER BUTTON
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () async {
                               final error = await ref
-                                  .read(businessActivityProvider.notifier)
-                                  .recover(activity.id);
+                                  .read(programActionProvider.notifier)
+                                  .recover(action.actionId);
 
                               if (error != null) {
                                 if (context.mounted) {
@@ -275,7 +241,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                 CustomSnackbar.show(
                                   context,
                                   message:
-                                      '${activity.name} recovered successfully',
+                                      '${action.actionName} recovered successfully',
                                   type: SnackBarType.success,
                                 );
                               }
@@ -284,7 +250,7 @@ class ActivityDetailPage extends ConsumerWidget {
                               Icons.restore,
                               color: Colors.white,
                             ),
-                            label: const Text('Recover Activity'),
+                            label: const Text('Recover Action'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green.shade600,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -298,10 +264,13 @@ class ActivityDetailPage extends ConsumerWidget {
                         /// ✏️ EDIT
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () =>
-                                EditActivityDialog.show(context, ref, activity),
+                            onPressed: () => EditProgramActionDialog.show(
+                              context,
+                              ref,
+                              action,
+                            ),
                             icon: const Icon(Icons.edit, color: Colors.white),
-                            label: const Text('Edit Activity'),
+                            label: const Text('Edit Action'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -316,14 +285,14 @@ class ActivityDetailPage extends ConsumerWidget {
                         /// 🗑 DELETE
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () => DeleteActivityDialog.show(
+                            onPressed: () => DeleteProgramActionDialog.show(
                               context,
                               ref,
-                              activity.id,
-                              activity.name,
+                              action.actionId,
+                              action.actionName,
                             ),
                             icon: const Icon(Icons.delete, color: Colors.white),
-                            label: const Text('Delete Activity'),
+                            label: const Text('Delete Action'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red.shade600,
                               padding: const EdgeInsets.symmetric(vertical: 14),
@@ -427,55 +396,14 @@ class _DetailItem extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? Colors.grey.shade900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ToggleItem extends StatelessWidget {
-  final String label;
-  final bool value;
-
-  const _ToggleItem({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: value
-                  ? const Color(0xFF0D7FF2).withAlpha(38)
-                  : Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(20),
-            ),
+          Flexible(
             child: Text(
-              value ? 'Yes' : 'No',
+              value,
+              textAlign: TextAlign.right,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: value ? const Color(0xFF0D7FF2) : Colors.grey.shade600,
+                color: valueColor ?? Colors.grey.shade900,
               ),
             ),
           ),

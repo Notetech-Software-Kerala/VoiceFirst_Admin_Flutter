@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import '../providers/business_activity_provider.dart';
 import '../dialogs/add_activity_dialog.dart';
 import '../dialogs/delete_activity_dialog.dart';
@@ -18,12 +19,17 @@ class ViewBusinessActivityPage extends ConsumerStatefulWidget {
 class _ViewBusinessActivityPageState
     extends ConsumerState<ViewBusinessActivityPage> {
   final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 10;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(businessActivityProvider.notifier).loadAll();
+      ref
+          .read(businessActivityProvider.notifier)
+          .loadAll(
+            filter: BusinessActivityFilter(pageNumber: 1, limit: _pageSize),
+          );
     });
   }
 
@@ -33,15 +39,29 @@ class _ViewBusinessActivityPageState
     super.dispose();
   }
 
+  // void _goToPage(int page) {
+  //   ref
+  //       .read(businessActivityProvider.notifier)
+  //       .loadAll(
+  //         pageNumber: page,
+  //         searchTerm: ref.read(businessActivityProvider).search.isEmpty
+  //             ? null
+  //             : ref.read(businessActivityProvider).search,
+  //       );
+  //   _scrollController.animateTo(
+  //     0,
+  //     duration: const Duration(milliseconds: 300),
+  //     curve: Curves.easeOut,
+  //   );
+  // }
+
   void _goToPage(int page) {
     ref
         .read(businessActivityProvider.notifier)
         .loadAll(
-          pageNumber: page,
-          searchTerm: ref.read(businessActivityProvider).search.isEmpty
-              ? null
-              : ref.read(businessActivityProvider).search,
+          filter: BusinessActivityFilter(pageNumber: page, limit: _pageSize),
         );
+
     _scrollController.animateTo(
       0,
       duration: const Duration(milliseconds: 300),
@@ -122,7 +142,16 @@ class _ViewBusinessActivityPageState
               ),
             ),
             child: TextField(
-              onChanged: notifier.search,
+              onChanged: (value) {
+                notifier.loadAll(
+                  filter: BusinessActivityFilter(
+                    searchText: value,
+                    pageNumber: 1,
+                  ),
+                );
+              },
+
+              // onChanged: notifier.search,
               decoration: InputDecoration(
                 hintText: 'Search activities...',
                 prefixIcon: Icon(Icons.search, color: primaryColor),
@@ -190,7 +219,7 @@ class _ViewBusinessActivityPageState
                           left: 12,
                           right: 12,
                           top: 12,
-                          bottom: 70, // Space for pagination controls
+                          bottom: 60, // Space for pagination controls
                         ),
                         itemCount: state.filtered.length,
                         itemBuilder: (_, i) {
@@ -198,7 +227,7 @@ class _ViewBusinessActivityPageState
                           final selected = state.selectedIds.contains(a.id);
 
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.only(bottom: 12, top: 2),
                             child: Material(
                               color: Colors.transparent,
                               child: ListTile(
@@ -329,37 +358,57 @@ class _ViewBusinessActivityPageState
                           right: 0,
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                              horizontal: 12,
+                              vertical: 10,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.grey.shade300,
-                                  blurRadius: 8,
+                                  blurRadius: 6,
                                   offset: const Offset(0, -2),
                                 ),
                               ],
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 // Page info
-                                Text(
-                                  'Showing ${(state.currentPage - 1) * 20 + 1}-${(state.currentPage - 1) * 20 + state.filtered.length} of ${state.totalCount}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade700,
-                                    fontWeight: FontWeight.w500,
+                                Flexible(
+                                  child: Builder(
+                                    builder: (_) {
+                                      final start =
+                                          (state.currentPage - 1) * _pageSize +
+                                          1;
+                                      final end =
+                                          start + state.filtered.length - 1;
+
+                                      return Text(
+                                        '$start-$end of ${state.totalCount}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      );
+                                    },
                                   ),
                                 ),
 
                                 // Page controls
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     // Previous button
                                     IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 36,
+                                        minHeight: 36,
+                                      ),
                                       onPressed:
                                           state.currentPage > 1 &&
                                               !state.isLoading
@@ -372,40 +421,52 @@ class _ViewBusinessActivityPageState
                                             ? primaryColor
                                             : Colors.grey.shade400,
                                       ),
-                                      iconSize: 28,
+                                      iconSize: 24,
                                     ),
 
                                     // Current page
                                     Container(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 60,
+                                      ),
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
+                                        horizontal: 8,
+                                        vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
                                         color: primaryColor.withAlpha(20),
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: state.isLoading
-                                          ? SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: primaryColor,
+                                          ? Center(
+                                              child: SizedBox(
+                                                width: 14,
+                                                height: 14,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: primaryColor,
+                                                    ),
                                               ),
                                             )
                                           : Text(
-                                              '${state.currentPage} / ${(state.totalCount / 20).ceil()}',
+                                              '${state.currentPage} / ${(state.totalCount / _pageSize).ceil()}',
                                               style: TextStyle(
-                                                fontSize: 13,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.w600,
                                                 color: primaryColor,
                                               ),
+                                              textAlign: TextAlign.center,
                                             ),
                                     ),
 
                                     // Next button
                                     IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 36,
+                                        minHeight: 36,
+                                      ),
                                       onPressed:
                                           state.hasMoreData && !state.isLoading
                                           ? () =>
@@ -417,22 +478,25 @@ class _ViewBusinessActivityPageState
                                             ? primaryColor
                                             : Colors.grey.shade400,
                                       ),
-                                      iconSize: 28,
+                                      iconSize: 24,
                                     ),
 
                                     // Page selector dropdown
-                                    const SizedBox(width: 8),
                                     PopupMenuButton<int>(
+                                      padding: EdgeInsets.zero,
                                       icon: Icon(
                                         Icons.more_vert,
                                         color: primaryColor,
                                         size: 20,
                                       ),
+                                      iconSize: 20,
+                                      offset: const Offset(0, -10),
                                       enabled: !state.isLoading,
                                       onSelected: (page) => _goToPage(page),
                                       itemBuilder: (context) {
                                         final totalPages =
-                                            (state.totalCount / 20).ceil();
+                                            (state.totalCount / _pageSize)
+                                                .ceil();
                                         return List.generate(
                                           totalPages,
                                           (index) => PopupMenuItem<int>(
@@ -448,7 +512,7 @@ class _ViewBusinessActivityPageState
                                                   Icon(
                                                     Icons.check,
                                                     color: primaryColor,
-                                                    size: 18,
+                                                    size: 16,
                                                   ),
                                               ],
                                             ),

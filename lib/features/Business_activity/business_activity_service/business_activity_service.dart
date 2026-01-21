@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 
 class PaginatedResponse<T> {
@@ -9,8 +10,6 @@ class PaginatedResponse<T> {
   final int pageSize;
   final int totalCount;
   final int totalPages;
-  final bool hasNextPage;
-  final bool hasPreviousPage;
 
   PaginatedResponse({
     required this.items,
@@ -18,9 +17,11 @@ class PaginatedResponse<T> {
     required this.pageSize,
     required this.totalCount,
     required this.totalPages,
-    required this.hasNextPage,
-    required this.hasPreviousPage,
   });
+
+  // ✅ DERIVED FLAGS
+  bool get hasNextPage => currentPage < totalPages;
+  bool get hasPreviousPage => currentPage > 1;
 
   factory PaginatedResponse.fromJson(
     Map<String, dynamic> json,
@@ -30,12 +31,10 @@ class PaginatedResponse<T> {
       items: (json['items'] as List)
           .map((e) => fromJsonT(e as Map<String, dynamic>))
           .toList(),
-      currentPage: json['currentPage'] ?? 1,
-      pageSize: json['pageSize'] ?? 10,
-      totalCount: json['totalCount'] ?? 0,
-      totalPages: json['totalPages'] ?? 0,
-      hasNextPage: json['hasNextPage'] ?? false,
-      hasPreviousPage: json['hasPreviousPage'] ?? false,
+      currentPage: json['pageNumber'], // ✅ MATCH API
+      pageSize: json['pageSize'],
+      totalCount: json['totalCount'],
+      totalPages: json['totalPages'],
     );
   }
 }
@@ -63,32 +62,12 @@ class BusinessActivityService {
     }
   }
 
-  Future<PaginatedResponse<BusinessActivity>> getAllActivities({
-    int pageNumber = 1,
-    int pageSize = 10,
-    String? searchTerm,
-    bool? isActive,
-    String sortBy = 'name',
-    bool sortDescending = false,
-  }) async {
-    final queryParams = <String, String>{
-      'pageNumber': pageNumber.toString(),
-      'pageSize': pageSize.toString(),
-      'sortBy': sortBy,
-      'sortDescending': sortDescending.toString(),
-    };
-
-    if (searchTerm != null && searchTerm.isNotEmpty) {
-      queryParams['searchTerm'] = searchTerm;
-    }
-
-    if (isActive != null) {
-      queryParams['isActive'] = isActive.toString();
-    }
-
+  Future<PaginatedResponse<BusinessActivity>> getAllActivities(
+    BusinessActivityFilter filter,
+  ) async {
     final url = Uri.parse(
       '$_baseUrl/business-activity',
-    ).replace(queryParameters: queryParams);
+    ).replace(queryParameters: filter.toQueryParams());
 
     debugPrint('API REQUEST: GET $url');
 
@@ -98,15 +77,14 @@ class BusinessActivityService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to load activities: ${response.statusCode}');
+      throw Exception('Failed to load activities');
     }
 
     final json = jsonDecode(response.body);
-    final data = json['data'] as Map<String, dynamic>;
 
     return PaginatedResponse.fromJson(
-      data,
-      (json) => BusinessActivity.fromJson(json),
+      json['data'],
+      (e) => BusinessActivity.fromJson(e),
     );
   }
 
@@ -165,6 +143,21 @@ class BusinessActivityService {
     }
   }
 
+  Future<void> recoverActivity(int id) async {
+    final url = Uri.parse('$_baseUrl/business-activity/recover/$id');
+
+    debugPrint('API REQUEST: PATCH $url');
+
+    final response = await http.patch(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to recover activity');
+    }
+  }
+
   Future<void> deleteActivity(int id) async {
     final url = Uri.parse('$_baseUrl/business-activity/$id');
 
@@ -199,47 +192,3 @@ class BusinessActivityService {
     }
   }
 }
-
-
-// import '../../../core/services/api_client.dart';
-// import '../../../core/models/paged_filter.dart';
-// import '../../../core/models/paged_result.dart';
-// import '../domain/business_activity.dart';
-
-// class BusinessActivityService {
-//   final _dio = ApiClient().dio;
-
-  // Future<PagedResult<BusinessActivity>> getAll(
-  //   PagedFilter filter,
-  // ) async {
-  //   final response = await _dio.get(
-  //     '/business-activity',
-  //     queryParameters: filter.toQuery(),
-  //   );
-
-  //   return PagedResult.fromJson(
-  //     response.data['data'],
-  //     (json) => BusinessActivity.fromJson(json),
-  //   );
-  // }
-
-//   Future<void> toggleStatus(int id, bool active) async {
-//     await _dio.patch(
-//       '/business-activity/$id/status',
-//       data: {'active': active},
-//     );
-//   }
-
-//   Future<BusinessActivity> create(String name) async {
-//     final response = await _dio.post(
-//       '/business-activity',
-//       data: {'name': name},
-//     );
-
-//     return BusinessActivity.fromJson(response.data['data']);
-//   }
-
-//   Future<void> delete(int id) async {
-//     await _dio.delete('/business-activity/$id');
-//   }
-// }

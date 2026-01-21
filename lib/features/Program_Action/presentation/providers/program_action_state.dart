@@ -1,41 +1,71 @@
+
 import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
 
 class ProgramActionState {
-  final List<ProgramActionModel> all;
+  final List<ProgramActionModel> actions;
   final List<ProgramActionModel> filtered;
-  final String search;
   final Set<int> selectedIds;
   final bool isMultiSelect;
+  final String search;
+  final bool isLoading;
+  final bool hasMoreData;
+  final int currentPage;
+  final int totalCount;
+  final int totalPages;
 
-  const ProgramActionState({
-    required this.all,
+
+  ProgramActionState({
+    required this.actions,
     required this.filtered,
-    required this.search,
     required this.selectedIds,
     required this.isMultiSelect,
+    required this.search,
+    required this.isLoading,
+    required this.hasMoreData,
+    required this.currentPage,
+    required this.totalCount,
+    required this.totalPages,
   });
 
-  factory ProgramActionState.initial() => const ProgramActionState(
-    all: [],
-    filtered: [],
-    search: '',
-    selectedIds: {},
-    isMultiSelect: false,
-  );
+  factory ProgramActionState.initial() {
+    return ProgramActionState(
+      actions: [],
+      filtered: [],
+      selectedIds: <int>{},
+      isMultiSelect: false,
+      search: '',
+      isLoading: false,
+      hasMoreData: true,
+      currentPage: 1,
+      totalCount: 0,
+      totalPages: 1,
+    );
+  }
 
   ProgramActionState copyWith({
-    List<ProgramActionModel>? all,
+    List<ProgramActionModel>? actions,
     List<ProgramActionModel>? filtered,
-    String? search,
     Set<int>? selectedIds,
     bool? isMultiSelect,
+    String? search,
+    bool? isLoading,
+    bool? hasMoreData,
+    int? currentPage,
+    int? totalCount,
+    int? totalPages,
   }) {
     return ProgramActionState(
-      all: all ?? this.all,
+      actions: actions ?? this.actions,
       filtered: filtered ?? this.filtered,
-      search: search ?? this.search,
       selectedIds: selectedIds ?? this.selectedIds,
       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
+      search: search ?? this.search,
+      isLoading: isLoading ?? this.isLoading,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
+      currentPage: currentPage ?? this.currentPage,
+      totalCount: totalCount ?? this.totalCount,
+      totalPages: totalPages ?? this.totalPages,
+
     );
   }
 }

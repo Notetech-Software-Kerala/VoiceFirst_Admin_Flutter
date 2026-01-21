@@ -32,7 +32,7 @@ class BusinessActivityState {
       search: '',
       isLoading: false,
       hasMoreData: true,
-      currentPage: 0,
+      currentPage: 1,
       totalCount: 0,
     );
   }

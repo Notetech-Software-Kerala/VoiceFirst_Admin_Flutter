@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Business_activity/business_activity_service/business_activity_service.dart';
+import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 import 'business_activity_state.dart';
 
@@ -15,50 +16,49 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
     return BusinessActivityState.initial();
   }
 
-  // 🔍 Search
-  void search(String query) {
-    final filtered = query.isEmpty
-        ? state.activities
-        : state.activities
-              .where((a) => a.name.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-
-    state = state.copyWith(search: query, filtered: filtered);
-  }
-
-  Future<void> loadAll({
-    int pageNumber = 1,
-    int pageSize = 20,
-    String? searchTerm,
-    bool? isActive,
-  }) async {
+  Future<void> loadAll({BusinessActivityFilter? filter}) async {
     if (state.isLoading) return;
 
     state = state.copyWith(isLoading: true);
 
     try {
       final response = await _service.getAllActivities(
-        pageNumber: pageNumber,
-        pageSize: pageSize,
-        searchTerm: searchTerm,
-        isActive: isActive,
+        filter ?? BusinessActivityFilter(pageNumber: 1, limit: 10),
       );
 
       state = state.copyWith(
         activities: response.items,
-        filtered: _applyFilter(response.items),
+        filtered: response.items, // backend already filtered
         isLoading: false,
         hasMoreData: response.hasNextPage,
         currentPage: response.currentPage,
         totalCount: response.totalCount,
       );
-
       debugPrint(
-        'Loaded ${response.items.length} of ${response.totalCount} activities (Page ${response.currentPage})',
+        'PAGE=${response.currentPage}, TOTAL_PAGES=${response.totalPages}, HAS_NEXT=${response.hasNextPage}',
       );
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      debugPrint('💥 Failed to load activities: $e');
+    }
+  }
+
+  // ♻️ Recover
+  Future<String?> recover(int activityId) async {
+    try {
+      state = state.copyWith(isLoading: true);
+
+      // Call the API to recover the activity
+      await _service.recoverActivity(activityId);
+
+      // Refresh the activities list
+      await loadAll();
+
+      state = state.copyWith(isLoading: false);
+      return null; // Success
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      debugPrint('💥 Failed to recover activity: $e');
+      return 'Failed to recover activity';
     }
   }
 
@@ -71,7 +71,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       final activity = await _service.createActivity(name);
 
       final list = [...state.activities, activity];
-      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+      state = state.copyWith(activities: list);
 
       debugPrint(' Activity added. Total activities: ${list.length}');
 
@@ -91,7 +91,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
           .map((a) => a.id == updated.id ? updated : a)
           .toList();
 
-      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+      state = state.copyWith(activities: list);
 
       debugPrint('✅ Activity updated: $name');
       return null; // success
@@ -110,7 +110,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
           .map((a) => a.id == id ? a.copyWith(active: active) : a)
           .toList();
 
-      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+      state = state.copyWith(activities: list);
 
       debugPrint('✅ Status toggled for activity ID: $id');
       return null; // success
@@ -126,7 +126,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       await _service.deleteActivity(id);
 
       final list = state.activities.where((a) => a.id != id).toList();
-      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+      state = state.copyWith(activities: list);
 
       debugPrint('✅ Activity deleted: $id');
       return null; // success
@@ -148,7 +148,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
       state = state.copyWith(
         activities: list,
-        filtered: _applyFilter(list),
+
         selectedIds: {},
         isMultiSelect: false,
       );
@@ -177,12 +177,12 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
   }
 
   // 🔧 Helper
-  List<BusinessActivity> _applyFilter(List<BusinessActivity> list) {
-    if (state.search.isEmpty) return list;
-    return list
-        .where((a) => a.name.toLowerCase().contains(state.search.toLowerCase()))
-        .toList();
-  }
+  // List<BusinessActivity> _applyFilter(List<BusinessActivity> list) {
+  //   if (state.search.isEmpty) return list;
+  //   return list
+  //       .where((a) => a.name.toLowerCase().contains(state.search.toLowerCase()))
+  //       .toList();
+  // }
 
   void enterSelectionMode({bool selectAll = false}) {
     final selected = <int>{};
