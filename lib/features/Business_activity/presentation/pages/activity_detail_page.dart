@@ -4,10 +4,9 @@ import 'package:voice_first_admin/features/Business_activity/models/business_act
 import '../providers/business_activity_provider.dart';
 import '../dialogs/edit_activity_dialog.dart';
 import '../dialogs/delete_activity_dialog.dart';
-import '../widgets/custom_snackbar.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
-  final String activityId;
+  final int activityId;
   // final BusinessActivity activity;
 
   const ActivityDetailPage({
@@ -27,7 +26,7 @@ class ActivityDetailPage extends ConsumerWidget {
         .cast<BusinessActivity?>()
         .firstOrNull;
 
-    /// ✅ SAFETY GUARD
+    // SAFETY GUARD
     if (activity == null) {
       return Scaffold(
         appBar: AppBar(
@@ -50,26 +49,6 @@ class ActivityDetailPage extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        // actions: [
-        // IconButton(
-        //   icon: const Icon(Icons.edit),
-        //   onPressed: () => EditActivityDialog.show(context, ref, activity),
-        // ),
-        //   IconButton(
-        //     icon: const Icon(Icons.delete, color: Color.fromARGB(255, 0, 0, 0)),
-        //     onPressed: () async {
-        //       DeleteActivityDialog.show(
-        //         context,
-        //         ref,
-        //         activity.id,
-        //         activity.activityName,
-        //       );
-        //       if (context.mounted) {
-        //         Navigator.pop(context);
-        //       }
-        //     },
-        //   ),
-        // ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -77,7 +56,7 @@ class ActivityDetailPage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.08),
+                color: primaryColor.withAlpha(20),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -85,22 +64,13 @@ class ActivityDetailPage extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  // Container(
-                  //   width: 80,
-                  //   height: 80,
-                  //   decoration: BoxDecoration(
-                  //     color: primaryColor.withOpacity(0.2),
-                  //     shape: BoxShape.circle,
-                  //   ),
-                  //   child: Icon(Icons.business, size: 40, color: primaryColor),
-                  // ),
                   const SizedBox(width: 20),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          activity.activityName,
+                          activity.name,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -114,17 +84,17 @@ class ActivityDetailPage extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: activity.status
-                                ? Colors.green.withOpacity(0.15)
-                                : Colors.red.withOpacity(0.15),
+                            color: activity.active
+                                ? Colors.green.withAlpha(38)
+                                : Colors.red.withAlpha(38),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            activity.status ? 'Active' : 'Inactive',
+                            activity.active ? 'Active' : 'Inactive',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: activity.status
+                              color: activity.active
                                   ? Colors.green.shade700
                                   : Colors.red.shade700,
                             ),
@@ -142,43 +112,91 @@ class ActivityDetailPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _DetailSection(
-                    title: 'Settings',
+                    title: 'Basic Information',
                     primaryColor: primaryColor,
                     children: [
-                      // _DetailItem(
-                      //   label: 'Activity ID',
-                      //   value: activity.id,
-                      //   primaryColor: primaryColor,
-                      // ),
                       _DetailItem(
                         label: 'Activity Name',
-                        value: activity.activityName,
+                        value: activity.name,
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
-                        label: 'Status',
-                        value: activity.status ? 'Active' : 'Inactive',
+                        label: 'Active Status',
+                        value: activity.active ? 'Active' : 'Inactive',
                         primaryColor: primaryColor,
-                        valueColor: activity.status ? Colors.green : Colors.red,
+                        valueColor: activity.active ? Colors.green : Colors.red,
+                      ),
+                      _DetailItem(
+                        label: 'Delete Status',
+                        value: activity.isDeleted ? 'Deleted' : 'Not Deleted',
+                        primaryColor: primaryColor,
+                        valueColor: activity.isDeleted
+                            ? Colors.red
+                            : Colors.green,
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  // _DetailSection(
-                  //   title: 'Configuration',
-                  //   primaryColor: primaryColor,
-                  //   children: [
-                  //     // _ToggleItem(
-                  //     //   label: 'For Company',
-                  //     //   value: activity.isForCompany,
-                  //     // ),
-                  //     // _ToggleItem(
-                  //     //   label: 'For Branch',
-                  //     //   value: activity.isForBranch,
-                  //     // ),
-                  //   ],
-                  // ),
-                  const SizedBox(height: 32),
+                  _DetailSection(
+                    title: 'Created Information',
+                    primaryColor: primaryColor,
+                    children: [
+                      _DetailItem(
+                        label: 'Created By',
+                        value: activity.createdUser,
+                        primaryColor: primaryColor,
+                      ),
+                      _DetailItem(
+                        label: 'Created Date',
+                        value: _formatDateTime(activity.createdDate),
+                        primaryColor: primaryColor,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _DetailSection(
+                    title: 'Modified Information',
+                    primaryColor: primaryColor,
+                    children: [
+                      _DetailItem(
+                        label: 'Modified By',
+                        value: activity.modifiedUser ?? 'N/A',
+                        primaryColor: primaryColor,
+                      ),
+                      _DetailItem(
+                        label: 'Modified Date',
+                        value: activity.modifiedDate != null
+                            ? _formatDateTime(activity.modifiedDate!)
+                            : 'Not modified',
+                        primaryColor: primaryColor,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  if (activity.isDeleted) ...[
+                    _DetailSection(
+                      title: 'Deleted Information',
+                      primaryColor: primaryColor,
+                      children: [
+                        _DetailItem(
+                          label: 'Deleted By',
+                          value: activity.deletedUser?.isEmpty ?? true
+                              ? 'N/A'
+                              : activity.deletedUser!,
+                          primaryColor: primaryColor,
+                        ),
+                        _DetailItem(
+                          label: 'Deleted Date',
+                          value: activity.deletedDate != null
+                              ? _formatDateTime(activity.deletedDate!)
+                              : 'N/A',
+                          primaryColor: primaryColor,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  const SizedBox(height: 8),
 
                   Row(
                     children: [
@@ -211,7 +229,7 @@ class ActivityDetailPage extends ConsumerWidget {
                             context,
                             ref,
                             activity.id,
-                            activity.activityName,
+                            activity.name,
                           ),
 
                           icon: const Icon(Icons.delete, color: Colors.white),
@@ -237,6 +255,14 @@ class ActivityDetailPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day.toString().padLeft(2, '0')}/'
+        '${dateTime.month.toString().padLeft(2, '0')}/'
+        '${dateTime.year} '
+        '${dateTime.hour.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
 
@@ -352,7 +378,7 @@ class _ToggleItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: value
-                  ? const Color(0xFF0D7FF2).withOpacity(0.15)
+                  ? const Color(0xFF0D7FF2).withAlpha(38)
                   : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(20),
             ),

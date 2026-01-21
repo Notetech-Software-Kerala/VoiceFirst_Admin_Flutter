@@ -1,21 +1,12 @@
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:flutter_riverpod/legacy.dart';
-// import 'division_one_notifier.dart';
-// import 'division_one_state.dart';
-
-// final divisionOneProvider = StateNotifierProvider.family<
-//     DivisionOneNotifier,
-//     DivisionOneState,
-//     String>((ref, countryId) {
-//   return DivisionOneNotifier(countryId);
-// });
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'division_one_notifier.dart';
-import 'division_one_state.dart';
+import 'package:voice_first_admin/features/Country%20Management/division1/presentation/providers/division_one_notifier.dart';
+import 'package:voice_first_admin/features/Country%20Management/division1/presentation/providers/division_one_state.dart';
 
-final divisionOneProvider =
-    StateNotifierProvider.family<DivisionOneNotifier, DivisionOneState, String>(
-  (ref, countryId) => DivisionOneNotifier(countryId),
-);
+final divisionOneProvider = Provider.family<DivisionOneNotifier, String>((
+  ref,
+  countryId,
+) {
+  final notifier = DivisionOneNotifier();
+  notifier.initialize(countryId);
+  return notifier;
+});

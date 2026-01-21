@@ -7,6 +7,7 @@ import 'package:voice_first_admin/features/Country%20Management/division1/presen
 import 'package:voice_first_admin/features/Country%20Management/division1/presentation/dialogs/delete_division1_dialog.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/presentation/dialogs/edit_division1_dialog.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/presentation/providers/division_one_provider.dart';
+import 'package:voice_first_admin/features/Country%20Management/division1/presentation/providers/division_one_state.dart';
 import 'package:voice_first_admin/features/Country%20Management/division2/presentation/pages/view_division2.dart';
 
 class DivisionOneView extends ConsumerWidget {
@@ -16,15 +17,14 @@ class DivisionOneView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(divisionOneProvider(country.id));
-    final notifier = ref.read(divisionOneProvider(country.id).notifier);
+    final notifier = ref.watch(divisionOneProvider(country.id));
+    final state = notifier.state;
 
     final primaryColor = const Color(0xFF0D7FF2);
     final label = country.divisionOneLabel ?? 'Division';
 
     return Scaffold(
       backgroundColor: Colors.white,
-     
 
       appBar: AppBar(
         backgroundColor: primaryColor,
@@ -80,7 +80,7 @@ class DivisionOneView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.08),
+              color: primaryColor.withAlpha(20),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
@@ -169,7 +169,7 @@ class DivisionOneView extends ConsumerWidget {
                         },
                         child: Card(
                           color: selected
-                              ? primaryColor.withOpacity(0.2)
+                              ? primaryColor.withAlpha(20)
                               : Colors.white,
                           margin: const EdgeInsets.symmetric(
                             horizontal: 16,

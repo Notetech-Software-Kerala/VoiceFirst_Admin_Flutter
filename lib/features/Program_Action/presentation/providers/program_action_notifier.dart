@@ -1,16 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_mockdata.dart';
 import 'program_action_state.dart';
 
-class ProgramActionNotifier extends StateNotifier<ProgramActionState> {
-  ProgramActionNotifier() : super(ProgramActionState.initial()) {
-    _load();
-  }
-
-  void _load() {
-    state = state.copyWith(
+class ProgramActionNotifier extends Notifier<ProgramActionState> {
+  @override
+  ProgramActionState build() {
+    return ProgramActionState.initial().copyWith(
       all: mockProgramActions,
       filtered: mockProgramActions,
     );

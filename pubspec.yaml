@@ -39,6 +39,7 @@ dependencies:
   riverpod_annotation: ^4.0.0
   dio: ^5.9.0
   flutter_secure_storage: ^8.1.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
@@ -50,6 +51,9 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  mockito: ^5.4.4
+  build_runner: ^2.4.14
+  riverpod_generator: ^4.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

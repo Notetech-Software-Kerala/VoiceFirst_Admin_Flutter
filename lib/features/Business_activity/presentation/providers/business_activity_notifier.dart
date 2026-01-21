@@ -1,33 +1,18 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:voice_first_admin/features/Business_activity/business_activity_service/business_activity_service.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 import 'business_activity_state.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class BusinessActivityNotifier extends StateNotifier<BusinessActivityState> {
-  BusinessActivityNotifier() : super(BusinessActivityState.initial()) {
-    _loadStaticData();
-  }
+class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
+  late final BusinessActivityService _service;
 
-  void _loadStaticData() {
-    final data = <BusinessActivity>[
-      BusinessActivity(
-        id: '1',
-        activityName: 'Sales',
-        // isForCompany: true,
-        // isForBranch: true,
-        status: true,
-      ),
-      BusinessActivity(
-        id: '2',
-        activityName: 'Marketing',
-        // isForCompany: true,
-        // isForBranch: false,
-        status: true,
-      ),
-    ];
+  @override
+  BusinessActivityState build() {
+    // Initialize service
+    _service = BusinessActivityService();
 
-    state = state.copyWith(activities: data, filtered: data);
+    return BusinessActivityState.initial();
   }
 
   // 🔍 Search
@@ -35,60 +20,149 @@ class BusinessActivityNotifier extends StateNotifier<BusinessActivityState> {
     final filtered = query.isEmpty
         ? state.activities
         : state.activities
-              .where(
-                (a) =>
-                    a.activityName.toLowerCase().contains(query.toLowerCase()),
-              )
+              .where((a) => a.name.toLowerCase().contains(query.toLowerCase()))
               .toList();
 
     state = state.copyWith(search: query, filtered: filtered);
   }
 
+  Future<void> loadAll({
+    int pageNumber = 1,
+    int pageSize = 20,
+    String? searchTerm,
+    bool? isActive,
+  }) async {
+    if (state.isLoading) return;
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await _service.getAllActivities(
+        pageNumber: pageNumber,
+        pageSize: pageSize,
+        searchTerm: searchTerm,
+        isActive: isActive,
+      );
+
+      state = state.copyWith(
+        activities: response.items,
+        filtered: _applyFilter(response.items),
+        isLoading: false,
+        hasMoreData: response.hasNextPage,
+        currentPage: response.currentPage,
+        totalCount: response.totalCount,
+      );
+
+      debugPrint(
+        'Loaded ${response.items.length} of ${response.totalCount} activities (Page ${response.currentPage})',
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      debugPrint('💥 Failed to load activities: $e');
+    }
+  }
+
   // ➕ Add
-  void add(BusinessActivity activity) {
-    final list = [...state.activities, activity];
-    state = state.copyWith(activities: list, filtered: _applyFilter(list));
+  Future<String?> add(String name) async {
+    debugPrint('Starting add operation for: "$name"');
+
+    try {
+      debugPrint('Calling service.createActivity...');
+      final activity = await _service.createActivity(name);
+
+      final list = [...state.activities, activity];
+      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+
+      debugPrint(' Activity added. Total activities: ${list.length}');
+
+      return null; // ✅ success
+    } catch (e) {
+      debugPrint('💥 Exception caught: $e');
+      return 'Failed to add activity';
+    }
   }
 
   // ✏️ Update
-  void update(BusinessActivity updated) {
-    final list = state.activities
-        .map((a) => a.id == updated.id ? updated : a)
-        .toList();
+  Future<String?> update(int id, String name) async {
+    try {
+      final updated = await _service.updateActivity(id, name);
 
-    state = state.copyWith(activities: list, filtered: _applyFilter(list));
+      final list = state.activities
+          .map((a) => a.id == updated.id ? updated : a)
+          .toList();
+
+      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+
+      debugPrint('✅ Activity updated: $name');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to update activity: $e');
+      return 'Failed to update activity';
+    }
   }
 
   // 🔄 Status
-  void toggleStatus(String id, bool status) {
-    final list = state.activities
-        .map((a) => a.id == id ? a.copyWith(status: status) : a)
-        .toList();
+  Future<String?> toggleStatus(int id, bool active) async {
+    try {
+      await _service.toggleStatus(id, active);
 
-    state = state.copyWith(activities: list, filtered: _applyFilter(list));
+      final list = state.activities
+          .map((a) => a.id == id ? a.copyWith(active: active) : a)
+          .toList();
+
+      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+
+      debugPrint('✅ Status toggled for activity ID: $id');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to toggle status: $e');
+      return 'Failed to toggle status';
+    }
   }
 
   // ❌ Delete
-  void delete(String id) {
-    final list = state.activities.where((a) => a.id != id).toList();
-    state = state.copyWith(activities: list, filtered: _applyFilter(list));
+  Future<String?> delete(int id) async {
+    try {
+      await _service.deleteActivity(id);
+
+      final list = state.activities.where((a) => a.id != id).toList();
+      state = state.copyWith(activities: list, filtered: _applyFilter(list));
+
+      debugPrint('✅ Activity deleted: $id');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to delete activity: $e');
+      return 'Failed to delete activity';
+    }
   }
 
-  void deleteSelected() {
-    final list = state.activities
-        .where((a) => !state.selectedIds.contains(a.id))
-        .toList();
+  Future<String?> deleteSelected() async {
+    if (state.selectedIds.isEmpty) return 'No items selected';
 
-    state = state.copyWith(
-      activities: list,
-      filtered: _applyFilter(list),
-      selectedIds: {},
-      isMultiSelect: false,
-    );
+    try {
+      await _service.bulkDelete(state.selectedIds.toList());
+
+      final list = state.activities
+          .where((a) => !state.selectedIds.contains(a.id))
+          .toList();
+
+      state = state.copyWith(
+        activities: list,
+        filtered: _applyFilter(list),
+        selectedIds: {},
+        isMultiSelect: false,
+      );
+
+      debugPrint('✅ Bulk delete completed: ${state.selectedIds.length} items');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to delete selected activities: $e');
+      return 'Failed to delete activities';
+    }
   }
 
   // ☑️ Selection
-  void toggleSelection(String id) {
+  void toggleSelection(int id) {
     final selected = {...state.selectedIds};
     selected.contains(id) ? selected.remove(id) : selected.add(id);
 
@@ -106,15 +180,12 @@ class BusinessActivityNotifier extends StateNotifier<BusinessActivityState> {
   List<BusinessActivity> _applyFilter(List<BusinessActivity> list) {
     if (state.search.isEmpty) return list;
     return list
-        .where(
-          (a) =>
-              a.activityName.toLowerCase().contains(state.search.toLowerCase()),
-        )
+        .where((a) => a.name.toLowerCase().contains(state.search.toLowerCase()))
         .toList();
   }
 
   void enterSelectionMode({bool selectAll = false}) {
-    final selected = <String>{};
+    final selected = <int>{};
 
     if (selectAll) {
       selected.addAll(state.filtered.map((e) => e.id));
