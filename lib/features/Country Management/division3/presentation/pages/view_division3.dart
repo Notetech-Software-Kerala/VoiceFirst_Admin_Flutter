@@ -94,7 +94,7 @@ class DivisionThreeView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.08),
+              color: primaryColor.withAlpha(20),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
@@ -146,7 +146,7 @@ class DivisionThreeView extends ConsumerWidget {
                         },
                         child: Card(
                           color: selected
-                              ? primaryColor.withOpacity(0.2)
+                              ? primaryColor.withAlpha(20)
                               : Colors.white,
                           margin: const EdgeInsets.symmetric(
                             horizontal: 16,

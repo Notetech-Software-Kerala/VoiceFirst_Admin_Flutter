@@ -10,9 +10,7 @@ class EditProgramActionDialog {
     WidgetRef ref,
     ProgramActionModel action,
   ) {
-    final nameController = TextEditingController(
-      text: action.programActionName,
-    );
+    final nameController = TextEditingController(text: action.actionName);
 
     showDialog(
       context: context,
@@ -21,6 +19,7 @@ class EditProgramActionDialog {
         title: const Text('Edit Program Action'),
         content: TextField(
           controller: nameController,
+          autofocus: true,
           decoration: const InputDecoration(
             labelText: 'Action Name',
             border: OutlineInputBorder(),
@@ -32,32 +31,49 @@ class EditProgramActionDialog {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final newName = nameController.text.trim();
               if (newName.isEmpty) {
-                CustomSnackbar.show(
-                  context,
-                  message: 'Please enter action name',
-                  type: SnackBarType.error,
-                );
+                if (context.mounted) {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Please enter action name',
+                    type: SnackBarType.error,
+                  );
+                }
                 return;
               }
 
-              if (newName == action.programActionName) {
+              if (newName == action.actionName) {
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                return;
+              }
+
+              final error = await ref
+                  .read(programActionProvider.notifier)
+                  .update(action.actionId, newName);
+
+              if (dialogContext.mounted) {
                 Navigator.pop(dialogContext);
-                return;
               }
 
-              final updatedAction = action.copyWith(programActionName: newName);
-              ref.read(programActionProvider.notifier).update(updatedAction);
-
-              Navigator.pop(dialogContext);
-
-              CustomSnackbar.show(
-                context,
-                message: 'Program action updated successfully',
-                type: SnackBarType.success,
-              );
+              if (context.mounted) {
+                if (error != null) {
+                  CustomSnackbar.show(
+                    context,
+                    message: error,
+                    type: SnackBarType.error,
+                  );
+                } else {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Program action updated successfully',
+                    type: SnackBarType.success,
+                  );
+                }
+              }
             },
             child: const Text('Update'),
           ),

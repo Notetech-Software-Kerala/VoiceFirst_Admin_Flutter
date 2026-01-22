@@ -133,15 +133,15 @@ class ProgramManagementView extends ConsumerWidget {
                             ? null
                             : () => notifier.toggleSelection(id),
                         onTap: () {
-                          if (!state.isMultiSelect && id != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    ProgramDetailPage(program: program),
-                              ),
-                            );
-                          }
+                          // if (!state.isMultiSelect && id != null) {
+                          //   Navigator.push(
+                          //     context,
+                          //     MaterialPageRoute(
+                          //       builder: (_) =>
+                          //           ProgramDetailPage(program: program),
+                          //     ),
+                          //   );
+                          // }
                         },
                         child: Card(
                           color: selected
@@ -243,10 +243,10 @@ class ProgramManagementView extends ConsumerWidget {
           : FloatingActionButton(
               backgroundColor: primaryColor,
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddProgramPage()),
-                );
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(builder: (_) => const AddProgramPage()),
+                // );
               },
               child: const Icon(Icons.add, color: Colors.white),
             ),

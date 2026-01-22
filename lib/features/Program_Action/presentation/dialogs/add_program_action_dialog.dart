@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
-import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
 import '../providers/program_action_provider.dart';
 
 class AddProgramActionDialog {
@@ -15,6 +14,7 @@ class AddProgramActionDialog {
         title: const Text('Add Program Action'),
         content: TextField(
           controller: nameController,
+          autofocus: true,
           decoration: const InputDecoration(
             labelText: 'Action Name',
             border: OutlineInputBorder(),
@@ -26,41 +26,42 @@ class AddProgramActionDialog {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final name = nameController.text.trim();
               if (name.isEmpty) {
-                CustomSnackbar.show(
-                  context,
-                  message: 'Please enter action name',
-                  type: SnackBarType.error,
-                );
+                if (context.mounted) {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Please enter action name',
+                    type: SnackBarType.error,
+                  );
+                }
                 return;
               }
 
-              // Generate a new ID (in real app, this would come from backend)
-              final state = ref.read(programActionProvider);
-              final newId = state.all.isEmpty
-                  ? 1
-                  : state.all
-                            .map((e) => e.ProgramActionId)
-                            .reduce((a, b) => a > b ? a : b) +
-                        1;
+              final error = await ref
+                  .read(programActionProvider.notifier)
+                  .add(name);
 
-              final newAction = ProgramActionModel(
-                ProgramActionId: newId,
-                programActionName: name,
-                isActive: true,
-              );
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
 
-              ref.read(programActionProvider.notifier).add(newAction);
-
-              Navigator.pop(dialogContext);
-
-              CustomSnackbar.show(
-                context,
-                message: 'Program action added successfully',
-                type: SnackBarType.success,
-              );
+              if (context.mounted) {
+                if (error != null) {
+                  CustomSnackbar.show(
+                    context,
+                    message: error,
+                    type: SnackBarType.error,
+                  );
+                } else {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Program action added successfully',
+                    type: SnackBarType.success,
+                  );
+                }
+              }
             },
             child: const Text('Add'),
           ),
