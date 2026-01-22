@@ -28,9 +28,9 @@ class BusinessActivity {
 
   factory BusinessActivity.fromJson(Map<String, dynamic> json) {
     return BusinessActivity(
-      activityId: json['activityId'],
-      activityName: json['activityName'],
-      active: json['active'],
+      activityId: json['activityId'] as int,
+      activityName: json['activityName'] as String,
+      active: json['active'] as bool,
       isDeleted: json['deleted'],
       createdUser: json['createdUser'],
       createdDate: DateTime.parse(json['createdDate']),

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:voice_first_admin/core/theme/app_theme.dart';
 
+import '../../test_setup.dart';
+
 void main() {
-  // Initialize test bindings for Google Fonts
-  TestWidgetsFlutterBinding.ensureInitialized();
+  configureTestEnvironment();
+  // setUpAll(() {
+  //   // Ensure bindings and disable network font fetching for tests
+  //   TestWidgetsFlutterBinding.ensureInitialized();
+  //   GoogleFonts.config.allowRuntimeFetching = false;
+  // });
 
   group('AppTheme', () {
     test('lightTheme should have correct brightness', () {

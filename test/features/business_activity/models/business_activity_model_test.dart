@@ -25,10 +25,10 @@ void main() {
 
     test('should parse from JSON correctly', () {
       final json = {
-        'id': 1,
-        'name': 'Test Activity',
+        'activityId': 1,
+        'activityName': 'Test Activity',
         'active': true,
-        'delete': false,
+        'deleted': false,
         'createdUser': 'admin',
         'createdDate': '2024-01-01T00:00:00.000',
         'modifiedUser': 'user1',
@@ -47,10 +47,10 @@ void main() {
 
     test('should handle null optional fields in JSON', () {
       final json = {
-        'id': 1,
-        'name': 'Test Activity',
+        'activityId': 1,
+        'activityName': 'Test Activity',
         'active': true,
-        'delete': false,
+        'deleted': false,
         'createdUser': 'admin',
         'createdDate': '2024-01-01T00:00:00.000',
         'modifiedUser': null,
@@ -102,5 +102,29 @@ void main() {
       expect(updated.active, activity.active);
       expect(updated.isDeleted, activity.isDeleted);
     });
+
+    // test('copyWith with clearDeletedMeta should clear deleted metadata', () {
+    //   final activity = BusinessActivity(
+    //     activityId: 1,
+    //     activityName: 'Test Activity',
+    //     active: true,
+    //     isDeleted: true,
+    //     createdUser: 'admin',
+    //     createdDate: testDate,
+    //     deletedUser: 'admin',
+    //     deletedDate: testDate,
+    //   );
+
+    //   final updated = activity.copyWith(
+    //     isDeleted: false,
+    //     clearDeletedMeta: true,
+    //   );
+
+    //   expect(updated.isDeleted, false);
+    //   expect(updated.deletedUser, null);
+    //   expect(updated.deletedDate, null);
+    //   expect(updated.activityId, activity.activityId);
+    //   expect(updated.activityName, activity.activityName);
+    // });
   });
 }

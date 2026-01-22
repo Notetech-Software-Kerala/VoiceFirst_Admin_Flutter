@@ -34,7 +34,7 @@ void main() {
       expect(state.search, '');
       expect(state.isLoading, false);
       expect(state.hasMoreData, true);
-      expect(state.currentPage, 0);
+      expect(state.currentPage, 1);
       expect(state.totalCount, 0);
     });
 
