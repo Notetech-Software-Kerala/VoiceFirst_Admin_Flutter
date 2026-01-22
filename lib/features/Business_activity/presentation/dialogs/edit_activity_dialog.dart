@@ -19,7 +19,10 @@ class EditActivityDialog {
         onSave: (updatedActivity) async {
           final error = await ref
               .read(businessActivityProvider.notifier)
-              .update(activity.id, updatedActivity.name);
+              .update(
+                id: activity.activityId,
+                activityName: updatedActivity.activityName,
+              );
 
           if (error != null) {
             // Show error snackbar
@@ -40,7 +43,7 @@ class EditActivityDialog {
 
           CustomSnackbar.show(
             context,
-            message: '${updatedActivity.name} updated successfully',
+            message: '${updatedActivity.activityName} updated successfully',
             type: SnackBarType.success,
           );
         },

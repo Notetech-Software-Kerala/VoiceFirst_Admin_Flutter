@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
 import '../providers/program_action_provider.dart';
 import '../dialogs/edit_program_action_dialog.dart';
 import '../dialogs/delete_program_action_dialog.dart';
+import '../dialogs/recover_program_action_dialog.dart';
 
 class ProgramActionDetailView extends ConsumerWidget {
-  final int actionId;
+  final ProgramActionModel action;
 
-  const ProgramActionDetailView({super.key, required this.actionId});
+  const ProgramActionDetailView({super.key, required this.action});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,31 +17,20 @@ class ProgramActionDetailView extends ConsumerWidget {
 
     final state = ref.watch(programActionProvider);
 
-    final action = state.actions
-        .where((a) => a.actionId == actionId)
-        .cast<ProgramActionModel?>()
-        .firstOrNull;
-
-    // SAFETY GUARD
-    if (action == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Action Details',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: primaryColor,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: const Center(child: Text('Action not found')),
-      );
-    }
+    // Get the latest version of this action from the provider
+    final updatedAction =
+        state.actions
+            .where((a) => a.actionId == action.actionId)
+            .cast<ProgramActionModel?>()
+            .firstOrNull ??
+        state.filtered
+            .where((a) => a.actionId == action.actionId)
+            .cast<ProgramActionModel?>()
+            .firstOrNull ??
+        action;
 
     // Determine if action is deleted
-    final isDeleted = action.deleted;
+    final isDeleted = updatedAction.deleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -76,7 +65,7 @@ class ProgramActionDetailView extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          action.actionName,
+                          updatedAction.actionName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -90,17 +79,17 @@ class ProgramActionDetailView extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: action.active
+                            color: updatedAction.active
                                 ? Colors.green.withAlpha(38)
                                 : Colors.red.withAlpha(38),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            action.active ? 'Active' : 'Inactive',
+                            updatedAction.active ? 'Active' : 'Inactive',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: action.active
+                              color: updatedAction.active
                                   ? Colors.green.shade700
                                   : Colors.red.shade700,
                             ),
@@ -123,19 +112,21 @@ class ProgramActionDetailView extends ConsumerWidget {
                     children: [
                       _DetailItem(
                         label: 'Action ID',
-                        value: action.actionId.toString(),
+                        value: updatedAction.actionId.toString(),
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
                         label: 'Action Name',
-                        value: action.actionName,
+                        value: updatedAction.actionName,
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
                         label: 'Active Status',
-                        value: action.active ? 'Active' : 'Inactive',
+                        value: updatedAction.active ? 'Active' : 'Inactive',
                         primaryColor: primaryColor,
-                        valueColor: action.active ? Colors.green : Colors.red,
+                        valueColor: updatedAction.active
+                            ? Colors.green
+                            : Colors.red,
                       ),
                       _DetailItem(
                         label: 'Delete Status',
@@ -146,21 +137,21 @@ class ProgramActionDetailView extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  if (action.createdUser != null ||
-                      action.createdDate != null) ...[
+                  if (updatedAction.createdUser != null ||
+                      updatedAction.createdDate != null) ...[
                     _DetailSection(
                       title: 'Created Information',
                       primaryColor: primaryColor,
                       children: [
                         _DetailItem(
                           label: 'Created By',
-                          value: action.createdUser ?? 'N/A',
+                          value: updatedAction.createdUser ?? 'N/A',
                           primaryColor: primaryColor,
                         ),
                         _DetailItem(
                           label: 'Created Date',
-                          value: action.createdDate != null
-                              ? _formatDateTime(action.createdDate!)
+                          value: updatedAction.createdDate != null
+                              ? _formatDateTime(updatedAction.createdDate!)
                               : 'N/A',
                           primaryColor: primaryColor,
                         ),
@@ -168,21 +159,21 @@ class ProgramActionDetailView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                   ],
-                  if (action.modifiedUser != null ||
-                      action.modifiedDate != null) ...[
+                  if (updatedAction.modifiedUser != null ||
+                      updatedAction.modifiedDate != null) ...[
                     _DetailSection(
                       title: 'Modified Information',
                       primaryColor: primaryColor,
                       children: [
                         _DetailItem(
                           label: 'Modified By',
-                          value: action.modifiedUser ?? 'N/A',
+                          value: updatedAction.modifiedUser ?? 'N/A',
                           primaryColor: primaryColor,
                         ),
                         _DetailItem(
                           label: 'Modified Date',
-                          value: action.modifiedDate != null
-                              ? _formatDateTime(action.modifiedDate!)
+                          value: updatedAction.modifiedDate != null
+                              ? _formatDateTime(updatedAction.modifiedDate!)
                               : 'Not modified',
                           primaryColor: primaryColor,
                         ),
@@ -197,15 +188,15 @@ class ProgramActionDetailView extends ConsumerWidget {
                       children: [
                         _DetailItem(
                           label: 'Deleted By',
-                          value: action.deletedUser?.isEmpty ?? true
+                          value: updatedAction.deletedUser?.isEmpty ?? true
                               ? 'N/A'
-                              : action.deletedUser!,
+                              : updatedAction.deletedUser!,
                           primaryColor: primaryColor,
                         ),
                         _DetailItem(
                           label: 'Deleted Date',
-                          value: action.deletedDate != null
-                              ? _formatDateTime(action.deletedDate!)
+                          value: updatedAction.deletedDate != null
+                              ? _formatDateTime(updatedAction.deletedDate!)
                               : 'N/A',
                           primaryColor: primaryColor,
                         ),
@@ -221,31 +212,12 @@ class ProgramActionDetailView extends ConsumerWidget {
                         /// ♻️ RECOVER BUTTON
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final error = await ref
-                                  .read(programActionProvider.notifier)
-                                  .recover(action.actionId);
-
-                              if (error != null) {
-                                if (context.mounted) {
-                                  CustomSnackbar.show(
-                                    context,
-                                    message: error,
-                                    type: SnackBarType.error,
-                                  );
-                                }
-                                return;
-                              }
-
-                              if (context.mounted) {
-                                CustomSnackbar.show(
-                                  context,
-                                  message:
-                                      '${action.actionName} recovered successfully',
-                                  type: SnackBarType.success,
-                                );
-                              }
-                            },
+                            onPressed: () => RecoverProgramActionDialog.show(
+                              context,
+                              ref,
+                              updatedAction.actionId,
+                              updatedAction.actionName,
+                            ),
                             icon: const Icon(
                               Icons.restore,
                               color: Colors.white,
@@ -267,7 +239,7 @@ class ProgramActionDetailView extends ConsumerWidget {
                             onPressed: () => EditProgramActionDialog.show(
                               context,
                               ref,
-                              action,
+                              updatedAction,
                             ),
                             icon: const Icon(Icons.edit, color: Colors.white),
                             label: const Text('Edit Action'),
@@ -288,8 +260,8 @@ class ProgramActionDetailView extends ConsumerWidget {
                             onPressed: () => DeleteProgramActionDialog.show(
                               context,
                               ref,
-                              action.actionId,
-                              action.actionName,
+                              updatedAction.actionId,
+                              updatedAction.actionName,
                             ),
                             icon: const Icon(Icons.delete, color: Colors.white),
                             label: const Text('Delete Action'),

@@ -7,16 +7,16 @@ void main() {
     final testDate = DateTime(2024, 1, 1);
     final mockActivities = [
       BusinessActivity(
-        id: 1,
-        name: 'Activity 1',
+        activityId: 1,
+        activityName: 'Activity 1',
         active: true,
         isDeleted: false,
         createdUser: 'admin',
         createdDate: testDate,
       ),
       BusinessActivity(
-        id: 2,
-        name: 'Activity 2',
+        activityId: 2,
+        activityName: 'Activity 2',
         active: false,
         isDeleted: false,
         createdUser: 'admin',

@@ -5,11 +5,11 @@ import 'package:voice_first_admin/features/Program_Action/program_action_service
 import 'program_action_state.dart';
 
 class ProgramActionNotifier extends Notifier<ProgramActionState> {
-  late final ProgramActionService _service;
+  final ProgramActionService _service = ProgramActionService();
 
   @override
   ProgramActionState build() {
-    _service = ProgramActionService();
+    // _service = ProgramActionService();
     return ProgramActionState.initial();
   }
 
@@ -42,33 +42,37 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // ♻️ Recover
+  // Recover
   Future<String?> recover(int actionId) async {
     try {
-      state = state.copyWith(isLoading: true);
-
-      // Call the API to recover the action
+      // Call API
       await _service.recover(actionId);
 
-      // Reload the data
-      await loadAll(
-        filter: ProgramActionFilter(
-          pageNumber: state.currentPage,
-          pageSize: 10,
-          search: state.search.isEmpty ? null : state.search,
-        ),
+      // ✅ Update state locally (NO reload)
+      state = state.copyWith(
+        actions: state.actions.map((action) {
+          if (action.actionId == actionId) {
+            return action.copyWith(deleted: false, clearDeletedMeta: true);
+          }
+          return action;
+        }).toList(),
+
+        filtered: state.filtered.map((action) {
+          if (action.actionId == actionId) {
+            return action.copyWith(deleted: false, clearDeletedMeta: true);
+          }
+          return action;
+        }).toList(),
       );
 
-      state = state.copyWith(isLoading: false);
-      return null; // Success
+      return null; // success
     } catch (e) {
-      state = state.copyWith(isLoading: false);
       debugPrint('💥 Failed to recover program action: $e');
       return 'Failed to recover program action';
     }
   }
 
-  // ➕ Add
+  // Add
   Future<String?> add(String name) async {
     debugPrint('Starting add operation for: "$name"');
 
@@ -94,7 +98,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // ✏️ Update name
+  // Update name
   Future<String?> update(int id, String name) async {
     try {
       await _service.updateAction(id, name: name);
@@ -116,7 +120,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // 🔄 Toggle status
+  // Toggle status
   Future<String?> toggleStatus(int id, bool active) async {
     try {
       await _service.updateAction(id, active: active);
@@ -138,7 +142,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // ❌ Delete
+  // Delete
   Future<String?> delete(int id) async {
     try {
       await _service.delete(id);
@@ -186,7 +190,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // ☑️ Selection
+  // Selection
   void toggleSelection(int id) {
     final selected = {...state.selectedIds};
     selected.contains(id) ? selected.remove(id) : selected.add(id);

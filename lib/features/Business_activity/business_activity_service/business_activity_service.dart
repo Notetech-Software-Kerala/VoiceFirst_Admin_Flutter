@@ -46,12 +46,12 @@ class BusinessActivityService {
     final url = Uri.parse('$_baseUrl/business-activity');
 
     debugPrint('API REQUEST: POST $url');
-    debugPrint('Request Body: {"name":"$name"}');
+    debugPrint('Request Body: {"activityName":"$name"}');
 
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'name': name}),
+      body: jsonEncode({'activityName': name}),
     );
 
     if (response.statusCode == 200) {
@@ -106,20 +106,37 @@ class BusinessActivityService {
     return BusinessActivity.fromJson(json['data']);
   }
 
-  Future<BusinessActivity> updateActivity(int id, String name) async {
+ 
+  Future<BusinessActivity> updateActivity({
+    required int id,
+    String? activityName,
+    bool? active,
+  }) async {
+    if (activityName == null && active == null) {
+      throw Exception('Nothing to update');
+    }
+
+    final Map<String, dynamic> body = {};
+
+    if (activityName != null) {
+      body['activityName'] = activityName;
+    }
+    if (active != null) {
+      body['active'] = active;
+    }
     final url = Uri.parse('$_baseUrl/business-activity/$id');
 
-    debugPrint('API REQUEST: PUT $url');
-    debugPrint('Request Body: {"name":"$name"}');
+    debugPrint('API REQUEST: PATCH $url');
+    debugPrint('Request Body: ${jsonEncode(body)}');
 
-    final response = await http.put(
+    final response = await http.patch(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'name': name}),
+      body: jsonEncode(body),
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to update activity: ${response.statusCode}');
+      throw Exception('Failed to update activity');
     }
 
     final json = jsonDecode(response.body);
@@ -130,7 +147,7 @@ class BusinessActivityService {
     final url = Uri.parse('$_baseUrl/business-activity/$id/status');
 
     debugPrint('API REQUEST: PATCH $url');
-    debugPrint('Request Body: {"active":$active}');
+    debugPrint('Request Body: ${jsonEncode({'active': active})}');
 
     final response = await http.patch(
       url,

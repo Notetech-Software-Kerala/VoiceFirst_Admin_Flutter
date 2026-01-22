@@ -1,6 +1,6 @@
 class BusinessActivity {
-  final int id;
-  final String name;
+  final int activityId;
+  final String activityName;
   final bool active;
   final bool isDeleted;
 
@@ -14,8 +14,8 @@ class BusinessActivity {
   final DateTime? deletedDate;
 
   BusinessActivity({
-    required this.id,
-    required this.name,
+    required this.activityId,
+    required this.activityName,
     required this.active,
     required this.isDeleted,
     required this.createdUser,
@@ -28,10 +28,10 @@ class BusinessActivity {
 
   factory BusinessActivity.fromJson(Map<String, dynamic> json) {
     return BusinessActivity(
-      id: json['id'],
-      name: json['name'],
+      activityId: json['activityId'],
+      activityName: json['activityName'],
       active: json['active'],
-      isDeleted: json['delete'],
+      isDeleted: json['deleted'],
       createdUser: json['createdUser'],
       createdDate: DateTime.parse(json['createdDate']),
       // modifiedUser: json['modifiedUser'],
@@ -52,8 +52,8 @@ class BusinessActivity {
   }
 
   BusinessActivity copyWith({
-    int? id,
-    String? name,
+    int? activityId,
+    String? activityName,
     bool? active,
     bool? isDeleted,
     String? createdUser,
@@ -62,18 +62,19 @@ class BusinessActivity {
     DateTime? modifiedDate,
     String? deletedUser,
     DateTime? deletedDate,
+    bool clearDeletedMeta = false,
   }) {
     return BusinessActivity(
-      id: id ?? this.id,
-      name: name ?? this.name,
+      activityId: activityId ?? this.activityId,
+      activityName: activityName ?? this.activityName,
       active: active ?? this.active,
       isDeleted: isDeleted ?? this.isDeleted,
       createdUser: createdUser ?? this.createdUser,
       createdDate: createdDate ?? this.createdDate,
       modifiedUser: modifiedUser ?? this.modifiedUser,
       modifiedDate: modifiedDate ?? this.modifiedDate,
-      deletedUser: deletedUser ?? this.deletedUser,
-      deletedDate: deletedDate ?? this.deletedDate,
+      deletedUser: clearDeletedMeta ? null : deletedUser ?? this.deletedUser,
+      deletedDate: clearDeletedMeta ? null : deletedDate ?? this.deletedDate,
     );
   }
 }

@@ -7,16 +7,16 @@ void main() {
 
     test('should create instance with required fields', () {
       final activity = BusinessActivity(
-        id: 1,
-        name: 'Test Activity',
+        activityId: 1,
+        activityName: 'Test Activity',
         active: true,
         isDeleted: false,
         createdUser: 'admin',
         createdDate: testDate,
       );
 
-      expect(activity.id, 1);
-      expect(activity.name, 'Test Activity');
+      expect(activity.activityId, 1);
+      expect(activity.activityName, 'Test Activity');
       expect(activity.active, true);
       expect(activity.isDeleted, false);
       expect(activity.createdUser, 'admin');
@@ -37,8 +37,8 @@ void main() {
 
       final activity = BusinessActivity.fromJson(json);
 
-      expect(activity.id, 1);
-      expect(activity.name, 'Test Activity');
+      expect(activity.activityId, 1);
+      expect(activity.activityName, 'Test Activity');
       expect(activity.active, true);
       expect(activity.isDeleted, false);
       expect(activity.createdUser, 'admin');
@@ -69,18 +69,18 @@ void main() {
 
     test('copyWith should create new instance with updated fields', () {
       final activity = BusinessActivity(
-        id: 1,
-        name: 'Original',
+        activityId: 1,
+        activityName: 'Original',
         active: true,
         isDeleted: false,
         createdUser: 'admin',
         createdDate: testDate,
       );
 
-      final updated = activity.copyWith(name: 'Updated', active: false);
+      final updated = activity.copyWith(activityName: 'Updated', active: false);
 
-      expect(updated.id, 1);
-      expect(updated.name, 'Updated');
+      expect(updated.activityId, 1);
+      expect(updated.activityName, 'Updated');
       expect(updated.active, false);
       expect(updated.createdUser, 'admin');
       expect(updated.createdDate, testDate);
@@ -88,17 +88,17 @@ void main() {
 
     test('copyWith should keep original values when not specified', () {
       final activity = BusinessActivity(
-        id: 1,
-        name: 'Original',
+        activityId: 1,
+        activityName: 'Original',
         active: true,
         isDeleted: false,
         createdUser: 'admin',
         createdDate: testDate,
       );
 
-      final updated = activity.copyWith(name: 'Updated');
+      final updated = activity.copyWith(activityName: 'Updated');
 
-      expect(updated.id, activity.id);
+      expect(updated.activityId, activity.activityId);
       expect(updated.active, activity.active);
       expect(updated.isDeleted, activity.isDeleted);
     });

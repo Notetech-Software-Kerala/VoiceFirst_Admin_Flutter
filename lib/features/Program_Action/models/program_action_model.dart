@@ -44,6 +44,9 @@ class ProgramActionModel {
     String? actionName,
     bool? active,
     bool? deleted,
+    String? deletedUser,
+    DateTime? deletedDate,
+    bool clearDeletedMeta = false,
   }) {
     return ProgramActionModel(
       actionId: actionId,
@@ -54,8 +57,8 @@ class ProgramActionModel {
       createdDate: createdDate,
       modifiedUser: modifiedUser,
       modifiedDate: modifiedDate,
-      deletedUser: deletedUser,
-      deletedDate: deletedDate,
+      deletedUser: clearDeletedMeta ? null : deletedUser ?? this.deletedUser,
+      deletedDate: clearDeletedMeta ? null : deletedDate ?? this.deletedDate,
     );
   }
 

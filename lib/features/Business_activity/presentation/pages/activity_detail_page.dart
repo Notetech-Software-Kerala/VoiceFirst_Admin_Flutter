@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
 import '../providers/business_activity_provider.dart';
 import '../dialogs/edit_activity_dialog.dart';
 import '../dialogs/delete_activity_dialog.dart';
+import '../dialogs/recover_activity_dialog.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
-  final int activityId;
-  // final BusinessActivity activity;
+  final BusinessActivity activity;
 
-  const ActivityDetailPage({
-    super.key,
-    required this.activityId,
-    // required this.activity,
-  });
+  const ActivityDetailPage({super.key, required this.activity});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,21 +17,20 @@ class ActivityDetailPage extends ConsumerWidget {
 
     final state = ref.watch(businessActivityProvider);
 
-    final activity = state.activities
-        .where((a) => a.id == activityId)
-        .cast<BusinessActivity?>()
-        .firstOrNull;
+    // Get the latest version of this activity from the provider
+    final updatedActivity =
+        state.activities
+            .where((a) => a.activityId == activity.activityId)
+            .cast<BusinessActivity?>()
+            .firstOrNull ??
+        state.filtered
+            .where((a) => a.activityId == activity.activityId)
+            .cast<BusinessActivity?>()
+            .firstOrNull ??
+        activity;
 
-    // SAFETY GUARD
-    if (activity == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Activity Details'),
-          backgroundColor: primaryColor,
-        ),
-        body: const Center(child: Text('Activity not found')),
-      );
-    }
+    // Determine if activity is deleted
+    final isDeleted = updatedActivity.isDeleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +65,7 @@ class ActivityDetailPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          activity.name,
+                          updatedActivity.activityName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -85,17 +79,17 @@ class ActivityDetailPage extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: activity.active
+                            color: updatedActivity.active
                                 ? Colors.green.withAlpha(38)
                                 : Colors.red.withAlpha(38),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            activity.active ? 'Active' : 'Inactive',
+                            updatedActivity.active ? 'Active' : 'Inactive',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: activity.active
+                              color: updatedActivity.active
                                   ? Colors.green.shade700
                                   : Colors.red.shade700,
                             ),
@@ -118,22 +112,22 @@ class ActivityDetailPage extends ConsumerWidget {
                     children: [
                       _DetailItem(
                         label: 'Activity Name',
-                        value: activity.name,
+                        value: updatedActivity.activityName,
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
                         label: 'Active Status',
-                        value: activity.active ? 'Active' : 'Inactive',
+                        value: updatedActivity.active ? 'Active' : 'Inactive',
                         primaryColor: primaryColor,
-                        valueColor: activity.active ? Colors.green : Colors.red,
+                        valueColor: updatedActivity.active
+                            ? Colors.green
+                            : Colors.red,
                       ),
                       _DetailItem(
                         label: 'Delete Status',
-                        value: activity.isDeleted ? 'Deleted' : 'Not Deleted',
+                        value: isDeleted ? 'Deleted' : 'Not Deleted',
                         primaryColor: primaryColor,
-                        valueColor: activity.isDeleted
-                            ? Colors.red
-                            : Colors.green,
+                        valueColor: isDeleted ? Colors.red : Colors.green,
                       ),
                     ],
                   ),
@@ -144,12 +138,12 @@ class ActivityDetailPage extends ConsumerWidget {
                     children: [
                       _DetailItem(
                         label: 'Created By',
-                        value: activity.createdUser,
+                        value: updatedActivity.createdUser,
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
                         label: 'Created Date',
-                        value: _formatDateTime(activity.createdDate),
+                        value: _formatDateTime(updatedActivity.createdDate),
                         primaryColor: primaryColor,
                       ),
                     ],
@@ -161,35 +155,35 @@ class ActivityDetailPage extends ConsumerWidget {
                     children: [
                       _DetailItem(
                         label: 'Modified By',
-                        value: activity.modifiedUser ?? 'N/A',
+                        value: updatedActivity.modifiedUser ?? 'N/A',
                         primaryColor: primaryColor,
                       ),
                       _DetailItem(
                         label: 'Modified Date',
-                        value: activity.modifiedDate != null
-                            ? _formatDateTime(activity.modifiedDate!)
+                        value: updatedActivity.modifiedDate != null
+                            ? _formatDateTime(updatedActivity.modifiedDate!)
                             : 'Not modified',
                         primaryColor: primaryColor,
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  if (activity.isDeleted) ...[
+                  if (isDeleted) ...[
                     _DetailSection(
                       title: 'Deleted Information',
                       primaryColor: primaryColor,
                       children: [
                         _DetailItem(
                           label: 'Deleted By',
-                          value: activity.deletedUser?.isEmpty ?? true
+                          value: updatedActivity.deletedUser?.isEmpty ?? true
                               ? 'N/A'
-                              : activity.deletedUser!,
+                              : updatedActivity.deletedUser!,
                           primaryColor: primaryColor,
                         ),
                         _DetailItem(
                           label: 'Deleted Date',
-                          value: activity.deletedDate != null
-                              ? _formatDateTime(activity.deletedDate!)
+                          value: updatedActivity.deletedDate != null
+                              ? _formatDateTime(updatedActivity.deletedDate!)
                               : 'N/A',
                           primaryColor: primaryColor,
                         ),
@@ -198,88 +192,18 @@ class ActivityDetailPage extends ConsumerWidget {
                     const SizedBox(height: 24),
                   ],
                   const SizedBox(height: 8),
-
-                  // Row(
-                  //   children: [
-                  //     /// ✏️ Edit Button
-                  //     Expanded(
-                  //       child: ElevatedButton.icon(
-                  //         onPressed: () =>
-                  //             EditActivityDialog.show(context, ref, activity),
-                  //         icon: const Icon(Icons.edit, color: Colors.white),
-                  //         label: const Text(
-                  //           'Edit Activity',
-                  //           style: TextStyle(color: Colors.white),
-                  //         ),
-                  //         style: ElevatedButton.styleFrom(
-                  //           backgroundColor: primaryColor,
-                  //           padding: const EdgeInsets.symmetric(vertical: 14),
-                  //           shape: RoundedRectangleBorder(
-                  //             borderRadius: BorderRadius.circular(12),
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-
-                  //     const SizedBox(width: 12),
-
-                  //     /// 🗑 Delete Button
-                  //     Expanded(
-                  //       child: ElevatedButton.icon(
-                  //         onPressed: () => DeleteActivityDialog.show(
-                  //           context,
-                  //           ref,
-                  //           activity.id,
-                  //           activity.name,
-                  //         ),
-
-                  //         icon: const Icon(Icons.delete, color: Colors.white),
-                  //         label: const Text(
-                  //           'Delete Activity',
-                  //           style: TextStyle(color: Colors.white),
-                  //         ),
-                  //         style: ElevatedButton.styleFrom(
-                  //           backgroundColor: Colors.red.shade600,
-                  //           padding: const EdgeInsets.symmetric(vertical: 14),
-                  //           shape: RoundedRectangleBorder(
-                  //             borderRadius: BorderRadius.circular(12),
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
                   Row(
                     children: [
-                      if (activity.isDeleted)
-                        /// ♻️ RECOVER BUTTON
+                      if (isDeleted)
+                        // RECOVER BUTTON
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final error = await ref
-                                  .read(businessActivityProvider.notifier)
-                                  .recover(activity.id);
-
-                              if (error != null) {
-                                if (context.mounted) {
-                                  CustomSnackbar.show(
-                                    context,
-                                    message: error,
-                                    type: SnackBarType.error,
-                                  );
-                                }
-                                return;
-                              }
-
-                              if (context.mounted) {
-                                CustomSnackbar.show(
-                                  context,
-                                  message:
-                                      '${activity.name} recovered successfully',
-                                  type: SnackBarType.success,
-                                );
-                              }
-                            },
+                            onPressed: () => RecoverActivityDialog.show(
+                              context,
+                              ref,
+                              updatedActivity.activityId,
+                              updatedActivity.activityName,
+                            ),
                             icon: const Icon(
                               Icons.restore,
                               color: Colors.white,
@@ -298,8 +222,11 @@ class ActivityDetailPage extends ConsumerWidget {
                         /// ✏️ EDIT
                         Expanded(
                           child: ElevatedButton.icon(
-                            onPressed: () =>
-                                EditActivityDialog.show(context, ref, activity),
+                            onPressed: () => EditActivityDialog.show(
+                              context,
+                              ref,
+                              updatedActivity,
+                            ),
                             icon: const Icon(Icons.edit, color: Colors.white),
                             label: const Text('Edit Activity'),
                             style: ElevatedButton.styleFrom(
@@ -319,8 +246,8 @@ class ActivityDetailPage extends ConsumerWidget {
                             onPressed: () => DeleteActivityDialog.show(
                               context,
                               ref,
-                              activity.id,
-                              activity.name,
+                              updatedActivity.activityId,
+                              updatedActivity.activityName,
                             ),
                             icon: const Icon(Icons.delete, color: Colors.white),
                             label: const Text('Delete Activity'),

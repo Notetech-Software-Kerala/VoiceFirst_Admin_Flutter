@@ -22,13 +22,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
   @override
   void initState() {
     super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   ref
-    //       .read(programActionProvider.notifier)
-    //       .loadAll(
-    //         filter: ProgramActionFilter(pageNumber: 1, pageSize: _pageSize),
-    //       );
-    // });
     Future.microtask(() {
       ref
           .read(programActionProvider.notifier)
@@ -354,7 +347,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                                               MaterialPageRoute(
                                                 builder: (_) =>
                                                     ProgramActionDetailView(
-                                                      actionId: action.actionId,
+                                                      action: action,
                                                     ),
                                               ),
                                             ),
@@ -500,8 +493,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                                               )
                                             : Text(
                                                 '${state.currentPage} / ${state.totalPages}',
-
-                                                // '${state.currentPage} / ${(state.totalCount / _pageSize).ceil()}',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,

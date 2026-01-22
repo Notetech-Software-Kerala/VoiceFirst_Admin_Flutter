@@ -39,22 +39,6 @@ class _ViewBusinessActivityPageState
     super.dispose();
   }
 
-  // void _goToPage(int page) {
-  //   ref
-  //       .read(businessActivityProvider.notifier)
-  //       .loadAll(
-  //         pageNumber: page,
-  //         searchTerm: ref.read(businessActivityProvider).search.isEmpty
-  //             ? null
-  //             : ref.read(businessActivityProvider).search,
-  //       );
-  //   _scrollController.animateTo(
-  //     0,
-  //     duration: const Duration(milliseconds: 300),
-  //     curve: Curves.easeOut,
-  //   );
-  // }
-
   void _goToPage(int page) {
     ref
         .read(businessActivityProvider.notifier)
@@ -224,7 +208,9 @@ class _ViewBusinessActivityPageState
                         itemCount: state.filtered.length,
                         itemBuilder: (_, i) {
                           final a = state.filtered[i];
-                          final selected = state.selectedIds.contains(a.id);
+                          final selected = state.selectedIds.contains(
+                            a.activityId,
+                          );
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12, top: 2),
@@ -250,24 +236,26 @@ class _ViewBusinessActivityPageState
                                 leading: state.isMultiSelect
                                     ? Checkbox(
                                         value: selected,
-                                        onChanged: (_) =>
-                                            notifier.toggleSelection(a.id),
+                                        onChanged: (_) => notifier
+                                            .toggleSelection(a.activityId),
                                         activeColor: primaryColor,
                                       )
                                     : null,
 
                                 title: Text(
-                                  a.name,
+                                  a.activityName,
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade800,
+                                    color: a.isDeleted
+                                        ? Colors.red
+                                        : Colors.grey.shade800,
                                   ),
                                 ),
 
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    /// 👁 Eye
+                                    /// detail view Eye
                                     IconButton(
                                       icon: Icon(
                                         Icons.remove_red_eye_outlined,
@@ -278,71 +266,75 @@ class _ViewBusinessActivityPageState
                                       onPressed: () => Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => ActivityDetailPage(
-                                            activityId: a.id,
-                                          ),
+                                          builder: (_) =>
+                                              ActivityDetailPage(activity: a),
                                         ),
                                       ),
                                     ),
 
-                                    /// 🔀 Toggle
-                                    Transform.scale(
-                                      scale: 0.8,
-                                      child: Switch(
-                                        value: a.active,
-                                        onChanged: (val) async {
-                                          final error = await notifier
-                                              .toggleStatus(a.id, val);
-                                          if (!mounted) return;
-
-                                          if (error != null) {
-                                            CustomSnackbar.show(
-                                              context,
-                                              message: error,
-                                              type: SnackBarType.error,
+                                    if (!a.isDeleted) ...[
+                                      /// Toggle
+                                      Transform.scale(
+                                        scale: 0.8,
+                                        child: Switch(
+                                          value: a.active,
+                                          onChanged: (val) async {
+                                            final error = await notifier.update(
+                                              id: a.activityId,
+                                              active: val,
                                             );
-                                          } else {
-                                            CustomSnackbar.show(
-                                              context,
-                                              message:
-                                                  '${a.name} ${val ? 'enabled' : 'disabled'}',
-                                              type: SnackBarType.info,
-                                            );
-                                          }
-                                        },
-                                        activeThumbColor: Colors.green.shade600,
-                                        inactiveThumbColor:
-                                            Colors.grey.shade400,
-                                        materialTapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                    ),
+                                            if (!mounted) return;
 
-                                    /// 🗑 Delete
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.delete_rounded,
-                                        color: Colors.red.shade600,
-                                        // size: 27,
+                                            if (error != null) {
+                                              CustomSnackbar.show(
+                                                context,
+                                                message: error,
+                                                type: SnackBarType.error,
+                                              );
+                                            } else {
+                                              CustomSnackbar.show(
+                                                context,
+                                                message:
+                                                    '${a.activityName} ${val ? 'enabled' : 'disabled'}',
+                                                type: SnackBarType.info,
+                                              );
+                                            }
+                                          },
+                                          activeThumbColor:
+                                              Colors.green.shade600,
+                                          inactiveThumbColor:
+                                              Colors.grey.shade400,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
                                       ),
-                                      iconSize: 22,
-                                      onPressed: () =>
-                                          DeleteActivityDialog.show(
-                                            context,
-                                            ref,
-                                            a.id,
-                                            a.name,
-                                          ),
-                                    ),
+
+                                      ///  Delete
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.delete_rounded,
+                                          color: Colors.red.shade600,
+                                          // size: 27,
+                                        ),
+                                        iconSize: 22,
+                                        onPressed: () =>
+                                            DeleteActivityDialog.show(
+                                              context,
+                                              ref,
+                                              a.activityId,
+                                              a.activityName,
+                                            ),
+                                      ),
+                                    ],
                                   ],
                                 ),
 
                                 onLongPress: () =>
-                                    notifier.toggleSelection(a.id),
+                                    notifier.toggleSelection(a.activityId),
                                 // onTap: state.isMultiSelect ? null : () {},
                                 onTap: () {
                                   if (state.isMultiSelect) {
-                                    notifier.toggleSelection(a.id);
+                                    notifier.toggleSelection(a.activityId);
                                   }
                                 },
                               ),

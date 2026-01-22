@@ -22,10 +22,6 @@ class AddActivityDialog {
         return;
       }
 
-      // Close dialog immediately
-      // debugPrint(' Closing dialog...');
-      // Navigator.pop(context);
-
       // Call API in the background
       debugPrint('Calling notifier.add()...');
       final notifier = ref.read(businessActivityProvider.notifier);

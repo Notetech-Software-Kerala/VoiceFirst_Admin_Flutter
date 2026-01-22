@@ -21,7 +21,9 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.activity?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.activity?.activityName ?? '',
+    );
   }
 
   @override
@@ -39,8 +41,8 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
     }
 
     final activity = BusinessActivity(
-      id: widget.activity?.id ?? DateTime.now().millisecondsSinceEpoch,
-      name: _nameController.text,
+      activityId: widget.activity!.activityId,
+      activityName: _nameController.text,
       active: widget.activity?.active ?? true,
       isDeleted: widget.activity?.isDeleted ?? false,
       createdUser: widget.activity?.createdUser ?? '',
@@ -52,7 +54,6 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
     );
 
     widget.onSave(activity);
-    
   }
 
   @override
