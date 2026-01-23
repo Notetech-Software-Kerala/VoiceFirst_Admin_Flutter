@@ -39,6 +39,7 @@ dependencies:
   riverpod_annotation: ^4.0.0
   dio: ^5.9.0
   flutter_secure_storage: ^8.1.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

@@ -12,7 +12,6 @@ class ApiClient {
   ApiClient._internal() {
     dio = Dio(
       BaseOptions(
-        
         // baseUrl: ApiEndpoints.baseUrl, // e.g. http://59.94.176.2:8022/api
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),

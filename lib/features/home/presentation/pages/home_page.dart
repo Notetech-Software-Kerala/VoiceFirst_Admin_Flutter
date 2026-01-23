@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:voice_first_admin/features/profile/presentation/pages/profile_page.dart';
 import 'package:voice_first_admin/features/roles/presentation/pages/roles_page.dart';
+import 'package:voice_first_admin/features/post_office/presentation/pages/post_office_list_page.dart';
 import '../../../../core/widgets/app_drawer.dart';
 
 class HomePage extends StatefulWidget {
@@ -38,6 +39,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         ProfilePage(),
+        PostOfficeListScreen(),
       ],
     );
 
