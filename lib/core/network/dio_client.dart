@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:voice_first_admin/core/config/api_endpints.dart';
 
 class ApiClient {
   static final ApiClient _i = ApiClient._internal();
   factory ApiClient() => _i;
 
   late final Dio dio;
-  
+
   // Token refresh lock to avoid multiple simultaneous refresh calls
   bool _isRefreshing = false;
   final Completer<String?> _refreshCompleter = Completer<String?>();
@@ -17,11 +18,10 @@ class ApiClient {
   ApiClient._internal() {
     dio = Dio(
       BaseOptions(
-        
-        // baseUrl: ApiEndpoints.baseUrl, // e.g. http://59.94.176.2:8022/api
+        baseUrl: ApiEndpoints.baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
-        headers: {'Content-Type': 'application/json'},
+        headers: ApiEndpoints.defaultHeaders,
       ),
     );
 
@@ -39,32 +39,37 @@ class ApiClient {
           if (scope == 'company') {
             token = await storage.read(key: 'company_access_token');
             refreshToken = await storage.read(key: 'company_refresh_token');
-            expirationTimeStr =
-                await storage.read(key: 'company_token_expiration');
+            expirationTimeStr = await storage.read(
+              key: 'company_token_expiration',
+            );
           } else if (scope == 'user') {
             token = await storage.read(key: 'user_access_token');
             refreshToken = await storage.read(key: 'user_refresh_token');
-            expirationTimeStr =
-                await storage.read(key: 'user_token_expiration');
+            expirationTimeStr = await storage.read(
+              key: 'user_token_expiration',
+            );
           } else {
             // Default: prefer company, then active, then user
             token = await storage.read(key: 'company_access_token');
             refreshToken = await storage.read(key: 'company_refresh_token');
-            expirationTimeStr =
-                await storage.read(key: 'company_token_expiration');
+            expirationTimeStr = await storage.read(
+              key: 'company_token_expiration',
+            );
 
             if (token == null || token.isEmpty) {
               token = await storage.read(key: 'active_access_token');
               refreshToken = await storage.read(key: 'active_refresh_token');
-              expirationTimeStr =
-                  await storage.read(key: 'active_token_expiration');
+              expirationTimeStr = await storage.read(
+                key: 'active_token_expiration',
+              );
             }
 
             if (token == null || token.isEmpty) {
               token = await storage.read(key: 'user_access_token');
               refreshToken = await storage.read(key: 'user_refresh_token');
-              expirationTimeStr =
-                  await storage.read(key: 'user_token_expiration');
+              expirationTimeStr = await storage.read(
+                key: 'user_token_expiration',
+              );
             }
           }
 
@@ -75,20 +80,13 @@ class ApiClient {
               refreshToken.isNotEmpty &&
               expirationTimeStr != null) {
             try {
-              final expirationTime =
-                  DateTime.parse(expirationTimeStr);
+              final expirationTime = DateTime.parse(expirationTimeStr);
               final now = DateTime.now();
-              final timeUntilExpiry = expirationTime
-                  .difference(now)
-                  .inSeconds;
+              final timeUntilExpiry = expirationTime.difference(now).inSeconds;
 
               // If token expires within 30 seconds, refresh it
               if (timeUntilExpiry < 30) {
-                token = await _refreshAccessToken(
-                  scope,
-                  token,
-                  refreshToken,
-                );
+                token = await _refreshAccessToken(scope, token, refreshToken);
               }
             } catch (e) {
               debugPrint('Error checking token expiration: $e');
@@ -123,6 +121,7 @@ class ApiClient {
       ),
     );
   }
+
   /// Refresh the access token using the refresh token.
   /// Returns the new access token if successful, otherwise null.
   Future<String?> _refreshAccessToken(
@@ -164,9 +163,7 @@ class ApiClient {
       // Make the refresh token API call
       final response = await dio.post(
         refreshEndpoint,
-        data: {
-          'refresh_token': refreshToken,
-        },
+        data: {'refresh_token': refreshToken},
         options: Options(
           headers: {'Content-Type': 'application/json'},
           extra: {'skipTokenRefresh': true}, // Avoid recursive refresh
@@ -175,25 +172,19 @@ class ApiClient {
 
       if (response.statusCode == 200) {
         final newAccessToken = response.data['access_token'] as String?;
-        final newRefreshToken =
-            response.data['refresh_token'] as String?;
+        final newRefreshToken = response.data['refresh_token'] as String?;
         final expiresIn = response.data['expires_in'] as int?;
 
         if (newAccessToken != null && newAccessToken.isNotEmpty) {
           // Calculate expiration time
-          final expirationTime = DateTime.now()
-              .add(Duration(seconds: expiresIn ?? 3600));
+          final expirationTime = DateTime.now().add(
+            Duration(seconds: expiresIn ?? 3600),
+          );
 
           // Store the new tokens
-          await storage.write(
-            key: tokenKey,
-            value: newAccessToken,
-          );
+          await storage.write(key: tokenKey, value: newAccessToken);
           if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
-            await storage.write(
-              key: refreshTokenKey,
-              value: newRefreshToken,
-            );
+            await storage.write(key: refreshTokenKey, value: newRefreshToken);
           }
           await storage.write(
             key: expirationKey,
@@ -217,4 +208,5 @@ class ApiClient {
     }
 
     return null;
-  }}
+  }
+}

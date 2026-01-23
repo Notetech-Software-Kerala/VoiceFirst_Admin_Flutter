@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/features/Program_management/presentation/dialogs/delete_program_dialog.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/program_detail_page.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/dialogs/delete_program_dialog.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
 
 class ProgramManagementView extends ConsumerWidget {
@@ -93,21 +94,21 @@ class ProgramManagementView extends ConsumerWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 160,
-                        height: 55,
-                        child: _ApplicationFilter(),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(width: 130, height: 55, child: _CompanyFilter()),
-                    ],
-                  ),
-                ),
+                // const SizedBox(height: 12),
+                // SingleChildScrollView(
+                //   scrollDirection: Axis.horizontal,
+                //   child: Row(
+                //     children: [
+                //       SizedBox(
+                //         width: 160,
+                //         height: 55,
+                //         child: _ApplicationFilter(),
+                //       ),
+                //       const SizedBox(width: 8),
+                //       SizedBox(width: 130, height: 55, child: _CompanyFilter()),
+                //     ],
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -125,6 +126,7 @@ class ProgramManagementView extends ConsumerWidget {
                     itemBuilder: (context, index) {
                       final program = state.filtered[index];
                       final id = program.sysProgramId;
+                      final isDeleted = program.deleted ?? false;
                       final selected =
                           id != null && state.selectedIds.contains(id);
 
@@ -133,16 +135,24 @@ class ProgramManagementView extends ConsumerWidget {
                             ? null
                             : () => notifier.toggleSelection(id),
                         onTap: () {
-                          // if (!state.isMultiSelect && id != null) {
-                          //   Navigator.push(
-                          //     context,
-                          //     MaterialPageRoute(
-                          //       builder: (_) =>
-                          //           ProgramDetailPage(program: program),
-                          //     ),
-                          //   );
-                          // }
+                          if (id == null) return;
+
+                          // If selection mode is ON → toggle checkbox
+                          if (state.isMultiSelect) {
+                            notifier.toggleSelection(id);
+                            return;
+                          }
+
+                          // Otherwise → navigate to detail view
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ProgramDetailPage(program: program),
+                            ),
+                          );
                         },
+
                         child: Card(
                           color: selected
                               ? primaryColor.withOpacity(0.12)
@@ -173,13 +183,27 @@ class ProgramManagementView extends ConsumerWidget {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
+                                      // Text(
+                                      //   program.programName,
+                                      //   style: const TextStyle(
+                                      //     fontSize: 16,
+                                      //     fontWeight: FontWeight.bold,
+                                      //   ),
+                                      // ),
                                       Text(
                                         program.programName,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
+                                          color: isDeleted
+                                              ? Colors.red
+                                              : Colors.black,
+                                          // decoration: isDeleted
+                                          //     ? TextDecoration.lineThrough
+                                          //     : null,
                                         ),
                                       ),
+
                                       const SizedBox(height: 4),
                                       Text(
                                         program.labelName,
@@ -207,10 +231,70 @@ class ProgramManagementView extends ConsumerWidget {
                                     ],
                                   ),
                                 ),
-                                if (!state.isMultiSelect && id != null)
+                                // if (!state.isMultiSelect && id != null)
+                                //   Row(
+                                //     mainAxisSize: MainAxisSize.min,
+                                //     children: [
+                                //       IconButton(
+                                //         icon: const Icon(
+                                //           Icons.delete,
+                                //           color: Colors.red,
+                                //           size: 20,
+                                //         ),
+                                //         onPressed: () {
+                                //           DeleteProgramDialog.show(
+                                //             context,
+                                //             ref,
+                                //             id,
+                                //             program.programName,
+                                //           );
+                                //         },
+                                //       ),
+                                //     ],
+                                //   ),
+                                if (!state.isMultiSelect &&
+                                    id != null &&
+                                    !isDeleted)
                                   Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
+                                      // 🔘 ACTIVE TOGGLE (only if NOT deleted)
+                                      if (!isDeleted)
+                                        Transform.scale(
+                                          scale: 0.75,
+                                          child: Switch(
+                                            value: program.active ?? true,
+                                            onChanged: (val) async {
+                                              final error = await notifier
+                                                  .toggleStatus(id, val);
+                                              if (error != null &&
+                                                  context.mounted) {
+                                                CustomSnackbar.show(
+                                                  context,
+                                                  message: error,
+                                                  type: SnackBarType.error,
+                                                );
+                                              }
+                                            },
+                                            activeThumbColor: Colors.green,
+                                          ),
+                                        ),
+
+                                      // 🗑 DELETE
+                                      // IconButton(
+                                      //   icon: const Icon(
+                                      //     Icons.delete,
+                                      //     color: Colors.red,
+                                      //   ),
+                                      //   onPressed: () {
+                                      //     DeleteProgramDialog.show(
+                                      //       context,
+                                      //       ref,
+                                      //       id,
+                                      //       program.programName,
+                                      //     );
+                                      //   },
+                                      // ),
                                       IconButton(
                                         icon: const Icon(
                                           Icons.delete,
@@ -243,10 +327,10 @@ class ProgramManagementView extends ConsumerWidget {
           : FloatingActionButton(
               backgroundColor: primaryColor,
               onPressed: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (_) => const AddProgramPage()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddProgramPage()),
+                );
               },
               child: const Icon(Icons.add, color: Colors.white),
             ),
@@ -259,21 +343,36 @@ class _ApplicationFilter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(programProvider);
     final notifier = ref.read(programProvider.notifier);
+    final appsAsync = ref.watch(applicationProvider);
 
-    return DropdownButtonFormField<int?>(
-      value: state.selectedApplicationId,
-      decoration: const InputDecoration(
-        labelText: 'Application',
-        border: OutlineInputBorder(),
-        filled: true,
-      ),
-      items: const [
-        DropdownMenuItem<int?>(value: null, child: Text('All Apps')),
-        DropdownMenuItem<int?>(value: 1, child: Text('App 1')),
-        DropdownMenuItem<int?>(value: 2, child: Text('App 2')),
-        DropdownMenuItem<int?>(value: 3, child: Text('App 3')),
-      ],
-      onChanged: (val) => notifier.setApplicationFilter(val),
+    return appsAsync.when(
+      data: (apps) {
+        return DropdownButtonFormField<int?>(
+          value: apps.any((a) => a.platformId == state.selectedApplicationId)
+              ? state.selectedApplicationId
+              : null,
+          decoration: const InputDecoration(
+            labelText: 'Application',
+            border: OutlineInputBorder(),
+            filled: true,
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('All Applications'),
+            ),
+            ...apps.map(
+              (a) => DropdownMenuItem<int?>(
+                value: a.platformId,
+                child: Text(a.platformName),
+              ),
+            ),
+          ],
+          onChanged: notifier.setApplicationFilter,
+        );
+      },
+      loading: () => const SizedBox(height: 56),
+      error: (_, __) => const Text('Failed to load applications'),
     );
   }
 }

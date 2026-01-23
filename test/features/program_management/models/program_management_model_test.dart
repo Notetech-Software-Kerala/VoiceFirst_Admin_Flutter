@@ -88,26 +88,102 @@ void main() {
       expect(program.programActionIds, isEmpty);
     });
 
-    test('should convert to JSON correctly', () {
+    // test('should convert to JSON correctly', () {
+    //   final program = ProgramManagementModel(
+    //     sysProgramId: 10,
+    //     programName: 'Test',
+    //     labelName: 'Label',
+    //     programRoute: '/test',
+    //     applicationId: 1,
+    //     companyId: 5,
+    //     programActionIds: [1, 2],
+    //   );
+
+    //   final json = program.toJson();
+
+    //   expect(json['sysProgramId'], 10);
+    //   expect(json['programName'], 'Test');
+    //   expect(json['labelName'], 'Label');
+    //   expect(json['programRoute'], '/test');
+    //   expect(json['applicationId'], 1);
+    //   expect(json['companyId'], 5);
+    //   expect(json['programActionIds'], [1, 2]);
+    // });
+
+    test('should convert to create JSON correctly', () {
       final program = ProgramManagementModel(
-        sysProgramId: 10,
         programName: 'Test',
         labelName: 'Label',
         programRoute: '/test',
         applicationId: 1,
-        companyId: 5,
         programActionIds: [1, 2],
       );
 
-      final json = program.toJson();
+      final json = program.toCreateJson();
 
-      expect(json['sysProgramId'], 10);
       expect(json['programName'], 'Test');
-      expect(json['labelName'], 'Label');
-      expect(json['programRoute'], '/test');
-      expect(json['applicationId'], 1);
-      expect(json['companyId'], 5);
-      expect(json['programActionIds'], [1, 2]);
+      expect(json['label'], 'Label');
+      expect(json['route'], '/test');
+      expect(json['platformId'], 1);
+      expect(json['companyId'], null);
+      expect(json['actionIds'], [1, 2]);
+    });
+
+    test('should convert to update JSON correctly', () {
+      final action1 = ProgramActionSummary(
+        actionId: 1,
+        actionName: 'Action 1',
+        active: true,
+      );
+      final action2 = ProgramActionSummary(
+        actionId: 2,
+        actionName: 'Action 2',
+        active: false,
+      );
+
+      final program = ProgramManagementModel(
+        programName: 'Test',
+        labelName: 'Label',
+        programRoute: '/test',
+        applicationId: 1,
+        active: true,
+        programActionIds: [1, 2],
+        actions: [action1, action2],
+      );
+
+      final json = program.toUpdateJson();
+
+      expect(json['programName'], 'Test');
+      expect(json['label'], 'Label');
+      expect(json['route'], '/test');
+      expect(json['platformId'], 1);
+      expect(json['companyId'], null);
+      expect(json['active'], true);
+      expect(json['action'], isA<List>());
+      expect(json['action'].length, 2);
+    });
+
+    test('should parse from JSON with actions correctly', () {
+      final json = {
+        'programId': 10,
+        'programName': 'Dashboard',
+        'label': 'Main Dashboard',
+        'route': '/dashboard',
+        'platformId': 1,
+        'companyId': 5,
+        'action': [
+          {'actionId': 1, 'actionName': 'View', 'active': true},
+          {'actionId': 2, 'actionName': 'Edit', 'active': false},
+        ],
+      };
+
+      final program = ProgramManagementModel.fromJson(json);
+
+      expect(program.programActionIds, [1, 2]);
+      expect(program.actions.length, 2);
+      expect(program.actions[0].actionId, 1);
+      expect(program.actions[0].actionName, 'View');
+      expect(program.actions[1].active, false);
     });
 
     test('copyWith should create new instance with updated fields', () {

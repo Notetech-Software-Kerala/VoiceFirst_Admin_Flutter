@@ -113,10 +113,14 @@ class EditProgramDialog {
                       labelName: label,
                       programRoute: route,
                       applicationId: applicationId,
-                      companyId: companyId,
+                      companyId: null,
                     );
 
-                    ref.read(programProvider.notifier).update(updated);
+                    // ref.read(programProvider.notifier).update(updated);
+                    ref
+                        .read(programProvider.notifier)
+                        .update(updated, updateBasic: true);
+
                     Navigator.pop(dialogContext);
                   },
                   child: const Text('Update'),
