@@ -3,16 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpints.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
+import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
+import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
 
 class ProgramManagementService {
   static const String _path = '/program';
 
-  Future<List<ProgramManagementModel>> getAll({String? search}) async {
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}$_path').replace(
-      queryParameters: {
-        if (search != null && search.isNotEmpty) 'SearchText': search,
-      },
-    );
+  Future<PaginatedResponse<ProgramManagementModel>> getAll(
+    ProgramFilter filter,
+  ) async {
+    final uri = Uri.parse(
+      '${ApiEndpoints.baseUrl}$_path',
+    ).replace(queryParameters: filter.toQueryParams());
 
     debugPrint('API REQUEST: GET $uri');
 
@@ -24,12 +26,32 @@ class ProgramManagementService {
     final jsonBody = jsonDecode(response.body);
     final data = jsonBody['data'];
 
-    // Backend may return either a list or a paginated object with items
-    final items = data is List ? data : (data['items'] as List? ?? []);
+    if (data is List) {
+      final items = data
+          .map(
+            (e) => ProgramManagementModel.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+      return PaginatedResponse(
+        items: items,
+        totalCount: items.length,
+        pageNumber: filter.pageNumber,
+        pageSize: filter.pageSize,
+        totalPages: 1,
+      );
+    }
 
-    return items
-        .map((e) => ProgramManagementModel.fromJson(e as Map<String, dynamic>))
+    final items = (data['items'] as List)
+        .map((e) => ProgramManagementModel.fromJson(e))
         .toList();
+
+    return PaginatedResponse(
+      items: items,
+      totalCount: data['totalCount'] ?? items.length,
+      pageNumber: data['pageNumber'] ?? filter.pageNumber,
+      pageSize: data['pageSize'] ?? filter.pageSize,
+      totalPages: data['totalPages'] ?? 1,
+    );
   }
 
   Future<ProgramManagementModel> create(ProgramManagementModel program) async {

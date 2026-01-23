@@ -8,6 +8,10 @@ class ProgramState {
   final bool isMultiSelect;
   final int? selectedApplicationId;
   final int? selectedCompanyId;
+  final bool isLoading;
+  final bool hasMoreData;
+  final int currentPage;
+  final int totalCount;
 
   const ProgramState({
     required this.all,
@@ -17,6 +21,10 @@ class ProgramState {
     required this.isMultiSelect,
     required this.selectedApplicationId,
     required this.selectedCompanyId,
+    required this.isLoading,
+    required this.hasMoreData,
+    required this.currentPage,
+    required this.totalCount,
   });
 
   factory ProgramState.initial() => const ProgramState(
@@ -27,6 +35,10 @@ class ProgramState {
     isMultiSelect: false,
     selectedApplicationId: null,
     selectedCompanyId: null,
+    isLoading: false,
+    hasMoreData: true,
+    currentPage: 1,
+    totalCount: 0,
   );
 
   ProgramState copyWith({
@@ -37,6 +49,10 @@ class ProgramState {
     bool? isMultiSelect,
     int? selectedApplicationId,
     int? selectedCompanyId,
+    bool? isLoading,
+    bool? hasMoreData,
+    int? currentPage,
+    int? totalCount,
   }) {
     return ProgramState(
       all: all ?? this.all,
@@ -47,6 +63,10 @@ class ProgramState {
       selectedApplicationId:
           selectedApplicationId ?? this.selectedApplicationId,
       selectedCompanyId: selectedCompanyId ?? this.selectedCompanyId,
+      isLoading: isLoading ?? this.isLoading,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
+      currentPage: currentPage ?? this.currentPage,
+      totalCount: totalCount ?? this.totalCount,
     );
   }
 }

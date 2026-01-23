@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_state.dart';
+import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
 import 'package:voice_first_admin/features/Program_management/program_management_service/program_management_service.dart';
 
 class ProgramNotifier extends Notifier<ProgramState> {
@@ -9,14 +10,31 @@ class ProgramNotifier extends Notifier<ProgramState> {
 
   @override
   ProgramState build() {
-    // return initial state and then load from API
-    Future.microtask(_load);
     return ProgramState.initial();
   }
 
-  Future<void> _load() async {
-    final items = await _service.getAll();
-    state = state.copyWith(all: items, filtered: _applyFilter(items));
+  Future<void> loadAll({ProgramFilter? filter}) async {
+    if (state.isLoading) return;
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await _service.getAll(
+        filter ?? const ProgramFilter(pageNumber: 1, pageSize: 10),
+      );
+
+      state = state.copyWith(
+        all: response.items,
+        filtered: _applyFilter(response.items),
+        isLoading: false,
+        hasMoreData: response.pageNumber < response.totalPages,
+        currentPage: response.pageNumber,
+        totalCount: response.totalCount,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      debugPrint('Failed to load programs: $e');
+    }
   }
 
   // void _load() {
@@ -29,9 +47,15 @@ class ProgramNotifier extends Notifier<ProgramState> {
   //   state = state.copyWith(all: combined, filtered: combined);
   // }
 
-  void search(String query) {
-    final newState = state.copyWith(search: query);
-    state = newState.copyWith(filtered: _applyFilter(newState.all));
+  Future<void> search(String query) async {
+    state = state.copyWith(search: query);
+    await loadAll(
+      filter: ProgramFilter(
+        pageNumber: 1,
+        pageSize: 10,
+        searchText: query.isEmpty ? null : query,
+      ),
+    );
   }
 
   void setApplicationFilter(int? applicationId) {
@@ -147,14 +171,13 @@ class ProgramNotifier extends Notifier<ProgramState> {
 
   Future<void> delete(int id) async {
     await _service.delete(id);
-    state = state.copyWith(
-      all: state.all.map((p) {
-        if (p.sysProgramId == id) {
-          return p.copyWith(deleted: true);
-        }
-        return p;
-      }).toList(),
-      filtered: _applyFilter(state.all),
+    // Reload current page so server-side pagination stays correct
+    await loadAll(
+      filter: ProgramFilter(
+        pageNumber: state.currentPage,
+        pageSize: 10,
+        searchText: state.search.isEmpty ? null : state.search,
+      ),
     );
 
     // final list = state.all.where((p) => p.sysProgramId != id).toList();
@@ -205,17 +228,13 @@ class ProgramNotifier extends Notifier<ProgramState> {
     if (ids.isEmpty) return;
 
     await _service.bulkDelete(ids);
-
-    state = state.copyWith(
-      all: state.all.map((p) {
-        if (ids.contains(p.sysProgramId)) {
-          return p.copyWith(deleted: true);
-        }
-        return p;
-      }).toList(),
-      filtered: _applyFilter(state.all),
-      selectedIds: {},
-      isMultiSelect: false,
+    state = state.copyWith(selectedIds: {}, isMultiSelect: false);
+    await loadAll(
+      filter: ProgramFilter(
+        pageNumber: state.currentPage,
+        pageSize: 10,
+        searchText: state.search.isEmpty ? null : state.search,
+      ),
     );
   }
 

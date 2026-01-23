@@ -25,7 +25,6 @@ void main() {
 
     test('initial state should have empty lists and null selections', () {
       final state = ProgramState.initial();
-
       expect(state.all, isEmpty);
       expect(state.filtered, isEmpty);
       expect(state.search, '');
@@ -62,6 +61,10 @@ void main() {
         isMultiSelect: true,
         selectedApplicationId: 1,
         selectedCompanyId: 5,
+        isLoading: false,
+        hasMoreData: true,
+        currentPage: 1,
+        totalCount: 0,
       );
 
       final newState = state.copyWith(search: 'updated');
@@ -113,6 +116,10 @@ void main() {
         isMultiSelect: false,
         selectedApplicationId: null,
         selectedCompanyId: null,
+        isLoading: false,
+        hasMoreData: true,
+        currentPage: 1,
+        totalCount: 0,
       );
 
       final filteredList = [mockPrograms[0]];
