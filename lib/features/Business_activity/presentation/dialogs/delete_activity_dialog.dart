@@ -7,7 +7,7 @@ class DeleteActivityDialog {
   static void show(
     BuildContext context,
     WidgetRef ref,
-    String id,
+    int id,
     String name,
   ) {
     showDialog(

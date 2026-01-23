@@ -1,84 +1,217 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_mockdata.dart';
+import 'package:voice_first_admin/features/Program_Action/models/program_action_filter.dart';
+import 'package:voice_first_admin/features/Program_Action/program_action_service/program_action_service.dart';
 import 'program_action_state.dart';
 
-class ProgramActionNotifier extends StateNotifier<ProgramActionState> {
-  ProgramActionNotifier() : super(ProgramActionState.initial()) {
-    _load();
+class ProgramActionNotifier extends Notifier<ProgramActionState> {
+  final ProgramActionService _service = ProgramActionService();
+
+  @override
+  ProgramActionState build() {
+    // _service = ProgramActionService();
+    return ProgramActionState.initial();
   }
 
-  void _load() {
-    state = state.copyWith(
-      all: mockProgramActions,
-      filtered: mockProgramActions,
-    );
+  Future<void> loadAll({ProgramActionFilter? filter}) async {
+    if (state.isLoading) return;
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await _service.getAll(
+        filter ?? ProgramActionFilter(pageNumber: 1, pageSize: 10),
+      );
+
+      state = state.copyWith(
+        actions: response.items,
+        filtered: response.items, // backend already filtered
+        isLoading: false,
+        // hasMoreData: response.items.length >= (filter?.pageSize ?? 10),
+        hasMoreData: response.pageNumber < response.totalPages,
+        currentPage: response.pageNumber,
+        totalCount: response.totalCount,
+        totalPages: response.totalPages,
+      );
+      debugPrint(
+        'PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false);
+      debugPrint('💥 Failed to load program actions: $e');
+    }
   }
 
-  void search(String query) {
-    final filtered = query.isEmpty
-        ? state.all
-        : state.all
-              .where(
-                (p) => p.programActionName.toLowerCase().contains(
-                  query.toLowerCase(),
-                ),
-              )
-              .toList();
-    state = state.copyWith(search: query, filtered: filtered);
+  // Recover
+  Future<String?> recover(int actionId) async {
+    try {
+      // Call API
+      await _service.recover(actionId);
+
+      // ✅ Update state locally (NO reload)
+      state = state.copyWith(
+        actions: state.actions.map((action) {
+          if (action.actionId == actionId) {
+            return action.copyWith(deleted: false, clearDeletedMeta: true);
+          }
+          return action;
+        }).toList(),
+
+        filtered: state.filtered.map((action) {
+          if (action.actionId == actionId) {
+            return action.copyWith(deleted: false, clearDeletedMeta: true);
+          }
+          return action;
+        }).toList(),
+      );
+
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to recover program action: $e');
+      return 'Failed to recover program action';
+    }
   }
 
-  void add(ProgramActionModel p) {
-    final list = [...state.all, p];
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+  // Add
+  Future<String?> add(String name) async {
+    debugPrint('Starting add operation for: "$name"');
+
+    try {
+      debugPrint('Calling service.create...');
+      await _service.create(name);
+
+      // Reload the current page to get fresh data with proper pagination
+      await loadAll(
+        filter: ProgramActionFilter(
+          pageNumber: state.currentPage,
+          pageSize: 10,
+          search: state.search.isEmpty ? null : state.search,
+        ),
+      );
+
+      debugPrint('✅ Action added successfully');
+
+      return null; // ✅ success
+    } catch (e) {
+      debugPrint('💥 Exception caught: $e');
+      return 'Failed to add program action';
+    }
   }
 
-  void update(ProgramActionModel updated) {
-    final list = state.all
-        .map((p) => p.ProgramActionId == updated.ProgramActionId ? updated : p)
-        .toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+  // Update name
+  Future<String?> update(int id, String name) async {
+    try {
+      await _service.updateAction(id, name: name);
+
+      // Reload the current page to get fresh data
+      await loadAll(
+        filter: ProgramActionFilter(
+          pageNumber: state.currentPage,
+          pageSize: 10,
+          search: state.search.isEmpty ? null : state.search,
+        ),
+      );
+
+      debugPrint('✅ Program action updated: $name');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to update program action: $e');
+      return 'Failed to update program action';
+    }
   }
 
-  void toggleStatus(int id, bool status) {
-    final list = state.all
-        .map((p) => p.ProgramActionId == id ? p.copyWith(isActive: status) : p)
-        .toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+  // Toggle status
+  Future<String?> toggleStatus(int id, bool active) async {
+    try {
+      await _service.updateAction(id, active: active);
+
+      // Reload the current page to get fresh data
+      await loadAll(
+        filter: ProgramActionFilter(
+          pageNumber: state.currentPage,
+          pageSize: 10,
+          search: state.search.isEmpty ? null : state.search,
+        ),
+      );
+
+      debugPrint('✅ Status toggled for program action ID: $id');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to toggle status: $e');
+      return 'Failed to toggle status';
+    }
   }
 
-  void delete(int id) {
-    final list = state.all.where((p) => p.ProgramActionId != id).toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+  // Delete
+  Future<String?> delete(int id) async {
+    try {
+      await _service.delete(id);
+
+      // Reload the current page to get fresh data
+      await loadAll(
+        filter: ProgramActionFilter(
+          pageNumber: state.currentPage,
+          pageSize: 10,
+          search: state.search.isEmpty ? null : state.search,
+        ),
+      );
+
+      debugPrint('✅ Program action deleted: $id');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to delete program action: $e');
+      return 'Failed to delete program action';
+    }
   }
 
-  void deleteSelected() {
-    final list = state.all
-        .where((p) => !state.selectedIds.contains(p.ProgramActionId))
-        .toList();
-    state = state.copyWith(
-      all: list,
-      filtered: _applyFilter(list),
-      selectedIds: {},
-      isMultiSelect: false,
-    );
+  Future<String?> deleteSelected() async {
+    if (state.selectedIds.isEmpty) return 'No items selected';
+
+    try {
+      await _service.bulkDelete(state.selectedIds.toList());
+
+      // Clear selection first
+      state = state.copyWith(selectedIds: {}, isMultiSelect: false);
+
+      // Reload the current page to get fresh data
+      await loadAll(
+        filter: ProgramActionFilter(
+          pageNumber: state.currentPage,
+          pageSize: 10,
+          search: state.search.isEmpty ? null : state.search,
+        ),
+      );
+
+      debugPrint('✅ Bulk delete completed');
+      return null; // success
+    } catch (e) {
+      debugPrint('💥 Failed to delete selected program actions: $e');
+      return 'Failed to delete program actions';
+    }
   }
 
+  // Selection
   void toggleSelection(int id) {
     final selected = {...state.selectedIds};
     selected.contains(id) ? selected.remove(id) : selected.add(id);
+
     state = state.copyWith(
       selectedIds: selected,
       isMultiSelect: selected.isNotEmpty,
     );
   }
 
+  void clearSelection() {
+    state = state.copyWith(selectedIds: {}, isMultiSelect: false);
+  }
+
   void enterSelectionMode({bool selectAll = false}) {
     final selected = <int>{};
+
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.ProgramActionId));
+      selected.addAll(state.filtered.map((e) => e.actionId));
     }
+
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
   }
 
@@ -89,15 +222,4 @@ class ProgramActionNotifier extends StateNotifier<ProgramActionState> {
   bool get allVisibleSelected =>
       state.filtered.isNotEmpty &&
       state.selectedIds.length == state.filtered.length;
-
-  List<ProgramActionModel> _applyFilter(List<ProgramActionModel> list) {
-    if (state.search.isEmpty) return list;
-    return list
-        .where(
-          (p) => p.programActionName.toLowerCase().contains(
-            state.search.toLowerCase(),
-          ),
-        )
-        .toList();
-  }
 }

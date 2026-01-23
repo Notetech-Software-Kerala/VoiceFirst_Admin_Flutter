@@ -1,18 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
 import 'country_state.dart';
 import 'country_mock_data.dart';
 
-final countryProvider = StateNotifierProvider<CountryNotifier, CountryState>((
-  ref,
-) {
-  return CountryNotifier();
-});
+final countryProvider = NotifierProvider<CountryNotifier, CountryState>(
+  CountryNotifier.new,
+);
 
-class CountryNotifier extends StateNotifier<CountryState> {
-  CountryNotifier() : super(CountryState.initial(mockCountries));
+class CountryNotifier extends Notifier<CountryState> {
+  @override
+  CountryState build() {
+    return CountryState.initial(mockCountries);
+  }
 
   // 🔍 Search
   void search(String query) {
@@ -27,7 +26,7 @@ class CountryNotifier extends StateNotifier<CountryState> {
     }
   }
 
-  // ➕ Enter selection mode
+  //Enter selection mode
   void enterSelectionMode({bool selectAll = false}) {
     if (selectAll) {
       state = state.copyWith(

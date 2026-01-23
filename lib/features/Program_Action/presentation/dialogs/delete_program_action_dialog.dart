@@ -50,16 +50,30 @@ class DeleteProgramActionDialog {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            onPressed: () {
-              ref.read(programActionProvider.notifier).delete(id);
+            onPressed: () async {
+              final error = await ref
+                  .read(programActionProvider.notifier)
+                  .delete(id);
 
-              Navigator.pop(dialogContext);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
 
-              CustomSnackbar.show(
-                context,
-                message: 'Program action deleted successfully',
-                type: SnackBarType.success,
-              );
+              if (context.mounted) {
+                if (error != null) {
+                  CustomSnackbar.show(
+                    context,
+                    message: error,
+                    type: SnackBarType.error,
+                  );
+                } else {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Program action deleted successfully',
+                    type: SnackBarType.success,
+                  );
+                }
+              }
             },
             child: const Text('Delete'),
           ),
