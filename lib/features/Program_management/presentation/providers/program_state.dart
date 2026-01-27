@@ -1,8 +1,8 @@
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 
 class ProgramState {
-  final List<ProgramManagementModel> all;
-  final List<ProgramManagementModel> filtered;
+  final List<ProgramModel> all;
+  final List<ProgramModel> filtered;
   final String search;
   final Set<int> selectedIds;
   final bool isMultiSelect;
@@ -42,8 +42,8 @@ class ProgramState {
   );
 
   ProgramState copyWith({
-    List<ProgramManagementModel>? all,
-    List<ProgramManagementModel>? filtered,
+    List<ProgramModel>? all,
+    List<ProgramModel>? filtered,
     String? search,
     Set<int>? selectedIds,
     bool? isMultiSelect,

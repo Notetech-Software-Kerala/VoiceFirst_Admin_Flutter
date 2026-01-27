@@ -4,7 +4,7 @@ import 'package:voice_first_admin/features/Program_management/models/program_man
 void main() {
   group('ProgramManagementModel', () {
     test('should create instance with required fields', () {
-      final program = ProgramManagementModel(
+      final program = ProgramModel(
         programName: 'Test Program',
         labelName: 'Test Label',
         programRoute: '/test',
@@ -22,7 +22,7 @@ void main() {
     });
 
     test('should create instance with optional fields', () {
-      final program = ProgramManagementModel(
+      final program = ProgramModel(
         sysProgramId: 10,
         programName: 'Test Program',
         labelName: 'Test Label',
@@ -48,7 +48,7 @@ void main() {
         'programActionIds': [1, 2, 3],
       };
 
-      final program = ProgramManagementModel.fromJson(json);
+      final program = ProgramModel.fromJson(json);
 
       expect(program.sysProgramId, 10);
       expect(program.programName, 'Dashboard');
@@ -67,7 +67,7 @@ void main() {
         'applicationId': 1,
       };
 
-      final program = ProgramManagementModel.fromJson(json);
+      final program = ProgramModel.fromJson(json);
 
       expect(program.sysProgramId, null);
       expect(program.companyId, null);
@@ -83,7 +83,7 @@ void main() {
         'programActionIds': [],
       };
 
-      final program = ProgramManagementModel.fromJson(json);
+      final program = ProgramModel.fromJson(json);
 
       expect(program.programActionIds, isEmpty);
     });
@@ -111,7 +111,7 @@ void main() {
     // });
 
     test('should convert to create JSON correctly', () {
-      final program = ProgramManagementModel(
+      final program = ProgramModel(
         programName: 'Test',
         labelName: 'Label',
         programRoute: '/test',
@@ -141,7 +141,7 @@ void main() {
         active: false,
       );
 
-      final program = ProgramManagementModel(
+      final program = ProgramModel(
         programName: 'Test',
         labelName: 'Label',
         programRoute: '/test',
@@ -177,7 +177,7 @@ void main() {
         ],
       };
 
-      final program = ProgramManagementModel.fromJson(json);
+      final program = ProgramModel.fromJson(json);
 
       expect(program.programActionIds, [1, 2]);
       expect(program.actions.length, 2);
@@ -187,7 +187,7 @@ void main() {
     });
 
     test('copyWith should create new instance with updated fields', () {
-      final program = ProgramManagementModel(
+      final program = ProgramModel(
         programName: 'Original',
         labelName: 'Label',
         programRoute: '/original',
@@ -209,7 +209,7 @@ void main() {
     });
 
     test('copyWith should keep original values when not specified', () {
-      final program = ProgramManagementModel(
+      final program = ProgramModel(
         sysProgramId: 10,
         programName: 'Original',
         labelName: 'Label',

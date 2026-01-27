@@ -12,7 +12,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
   ProgramState build() {
     return ProgramState.initial();
   }
-
+// Load all programs with optional filtering
   Future<void> loadAll({ProgramFilter? filter}) async {
     if (state.isLoading) return;
 
@@ -37,16 +37,6 @@ class ProgramNotifier extends Notifier<ProgramState> {
     }
   }
 
-  // void _load() {
-  //   // Build ProgramManagementModel list from SysProgram mock data.
-  //   // For now, initial action ids are empty and will be filled when adding.
-  //   final List<ProgramManagementModel> combined = mockPrograms
-  //       .map((prog) => ProgramManagementModel.fromProgram(prog, const []))
-  //       .toList();
-
-  //   state = state.copyWith(all: combined, filtered: combined);
-  // }
-
   Future<void> search(String query) async {
     state = state.copyWith(search: query);
     await loadAll(
@@ -68,32 +58,18 @@ class ProgramNotifier extends Notifier<ProgramState> {
     state = state.copyWith(filtered: _applyFilter(state.all));
   }
 
-  // void add(ProgramManagementModel program) {
-  //   final list = [...state.all, program];
-  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
-  // }
-
-  Future<void> add(ProgramManagementModel program) async {
+  //add
+  Future<void> add(ProgramModel program) async {
     _validate(program);
     final created = await _service.create(program);
     final list = [...state.all, created];
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
-  // Future<void> update(ProgramManagementModel updated) async {
-  //   if (updated.sysProgramId == null) {
-  //     throw Exception('Program id is required for update');
-  //   }
-  //   _validate(updated);
-  //   final saved = await _service.update(updated.sysProgramId!, updated);
-  //   final list = state.all
-  //       .map((p) => p.sysProgramId == saved.sysProgramId ? saved : p)
-  //       .toList();
-  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
-  // }
 
+//update
   Future<void> update(
-    ProgramManagementModel updated, {
+    ProgramModel updated, {
     bool updateBasic = false,
     bool updateActions = false,
     bool? updateActive,
@@ -119,30 +95,12 @@ class ProgramNotifier extends Notifier<ProgramState> {
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
-  // Future<String?> toggleStatus(int id, bool active) async {
-  //   try {
-  //     final program = state.all.firstWhere((p) => p.sysProgramId == id);
-
-  //     final updated = program.copyWith(active: active);
-  //     await _service.update(id, updated);
-
-  //     state = state.copyWith(
-  //       all: state.all.map((p) => p.sysProgramId == id ? updated : p).toList(),
-  //       filtered: _applyFilter(state.all),
-  //     );
-
-  //     return null;
-  //   } catch (e) {
-  //     debugPrint('Failed to toggle program status: $e');
-  //     return 'Failed to update program status';
-  //   }
-  // }
 
   Future<String?> toggleStatus(int id, bool active) async {
     try {
       await _service.update(
         id,
-        ProgramManagementModel(
+        ProgramModel(
           programName: '',
           labelName: '',
           programRoute: '',
@@ -209,20 +167,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
     }
   }
 
-  // Future<void> deleteSelected() async {
-  //   final ids = state.selectedIds.whereType<int>().toList();
-  //   if (ids.isEmpty) return;
-  //   await _service.bulkDelete(ids);
-  //   final list = state.all
-  //       .where((p) => !state.selectedIds.contains(p.sysProgramId))
-  //       .toList();
-  //   state = state.copyWith(
-  //     all: list,
-  //     filtered: _applyFilter(list),
-  //     selectedIds: {},
-  //     isMultiSelect: false,
-  //   );
-  // }
+
   Future<void> deleteSelected() async {
     final ids = state.selectedIds.whereType<int>().toList();
     if (ids.isEmpty) return;
@@ -263,7 +208,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
     state = state.copyWith(isMultiSelect: false, selectedIds: {});
   }
 
-  void _validate(ProgramManagementModel program) {
+  void _validate(ProgramModel program) {
     if (program.programName.trim().isEmpty) {
       throw Exception('Program name is required');
     }
@@ -289,9 +234,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
       state.selectedIds.length ==
           state.filtered.where((p) => p.sysProgramId != null).length;
 
-  List<ProgramManagementModel> _applyFilter(
-    List<ProgramManagementModel> source,
-  ) {
+  List<ProgramModel> _applyFilter(List<ProgramModel> source) {
     var list = source;
 
     // Filter by application

@@ -11,6 +11,15 @@ class DivisionOneModel {
     required this.status,
   });
 
+  factory DivisionOneModel.fromJson(Map<String, dynamic> json) {
+    return DivisionOneModel(
+      id: json['divOneId'].toString(),
+      countryId: json['countryId'].toString(),
+      name: json['divOneName'] ?? '',
+      status: json['active'] ?? false,
+    );
+  }
+
   DivisionOneModel copyWith({
     String? id,
     String? countryId,
@@ -25,4 +34,3 @@ class DivisionOneModel {
     );
   }
 }
-

@@ -1,41 +1,61 @@
 import 'package:voice_first_admin/features/Country%20Management/division3/models/division_three_model.dart';
 
 class DivisionThreeState {
-  final List<DivisionThreeModel> all;
-  final List<DivisionThreeModel> filtered;
+  final List<DivisionThreeModel> items;
+  final int currentPage;
+  final int totalPages;
+  final int totalCount;
+  final int pageSize;
+  final bool isLoading;
+  final bool hasMoreData;
   final String search;
-  final Set<String> selectedIds;
-  final bool isMultiSelect;
+  final String? error;
 
   const DivisionThreeState({
-    required this.all,
-    required this.filtered,
+    required this.items,
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalCount,
+    required this.pageSize,
+    required this.isLoading,
+    required this.hasMoreData,
     required this.search,
-    required this.selectedIds,
-    required this.isMultiSelect,
+    this.error,
   });
 
   factory DivisionThreeState.initial() => const DivisionThreeState(
-    all: [],
-    filtered: [],
+    items: [],
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    pageSize: 10,
+    isLoading: false,
+    hasMoreData: false,
     search: '',
-    selectedIds: {},
-    isMultiSelect: false,
+    error: null,
   );
 
   DivisionThreeState copyWith({
-    List<DivisionThreeModel>? all,
-    List<DivisionThreeModel>? filtered,
+    List<DivisionThreeModel>? items,
+    int? currentPage,
+    int? totalPages,
+    int? totalCount,
+    int? pageSize,
+    bool? isLoading,
+    bool? hasMoreData,
     String? search,
-    Set<String>? selectedIds,
-    bool? isMultiSelect,
+    String? error,
   }) {
     return DivisionThreeState(
-      all: all ?? this.all,
-      filtered: filtered ?? this.filtered,
+      items: items ?? this.items,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      totalCount: totalCount ?? this.totalCount,
+      pageSize: pageSize ?? this.pageSize,
+      isLoading: isLoading ?? this.isLoading,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
       search: search ?? this.search,
-      selectedIds: selectedIds ?? this.selectedIds,
-      isMultiSelect: isMultiSelect ?? this.isMultiSelect,
+      error: error,
     );
   }
 }

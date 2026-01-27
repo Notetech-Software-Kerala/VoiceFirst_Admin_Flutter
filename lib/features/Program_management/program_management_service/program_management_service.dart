@@ -9,9 +9,7 @@ import 'package:voice_first_admin/features/Program_Action/models/paginated_respo
 class ProgramManagementService {
   static const String _path = '/program';
 
-  Future<PaginatedResponse<ProgramManagementModel>> getAll(
-    ProgramFilter filter,
-  ) async {
+  Future<PaginatedResponse<ProgramModel>> getAll(ProgramFilter filter) async {
     final uri = Uri.parse(
       '${ApiEndpoints.baseUrl}$_path',
     ).replace(queryParameters: filter.toQueryParams());
@@ -28,9 +26,7 @@ class ProgramManagementService {
 
     if (data is List) {
       final items = data
-          .map(
-            (e) => ProgramManagementModel.fromJson(e as Map<String, dynamic>),
-          )
+          .map((e) => ProgramModel.fromJson(e as Map<String, dynamic>))
           .toList();
       return PaginatedResponse(
         items: items,
@@ -42,7 +38,7 @@ class ProgramManagementService {
     }
 
     final items = (data['items'] as List)
-        .map((e) => ProgramManagementModel.fromJson(e))
+        .map((e) => ProgramModel.fromJson(e))
         .toList();
 
     return PaginatedResponse(
@@ -54,7 +50,7 @@ class ProgramManagementService {
     );
   }
 
-  Future<ProgramManagementModel> create(ProgramManagementModel program) async {
+  Future<ProgramModel> create(ProgramModel program) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
 
     debugPrint('API REQUEST: POST $url');
@@ -71,37 +67,12 @@ class ProgramManagementService {
     }
 
     final jsonBody = jsonDecode(response.body);
-    return ProgramManagementModel.fromJson(jsonBody['data']);
+    return ProgramModel.fromJson(jsonBody['data']);
   }
 
-  //update
-
-  // Future<ProgramManagementModel> update(
-  //   int id,
-  //   ProgramManagementModel program,
-  // ) async {
-  //   final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
-
-  //   debugPrint('API REQUEST: PATCH $url');
-  //   debugPrint('Request Body: ${jsonEncode(program.toUpdateJson())}');
-
-  //   final response = await http.patch(
-  //     url,
-  //     headers: ApiEndpoints.defaultHeaders,
-  //     body: jsonEncode(program.toUpdateJson()),
-  //   );
-
-  //   if (response.statusCode != 200) {
-  //     throw Exception('Failed to update program: ${response.statusCode}');
-  //   }
-
-  //   final jsonBody = jsonDecode(response.body);
-  //   return ProgramManagementModel.fromJson(jsonBody['data']);
-  // }
-
-  Future<ProgramManagementModel> update(
+  Future<ProgramModel> update(
     int id,
-    ProgramManagementModel program, {
+    ProgramModel program, {
     bool updateBasic = false,
     bool updateActions = false,
     bool? updateActive,
@@ -128,7 +99,7 @@ class ProgramManagementService {
     }
 
     final jsonBody = jsonDecode(response.body);
-    return ProgramManagementModel.fromJson(jsonBody['data']);
+    return ProgramModel.fromJson(jsonBody['data']);
   }
 
   //delete

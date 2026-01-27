@@ -40,7 +40,7 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
     // backend accepts plain route, ensure leading slash if missing
     if (!route.startsWith('/')) route = '/$route';
 
-    final program = ProgramManagementModel(
+    final program = ProgramModel(
       sysProgramId: null,
       programName: name,
       labelName: label,
@@ -131,30 +131,7 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
                   loading: () => const LinearProgressIndicator(minHeight: 2),
                   error: (_, __) => const Text('Failed to load applications'),
                 ),
-            const SizedBox(height: 12),
-            // Row(
-            //   children: [
-            //     const Text('Company'),
-            //     const SizedBox(width: 12),
-            //     DropdownButton<int>(
-            //       value: _companyId,
-            //       hint: const Text('Select Company (optional)'),
-            //       items: mockCompanies
-            //           .map(
-            //             (c) => DropdownMenuItem<int>(
-            //               value: c.id,
-            //               child: Text(c.name),
-            //             ),
-            //           )
-            //           .toList(),
-            //       onChanged: (val) {
-            //         setState(() {
-            //           _companyId = val;
-            //         });
-            //       },
-            //     ),
-            //   ],
-            // ),
+
             const SizedBox(height: 16),
             Text(
               'Program Actions',

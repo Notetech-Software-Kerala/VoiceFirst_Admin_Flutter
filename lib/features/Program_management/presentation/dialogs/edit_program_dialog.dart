@@ -4,11 +4,7 @@ import 'package:voice_first_admin/features/Program_management/models/program_man
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
 
 class EditProgramDialog {
-  static void show(
-    BuildContext context,
-    WidgetRef ref,
-    ProgramManagementModel program,
-  ) {
+  static void show(BuildContext context, WidgetRef ref, ProgramModel program) {
     final nameCtrl = TextEditingController(text: program.programName);
     final labelCtrl = TextEditingController(text: program.labelName);
     final routeCtrl = TextEditingController(text: program.programRoute);

@@ -33,7 +33,7 @@ class ProgramActionSummary {
   }
 }
 
-class ProgramManagementModel {
+class ProgramModel {
   final int? sysProgramId;
   final String programName;
   final String labelName;
@@ -53,7 +53,7 @@ class ProgramManagementModel {
   final List<int> programActionIds;
   final List<ProgramActionSummary> actions;
 
-  const ProgramManagementModel({
+  const ProgramModel({
     this.sysProgramId,
     required this.programName,
     required this.labelName,
@@ -74,12 +74,12 @@ class ProgramManagementModel {
     this.actions = const [],
   });
 
-  factory ProgramManagementModel.fromJson(Map<String, dynamic> json) {
+  factory ProgramModel.fromJson(Map<String, dynamic> json) {
     final actionList = (json['action'] as List<dynamic>? ?? [])
         .map((e) => ProgramActionSummary.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    return ProgramManagementModel(
+    return ProgramModel(
       sysProgramId: json['programId'] as int?,
       programName: json['programName'] as String? ?? '',
       labelName: json['label'] as String? ?? '',
@@ -101,18 +101,6 @@ class ProgramManagementModel {
     );
   }
 
-  // Map<String, dynamic> toJson() {
-  //   return {
-  //     'programId': sysProgramId,
-  //     'programName': programName,
-  //     'label': labelName,
-  //     'route': programRoute,
-  //     'platformId': applicationId,
-  //     'companyId': companyId,
-  //     'actionIds': programActionIds,
-  //   };
-  // }
-
   Map<String, dynamic> toCreateJson() {
     return {
       'programName': programName,
@@ -123,18 +111,6 @@ class ProgramManagementModel {
       'actionIds': programActionIds,
     };
   }
-
-  // Map<String, dynamic> toUpdateJson() {
-  //   return {
-  //     'programName': programName,
-  //     'label': labelName,
-  //     'route': programRoute,
-  //     'platformId': applicationId,
-  //     'companyId': null,
-  //     'active': active,
-  //     'action': actions.map((a) => a.toUpdateJson()).toList(),
-  //   };
-  // }
 
   Map<String, dynamic> toUpdateJson({
     bool updateBasic = false,
@@ -162,7 +138,7 @@ class ProgramManagementModel {
     return body;
   }
 
-  ProgramManagementModel copyWith({
+  ProgramModel copyWith({
     int? sysProgramId,
     String? programName,
     String? labelName,
@@ -182,7 +158,7 @@ class ProgramManagementModel {
     List<int>? programActionIds,
     List<ProgramActionSummary>? actions,
   }) {
-    return ProgramManagementModel(
+    return ProgramModel(
       sysProgramId: sysProgramId ?? this.sysProgramId,
       programName: programName ?? this.programName,
       labelName: labelName ?? this.labelName,

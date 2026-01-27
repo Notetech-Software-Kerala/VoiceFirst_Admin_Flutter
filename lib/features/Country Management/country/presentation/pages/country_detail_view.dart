@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
 import '../providers/country_provider.dart';
-import '../dialogs/edit_country_dialog.dart';
-import '../dialogs/delete_country_dialog.dart';
+import '../providers/country_state.dart';
 
 class CountryDetailPage extends ConsumerWidget {
   final String countryId;
@@ -15,10 +14,33 @@ class CountryDetailPage extends ConsumerWidget {
     final primaryColor = const Color(0xFF0D7FF2);
     final state = ref.watch(countryProvider);
 
-    final country = state.countries
-        .where((c) => c.id == countryId)
-        .cast<CountryModel?>()
-        .firstOrNull;
+    if (state.isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Country Details'),
+          backgroundColor: primaryColor,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (state.error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Country Details'),
+          backgroundColor: primaryColor,
+        ),
+        body: Center(child: Text('Error: ${state.error}')),
+      );
+    }
+
+    CountryModel? country;
+    for (final c in state.countries) {
+      if (c.id == countryId) {
+        country = c;
+        break;
+      }
+    }
 
     if (country == null) {
       return Scaffold(
@@ -49,7 +71,7 @@ class CountryDetailPage extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.08),
+                color: primaryColor.withOpacity(0.08),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(24),
                   bottomRight: Radius.circular(24),
@@ -61,7 +83,7 @@ class CountryDetailPage extends ConsumerWidget {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.2),
+                      color: primaryColor.withOpacity(0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.public, size: 40, color: primaryColor),
@@ -86,17 +108,17 @@ class CountryDetailPage extends ConsumerWidget {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: (country.status ?? false)
-                                ? Colors.green.withValues(alpha: 0.15)
-                                : Colors.red.withValues(alpha: 0.15),
+                            color: country.status
+                                ? Colors.green.withOpacity(0.15)
+                                : Colors.red.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            country.status ?? false ? 'Active' : 'Inactive',
+                            country.status ? 'Active' : 'Inactive',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: (country.status ?? false)
+                              color: country.status
                                   ? Colors.green.shade700
                                   : Colors.red.shade700,
                             ),
@@ -174,60 +196,9 @@ class CountryDetailPage extends ConsumerWidget {
                     children: [
                       _DetailItem(
                         label: 'Status',
-                        value: country.status ?? false ? 'Active' : 'Inactive',
+                        value: country.status ? 'Active' : 'Inactive',
                         primaryColor: primaryColor,
-                        valueColor: country.status ?? false
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    children: [
-                      /// ✏️ Edit Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () =>
-                              EditCountryDialog.show(context, ref, country),
-                          icon: const Icon(Icons.edit, color: Colors.white),
-                          label: const Text(
-                            'Edit Country',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-
-                      /// 🗑 Delete Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => DeleteCountryDialog.show(
-                            context,
-                            ref,
-                            country.id,
-                            country.country,
-                          ),
-                          icon: const Icon(Icons.delete, color: Colors.white),
-                          label: const Text(
-                            'Delete Country',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade600,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
+                        valueColor: country.status ? Colors.green : Colors.red,
                       ),
                     ],
                   ),

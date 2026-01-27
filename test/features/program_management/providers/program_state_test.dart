@@ -5,7 +5,7 @@ import 'package:voice_first_admin/features/Program_management/presentation/provi
 void main() {
   group('ProgramState', () {
     final mockPrograms = [
-      const ProgramManagementModel(
+      const ProgramModel(
         sysProgramId: 1,
         programName: 'Dashboard',
         labelName: 'Dashboard',
@@ -13,7 +13,7 @@ void main() {
         applicationId: 1,
         programActionIds: [1, 2],
       ),
-      const ProgramManagementModel(
+      const ProgramModel(
         sysProgramId: 2,
         programName: 'Settings',
         labelName: 'Settings',

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division2/models/DivisionTwoModel';
+import 'package:voice_first_admin/features/Country%20Management/division2/models/division2_filter.dart';
 import 'package:voice_first_admin/features/Country%20Management/division3/presentation/pages/view_division3.dart';
 import '../providers/division_two_provider.dart';
-import '../dialogs/delete_division2_dialog.dart';
-import '../dialogs/edit_division2_dialog.dart';
 
-class DivisionTwoView extends ConsumerWidget {
+class DivisionTwoView extends ConsumerStatefulWidget {
   final CountryModel country;
   final DivisionOneModel divisionOne;
 
@@ -20,23 +20,52 @@ class DivisionTwoView extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(divisionTwoProvider(divisionOne.id));
-    final notifier = ref.read(divisionTwoProvider(divisionOne.id).notifier);
+  ConsumerState<DivisionTwoView> createState() => _DivisionTwoViewState();
+}
+
+class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
+  final TextEditingController _searchController = TextEditingController();
+  static const int _pageSize = 10;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int page) {
+    final notifier = ref.read(
+      divisionTwoProvider(widget.divisionOne.id).notifier,
+    );
+    notifier.loadAll(
+      filter: DivisionTwoFilter(
+        divisionOneId: widget.divisionOne.id,
+        pageNumber: page,
+        pageSize: _pageSize,
+        searchText: _searchController.text.isEmpty
+            ? null
+            : _searchController.text,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(divisionTwoProvider(widget.divisionOne.id));
+    final notifier = ref.read(
+      divisionTwoProvider(widget.divisionOne.id).notifier,
+    );
 
     final primaryColor = const Color(0xFF0D7FF2);
+    final label = widget.country.divisionTwoLabel ?? 'Division 2';
 
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // ───────────────── AppBar ─────────────────
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 0,
         title: Text(
-          state.isMultiSelect
-              ? '${state.selectedIds.length} selected'
-              : (country.divisionTwoLabel ?? 'Division 2'),
+          state.isMultiSelect ? '${state.selectedIds.length} selected' : label,
           style: const TextStyle(color: Colors.white),
         ),
         leading: state.isMultiSelect
@@ -49,7 +78,6 @@ class DivisionTwoView extends ConsumerWidget {
                 onPressed: () => Navigator.pop(context),
               ),
         actions: [
-          /// Select
           if (!state.isMultiSelect)
             TextButton(
               onPressed: notifier.enterSelectionMode,
@@ -58,39 +86,15 @@ class DivisionTwoView extends ConsumerWidget {
                 style: TextStyle(color: Colors.white),
               ),
             ),
-
-          /// Select All / Clear All
-          if (state.isMultiSelect)
-            TextButton(
-              onPressed: () => notifier.enterSelectionMode(
-                selectAll: !notifier.allVisibleSelected,
-              ),
-              child: Text(
-                notifier.allVisibleSelected ? 'Clear All' : 'Select All',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// Delete
           if (state.isMultiSelect)
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.white),
-              onPressed: () {
-                notifier.deleteSelected();
-                CustomSnackbar.show(
-                  context,
-                  message: 'Selected divisions deleted',
-                  type: SnackBarType.success,
-                );
-              },
+              onPressed: notifier.exitSelectionMode,
+              icon: const Icon(Icons.close, color: Colors.white),
             ),
         ],
       ),
-
-      // ───────────────── Body ─────────────────
       body: Column(
         children: [
-          // 🔍 Search
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -100,30 +104,39 @@ class DivisionTwoView extends ConsumerWidget {
                 bottomRight: Radius.circular(16),
               ),
             ),
-            child: TextField(
-              onChanged: notifier.search,
-              decoration: InputDecoration(
-                hintText: 'Search divisions...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search $label...',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (value) => notifier.search(value),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => notifier.search(_searchController.text),
+                  child: const Text('Search'),
+                ),
+              ],
             ),
           ),
-
-          // 📋 List
           Expanded(
-            child: state.filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      'No divisions found',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  )
+            child: state.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state.error != null
+                ? Center(child: Text(state.error!))
+                : state.filtered.isEmpty
+                ? Center(child: Text('No $label found'))
                 : ListView.builder(
                     itemCount: state.filtered.length,
                     itemBuilder: (context, index) {
@@ -136,18 +149,12 @@ class DivisionTwoView extends ConsumerWidget {
                           if (state.isMultiSelect) {
                             notifier.toggleSelection(d.id);
                           } else {
-                            // Navigate to division3 or detail
-                            // CustomSnackbar.show(
-                            //   context,
-                            //   message: 'View ${d.name}',
-                            //   type: SnackBarType.info,
-                            // );
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => DivisionThreeView(
-                                  country: country,
-                                  divisionOne: divisionOne,
+                                  country: widget.country,
+                                  divisionOne: widget.divisionOne,
                                   divisionTwo: d,
                                 ),
                               ),
@@ -168,106 +175,14 @@ class DivisionTwoView extends ConsumerWidget {
                                 ? BorderSide(color: primaryColor, width: 1.5)
                                 : BorderSide.none,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                // ☐ Checkbox
-                                if (state.isMultiSelect)
-                                  Checkbox(
-                                    value: selected,
-                                    onChanged: (_) =>
-                                        notifier.toggleSelection(d.id),
-                                    activeColor: primaryColor,
-                                  ),
-
-                                // 📄 Division info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        d.name,
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // 🔀 Status toggle
-                                if (!state.isMultiSelect)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Transform.scale(
-                                        scale:
-                                            0.75, // 👈 adjust between 0.6 – 0.8
-                                        child: Switch(
-                                          value: d.status,
-                                          onChanged: (val) {
-                                            notifier.toggleStatus(d.id, val);
-                                            CustomSnackbar.show(
-                                              context,
-                                              message:
-                                                  '${d.name} ${val ? 'enabled' : 'disabled'}',
-                                              type: SnackBarType.info,
-                                            );
-                                          },
-                                          activeThumbColor: Colors.green,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-
-                                      PopupMenuButton<String>(
-                                        icon: const Icon(Icons.more_vert),
-                                        onSelected: (value) {
-                                          if (value == 'view') {
-                                            CustomSnackbar.show(
-                                              context,
-                                              message: 'View ${d.name}',
-                                              type: SnackBarType.info,
-                                            );
-                                          } else if (value == 'update') {
-                                            EditDivisionTwoDialog.show(
-                                              context,
-                                              ref,
-                                              divisionOne.id,
-                                              d,
-                                            );
-                                          } else if (value == 'delete') {
-                                            DeleteDivisionTwoDialog.show(
-                                              context,
-                                              ref,
-                                              divisionOne.id,
-                                              d.id,
-                                              d.name,
-                                            );
-                                          }
-                                        },
-                                        itemBuilder: (context) => const [
-                                          PopupMenuItem(
-                                            value: 'view',
-                                            child: Text('View Details'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'update',
-                                            child: Text('Update'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Text('Delete'),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                              ],
+                          child: ListTile(
+                            title: Text(d.name),
+                            trailing: TextButton.icon(
+                              icon: const Icon(Icons.visibility),
+                              label: const Text('View'),
+                              onPressed: () {
+                                // Implement more options if needed
+                              },
                             ),
                           ),
                         ),
@@ -275,20 +190,53 @@ class DivisionTwoView extends ConsumerWidget {
                     },
                   ),
           ),
+          if (state.filtered.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade300,
+                    blurRadius: 6,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Builder(
+                      builder: (_) {
+                        final start = (state.currentPage - 1) * _pageSize + 1;
+                        final end = start + state.filtered.length - 1;
+                        return Text(
+                          '$start-$end of ${state.totalCount}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      },
+                    ),
+                  ),
+                  PaginationControls(
+                    currentPage: state.currentPage,
+                    totalCount: state.totalCount,
+                    pageSize: _pageSize,
+                    isLoading: state.isLoading,
+                    hasMoreData: state.hasMoreData,
+                    onPageChanged: _goToPage,
+                    primaryColor: primaryColor,
+                  ),
+                ],
+              ),
+            ),
         ],
-      ),
-
-      // ➕ FAB
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: primaryColor,
-        onPressed: () {
-          CustomSnackbar.show(
-            context,
-            message: 'Add Division (mock)',
-            type: SnackBarType.info,
-          );
-        },
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

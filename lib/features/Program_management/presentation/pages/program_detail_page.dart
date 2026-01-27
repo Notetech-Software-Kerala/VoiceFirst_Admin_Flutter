@@ -9,7 +9,7 @@ import 'package:voice_first_admin/features/Program_Action/presentation/providers
 class ProgramDetailPage extends ConsumerStatefulWidget {
   const ProgramDetailPage({super.key, required this.program});
 
-  final ProgramManagementModel program;
+  final ProgramModel program;
 
   @override
   ConsumerState<ProgramDetailPage> createState() => _ProgramDetailPageState();
@@ -65,18 +65,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
     if (!route.startsWith('/')) route = '/$route';
 
-    // final updated = widget.program.copyWith(
-    //   programName: name,
-    //   labelName: label,
-    //   programRoute: route,
-    //   applicationId: _applicationId,
-    //   companyId: null,
-    //   actions: widget.program.actions
-    //       .where((a) => _selectedActionIds.contains(a.actionId))
-    //       .toList(),
-    // );
-
-    // ref.read(programProvider.notifier).update(updated);
     final updated = widget.program.copyWith(
       programName: name,
       labelName: label,
@@ -257,41 +245,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
                   const SizedBox(height: 24),
 
-                  // /// 🔹 PROGRAM ACTIONS
-                  // _DetailSection(
-                  //   title: 'Program Actions',
-                  //   primaryColor: primaryColor,
-                  //   children: [
-                  //     ref
-                  //         .watch(programActionLookupProvider)
-                  //         .when(
-                  //           data: (actions) {
-                  //             final idToName = {
-                  //               for (final a in actions)
-                  //                 a.actionId: a.actionName,
-                  //             };
-
-                  //             return Wrap(
-                  //               spacing: 8,
-                  //               runSpacing: 8,
-                  //               children: _selectedActionIds
-                  //                   .map(
-                  //                     (id) => Chip(
-                  //                       label: Text(
-                  //                         idToName[id] ?? 'Action #$id',
-                  //                       ),
-                  //                     ),
-                  //                   )
-                  //                   .toList(),
-                  //             );
-                  //           },
-                  //           loading: () =>
-                  //               const LinearProgressIndicator(minHeight: 2),
-                  //           error: (_, __) =>
-                  //               const Text('Failed to load actions'),
-                  //         ),
-                  //   ],
-                  // ),
                   /// 🔹 PROGRAM ACTIONS
                   _DetailSection(
                     title: 'Program Actions',

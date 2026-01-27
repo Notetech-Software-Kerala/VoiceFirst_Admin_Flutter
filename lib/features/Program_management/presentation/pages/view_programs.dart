@@ -143,21 +143,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                     ),
                   ),
                 ),
-                // const SizedBox(height: 12),
-                // SingleChildScrollView(
-                //   scrollDirection: Axis.horizontal,
-                //   child: Row(
-                //     children: [
-                //       SizedBox(
-                //         width: 160,
-                //         height: 55,
-                //         child: _ApplicationFilter(),
-                //       ),
-                //       const SizedBox(width: 8),
-                //       SizedBox(width: 130, height: 55, child: _CompanyFilter()),
-                //     ],
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -243,13 +228,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          // Text(
-                                          //   program.programName,
-                                          //   style: const TextStyle(
-                                          //     fontSize: 16,
-                                          //     fontWeight: FontWeight.bold,
-                                          //   ),
-                                          // ),
                                           Text(
                                             program.programName,
                                             style: TextStyle(
@@ -258,9 +236,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                                               color: isDeleted
                                                   ? Colors.red
                                                   : Colors.black,
-                                              // decoration: isDeleted
-                                              //     ? TextDecoration.lineThrough
-                                              //     : null,
                                             ),
                                           ),
 
@@ -273,45 +248,10 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                                             ),
                                           ),
                                           const SizedBox(height: 4),
-                                          // Text(
-                                          //   'Route: ${program.programRoute}',
-                                          //   style: TextStyle(
-                                          //     color: Colors.grey[600],
-                                          //     fontSize: 12,
-                                          //   ),
-                                          // ),
-                                          // const SizedBox(height: 2),
-                                          // Text(
-                                          //   'App: ${program.applicationId}${program.companyId != null ? ' | Company: ${program.companyId}' : ''}',
-                                          //   style: TextStyle(
-                                          //     color: Colors.grey[600],
-                                          //     fontSize: 11,
-                                          //   ),
-                                          // ),
                                         ],
                                       ),
                                     ),
-                                    // if (!state.isMultiSelect && id != null)
-                                    //   Row(
-                                    //     mainAxisSize: MainAxisSize.min,
-                                    //     children: [
-                                    //       IconButton(
-                                    //         icon: const Icon(
-                                    //           Icons.delete,
-                                    //           color: Colors.red,
-                                    //           size: 20,
-                                    //         ),
-                                    //         onPressed: () {
-                                    //           DeleteProgramDialog.show(
-                                    //             context,
-                                    //             ref,
-                                    //             id,
-                                    //             program.programName,
-                                    //           );
-                                    //         },
-                                    //       ),
-                                    //     ],
-                                    //   ),
+
                                     if (!state.isMultiSelect &&
                                         id != null &&
                                         !isDeleted)
@@ -341,20 +281,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                                             ),
 
                                           // 🗑 DELETE
-                                          // IconButton(
-                                          //   icon: const Icon(
-                                          //     Icons.delete,
-                                          //     color: Colors.red,
-                                          //   ),
-                                          //   onPressed: () {
-                                          //     DeleteProgramDialog.show(
-                                          //       context,
-                                          //       ref,
-                                          //       id,
-                                          //       program.programName,
-                                          //     );
-                                          //   },
-                                          // ),
                                           IconButton(
                                             icon: const Icon(
                                               Icons.delete,
@@ -519,6 +445,153 @@ class _CompanyFilter extends ConsumerWidget {
           notifier.setCompanyFilter(int.tryParse(value.trim()));
         }
       },
+    );
+  }
+}
+
+class _ProgramCard extends StatelessWidget {
+  final String name;
+  final String label;
+  final bool isDeleted;
+  final bool isActive;
+  final bool selected;
+  final bool showCheckbox;
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
+  final ValueChanged<bool>? onToggle;
+
+  const _ProgramCard({
+    required this.name,
+    required this.label,
+    required this.isDeleted,
+    required this.isActive,
+    required this.selected,
+    required this.showCheckbox,
+    this.onTap,
+    this.onDelete,
+    this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF0D7FF2);
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected ? primaryColor.withOpacity(0.12) : theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: selected ? Border.all(color: primaryColor, width: 1.5) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showCheckbox)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Checkbox(value: selected, onChanged: (_) {}),
+              ),
+
+            /// ICON
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.extension_rounded, color: primaryColor),
+            ),
+
+            const SizedBox(width: 16),
+
+            /// TEXT CONTENT
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDeleted ? Colors.red : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  /// STATUS CHIP
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDeleted
+                          ? Colors.red.withOpacity(0.15)
+                          : isActive
+                          ? Colors.green.withOpacity(0.15)
+                          : Colors.orange.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isDeleted
+                          ? 'DELETED'
+                          : isActive
+                          ? 'ACTIVE'
+                          : 'INACTIVE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isDeleted
+                            ? Colors.red
+                            : isActive
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// ACTIONS
+            if (!isDeleted)
+              Column(
+                children: [
+                  Transform.scale(
+                    scale: 0.75,
+                    child: Switch(value: isActive, onChanged: onToggle),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

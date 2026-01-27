@@ -1,86 +1,57 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country%20Management/division1/presentation/providers/division_one_mockdata.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:voice_first_admin/features/Country Management/division1/division1_service/division1_service.dart';
+import 'package:voice_first_admin/features/Country Management/division1/models/division1_filter.dart';
 import 'division_one_state.dart';
 
-// class DivisionOneNotifier extends FamilyNotifier<DivisionOneState, String> {
-//   @override
-//   DivisionOneState build(String countryId) {
-//     final data = mockDivisionOne
-//         .where((d) => d.countryId == countryId)
-//         .toList();
+class DivisionOneNotifier extends StateNotifier<DivisionOneState> {
+  final DivisionOneService _service;
+  final String countryId;
 
-//     return DivisionOneState.initial().copyWith(all: data, filtered: data);
-//   }
-
-class DivisionOneNotifier extends Notifier<DivisionOneState> {
-  String _countryId = '';
-
-  @override
-  DivisionOneState build() {
-    return DivisionOneState.initial();
+  DivisionOneNotifier({
+    required this.countryId,
+    required DivisionOneService service,
+  }) : _service = service,
+       super(DivisionOneState.initial()) {
+    loadAll(filter: const DivisionOneFilter(pageNumber: 1, pageSize: 10));
   }
 
-  void initialize(String countryId) {
-    _countryId = countryId;
-    final data = mockDivisionOne
-        .where((d) => d.countryId == countryId)
-        .toList();
-    state = state.copyWith(all: data, filtered: data);
+  Future<void> loadAll({DivisionOneFilter? filter}) async {
+    if (state.isLoading) return;
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await _service.getAll(
+        countryId,
+        filter ?? const DivisionOneFilter(pageNumber: 1, pageSize: 10),
+      );
+
+      state = state.copyWith(
+        all: response.items,
+        filtered: response.items,
+        isLoading: false,
+        hasMoreData: response.pageNumber < response.totalPages,
+        currentPage: response.pageNumber,
+        totalCount: response.totalCount,
+        totalPages: response.totalPages,
+        error: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to load divisions',
+      );
+    }
   }
 
   // 🔍 Search
-  void search(String query) {
-    final filtered = query.isEmpty
-        ? state.all
-        : state.all
-              .where((d) => d.name.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-
-    state = state.copyWith(search: query, filtered: filtered);
-  }
-
-  // ➕ Add
-  void add(DivisionOneModel d) {
-    final list = [...state.all, d];
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
-  }
-
-  // ✏️ Update
-  void update(DivisionOneModel updated) {
-    final list = state.all
-        .map((d) => d.id == updated.id ? updated : d)
-        .toList();
-
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
-  }
-
-  // 🔄 Status
-  void toggleStatus(String id, bool status) {
-    final list = state.all
-        .map((d) => d.id == id ? d.copyWith(status: status) : d)
-        .toList();
-
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
-  }
-
-  // ❌ Delete
-  void delete(String id) {
-    final list = state.all.where((d) => d.id != id).toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
-  }
-
-  // ❌ Delete selected
-  void deleteSelected() {
-    final list = state.all
-        .where((d) => !state.selectedIds.contains(d.id))
-        .toList();
-
-    state = state.copyWith(
-      all: list,
-      filtered: _applyFilter(list),
-      selectedIds: {},
-      isMultiSelect: false,
+  Future<void> search(String query) async {
+    state = state.copyWith(search: query);
+    await loadAll(
+      filter: DivisionOneFilter(
+        pageNumber: 1,
+        pageSize: 10,
+        searchText: query.isEmpty ? null : query,
+      ),
     );
   }
 
@@ -112,12 +83,4 @@ class DivisionOneNotifier extends Notifier<DivisionOneState> {
   bool get allVisibleSelected =>
       state.filtered.isNotEmpty &&
       state.selectedIds.length == state.filtered.length;
-
-  List<DivisionOneModel> _applyFilter(List<DivisionOneModel> list) {
-    if (state.search.isEmpty) return list;
-
-    return list
-        .where((d) => d.name.toLowerCase().contains(state.search.toLowerCase()))
-        .toList();
-  }
 }
