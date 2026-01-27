@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:voice_first_admin/core/config/api_endpints.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 
@@ -40,17 +41,15 @@ class PaginatedResponse<T> {
 }
 
 class BusinessActivityService {
-  static const String _baseUrl = 'http://192.168.0.202:8010/api';
-
   Future<BusinessActivity> createActivity(String name) async {
-    final url = Uri.parse('$_baseUrl/business-activity');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity');
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: {"activityName":"$name"}');
 
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: ApiEndpoints.defaultHeaders,
       body: jsonEncode({'activityName': name}),
     );
 
@@ -66,7 +65,7 @@ class BusinessActivityService {
     BusinessActivityFilter filter,
   ) async {
     final url = Uri.parse(
-      '$_baseUrl/business-activity',
+      '${ApiEndpoints.baseUrl}/business-activity',
     ).replace(queryParameters: filter.toQueryParams());
 
     debugPrint('API REQUEST: GET $url');
@@ -89,14 +88,11 @@ class BusinessActivityService {
   }
 
   Future<BusinessActivity> getActivityById(int id) async {
-    final url = Uri.parse('$_baseUrl/business-activity/$id');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
 
     debugPrint('API REQUEST: GET $url');
 
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
+    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load activity: ${response.statusCode}');
@@ -106,7 +102,6 @@ class BusinessActivityService {
     return BusinessActivity.fromJson(json['data']);
   }
 
- 
   Future<BusinessActivity> updateActivity({
     required int id,
     String? activityName,
@@ -124,14 +119,14 @@ class BusinessActivityService {
     if (active != null) {
       body['active'] = active;
     }
-    final url = Uri.parse('$_baseUrl/business-activity/$id');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
 
     debugPrint('API REQUEST: PATCH $url');
     debugPrint('Request Body: ${jsonEncode(body)}');
 
     final response = await http.patch(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: ApiEndpoints.defaultHeaders,
       body: jsonEncode(body),
     );
 
@@ -144,14 +139,16 @@ class BusinessActivityService {
   }
 
   Future<void> toggleStatus(int id, bool active) async {
-    final url = Uri.parse('$_baseUrl/business-activity/$id/status');
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/business-activity/$id/status',
+    );
 
     debugPrint('API REQUEST: PATCH $url');
     debugPrint('Request Body: ${jsonEncode({'active': active})}');
 
     final response = await http.patch(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: ApiEndpoints.defaultHeaders,
       body: jsonEncode({'active': active}),
     );
 
@@ -161,13 +158,15 @@ class BusinessActivityService {
   }
 
   Future<void> recoverActivity(int id) async {
-    final url = Uri.parse('$_baseUrl/business-activity/recover/$id');
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/business-activity/recover/$id',
+    );
 
     debugPrint('API REQUEST: PATCH $url');
 
     final response = await http.patch(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: ApiEndpoints.defaultHeaders,
     );
 
     if (response.statusCode != 200) {
@@ -176,13 +175,13 @@ class BusinessActivityService {
   }
 
   Future<void> deleteActivity(int id) async {
-    final url = Uri.parse('$_baseUrl/business-activity/$id');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
 
     debugPrint('API REQUEST: DELETE $url');
 
     final response = await http.delete(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: ApiEndpoints.defaultHeaders,
     );
 
     if (response.statusCode != 200) {
@@ -191,14 +190,16 @@ class BusinessActivityService {
   }
 
   Future<void> bulkDelete(List<int> ids) async {
-    final url = Uri.parse('$_baseUrl/business-activity/bulk-delete');
+    final url = Uri.parse(
+      '${ApiEndpoints.baseUrl}/business-activity/bulk-delete',
+    );
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: {"ids":$ids}');
 
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: ApiEndpoints.defaultHeaders,
       body: jsonEncode({'ids': ids}),
     );
 

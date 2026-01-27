@@ -1,37 +1,80 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:voice_first_admin/features/Country Management/division2/division2_service/division2_service.dart';
+import 'package:voice_first_admin/features/Country Management/division2/models/division2_filter.dart';
 import 'package:voice_first_admin/features/Country%20Management/division2/models/DivisionTwoModel';
-import 'package:voice_first_admin/features/Country%20Management/division2/presentation/providers/division_two_mockdata.dart';
 import 'division_two_state.dart';
 
 class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
+  final DivisionTwoService _service;
   final String divisionOneId;
 
-  DivisionTwoNotifier(this.divisionOneId) : super(DivisionTwoState.initial()) {
-    _load();
+  DivisionTwoNotifier({
+    required this.divisionOneId,
+    required DivisionTwoService service,
+  }) : _service = service,
+       super(DivisionTwoState.initial()) {
+    loadAll(
+      filter: DivisionTwoFilter(
+        divisionOneId: divisionOneId,
+        pageNumber: 1,
+        pageSize: 10,
+      ),
+    );
   }
 
-  void _load() {
-    final data = mockDivisionTwo
-        .where((d) => d.divisionOneId == divisionOneId)
-        .toList();
-    state = state.copyWith(all: data, filtered: data);
+  Future<void> loadAll({DivisionTwoFilter? filter}) async {
+    if (state.isLoading) return;
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final response = await _service.getAll(
+        filter ??
+            DivisionTwoFilter(
+              divisionOneId: divisionOneId,
+              pageNumber: 1,
+              pageSize: 10,
+            ),
+      );
+
+      state = state.copyWith(
+        all: response.items,
+        filtered: response.items,
+        isLoading: false,
+        hasMoreData: response.pageNumber < response.totalPages,
+        currentPage: response.pageNumber,
+        totalCount: response.totalCount,
+        totalPages: response.totalPages,
+        error: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Failed to load divisions',
+      );
+    }
   }
 
-  void search(String query) {
-    final filtered = query.isEmpty
-        ? state.all
-        : state.all
-              .where((d) => d.name.toLowerCase().contains(query.toLowerCase()))
-              .toList();
-    state = state.copyWith(search: query, filtered: filtered);
+  // 🔍 Backend Search
+  Future<void> search(String query) async {
+    state = state.copyWith(search: query);
+    await loadAll(
+      filter: DivisionTwoFilter(
+        divisionOneId: divisionOneId,
+        pageNumber: 1,
+        pageSize: 10,
+        searchText: query.isEmpty ? null : query,
+      ),
+    );
   }
 
+  // ➕ Add
   void add(DivisionTwoModel d) {
     final list = [...state.all, d];
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
+  // ✏️ Update
   void update(DivisionTwoModel updated) {
     final list = state.all
         .map((d) => d.id == updated.id ? updated : d)
@@ -39,6 +82,7 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
+  // 🔄 Status
   void toggleStatus(String id, bool status) {
     final list = state.all
         .map((d) => d.id == id ? d.copyWith(status: status) : d)
@@ -46,15 +90,18 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
+  // ❌ Delete
   void delete(String id) {
     final list = state.all.where((d) => d.id != id).toList();
     state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
+  // ❌ Delete selected
   void deleteSelected() {
     final list = state.all
         .where((d) => !state.selectedIds.contains(d.id))
         .toList();
+
     state = state.copyWith(
       all: list,
       filtered: _applyFilter(list),
@@ -63,16 +110,17 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
     );
   }
 
+  // ☑️ Selection
   void toggleSelection(String id) {
     final selected = {...state.selectedIds};
     selected.contains(id) ? selected.remove(id) : selected.add(id);
+
     state = state.copyWith(
       selectedIds: selected,
       isMultiSelect: selected.isNotEmpty,
     );
   }
 
-  // ➕ Enter selection mode
   void enterSelectionMode({bool selectAll = false}) {
     final selected = <String>{};
 
@@ -83,7 +131,6 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
   }
 
-  // ❌ Exit selection mode
   void exitSelectionMode() {
     state = state.copyWith(isMultiSelect: false, selectedIds: {});
   }

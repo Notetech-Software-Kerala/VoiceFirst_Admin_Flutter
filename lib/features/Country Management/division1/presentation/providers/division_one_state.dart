@@ -1,48 +1,4 @@
-// import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
-
-// class DivisionOneState {
-//   final List<DivisionOne> divisions;
-//   final List<DivisionOne> filtered;
-//   final Set<String> selectedIds;
-//   final bool isMultiSelect;
-//   final String search;
-
-//   DivisionOneState({
-//     required this.divisions,
-//     required this.filtered,
-//     required this.selectedIds,
-//     required this.isMultiSelect,
-//     required this.search,
-//   });
-
-//   factory DivisionOneState.initial() {
-//     return DivisionOneState(
-//       divisions: [],
-//       filtered: [],
-//       selectedIds: {},
-//       isMultiSelect: false,
-//       search: '',
-//     );
-//   }
-
-//   DivisionOneState copyWith({
-//     List<DivisionOne>? divisions,
-//     List<DivisionOne>? filtered,
-//     Set<String>? selectedIds,
-//     bool? isMultiSelect,
-//     String? search,
-//   }) {
-//     return DivisionOneState(
-//       divisions: divisions ?? this.divisions,
-//       filtered: filtered ?? this.filtered,
-//       selectedIds: selectedIds ?? this.selectedIds,
-//       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
-//       search: search ?? this.search,
-//     );
-//   }
-// }
-
-import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
+import 'package:voice_first_admin/features/Country Management/division1/models/division1_model.dart';
 
 class DivisionOneState {
   final List<DivisionOneModel> all;
@@ -50,6 +6,12 @@ class DivisionOneState {
   final bool isMultiSelect;
   final Set<String> selectedIds;
   final String search;
+  final bool isLoading;
+  final String? error;
+  final bool hasMoreData;
+  final int currentPage;
+  final int totalCount;
+  final int totalPages;
 
   DivisionOneState({
     required this.all,
@@ -57,6 +19,12 @@ class DivisionOneState {
     required this.isMultiSelect,
     required this.selectedIds,
     required this.search,
+    required this.isLoading,
+    this.error,
+    required this.hasMoreData,
+    required this.currentPage,
+    required this.totalCount,
+    required this.totalPages,
   });
 
   factory DivisionOneState.initial() => DivisionOneState(
@@ -65,6 +33,12 @@ class DivisionOneState {
     isMultiSelect: false,
     selectedIds: {},
     search: '',
+    isLoading: false,
+    error: null,
+    hasMoreData: true,
+    currentPage: 1,
+    totalCount: 0,
+    totalPages: 1,
   );
 
   DivisionOneState copyWith({
@@ -73,6 +47,12 @@ class DivisionOneState {
     bool? isMultiSelect,
     Set<String>? selectedIds,
     String? search,
+    bool? isLoading,
+    String? error,
+    bool? hasMoreData,
+    int? currentPage,
+    int? totalCount,
+    int? totalPages,
   }) {
     return DivisionOneState(
       all: all ?? this.all,
@@ -80,6 +60,12 @@ class DivisionOneState {
       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
       selectedIds: selectedIds ?? this.selectedIds,
       search: search ?? this.search,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
+      currentPage: currentPage ?? this.currentPage,
+      totalCount: totalCount ?? this.totalCount,
+      totalPages: totalPages ?? this.totalPages,
     );
   }
 }

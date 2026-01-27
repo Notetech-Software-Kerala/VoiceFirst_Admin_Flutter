@@ -6,7 +6,7 @@ class CountryModel {
   final String? divisionOneLabel;
   final String? divisionTwoLabel;
   final String? divisionThreeLabel;
-  final bool? status;
+  final bool status;
 
   CountryModel({
     required this.id,
@@ -16,54 +16,19 @@ class CountryModel {
     this.divisionOneLabel,
     this.divisionTwoLabel,
     this.divisionThreeLabel,
-    this.status = false,
+    required this.status,
   });
-
-  CountryModel copyWith({
-    String? id,
-    String? country,
-    String? countryCode,
-    String? countryIsoCode,
-    String? divisionOneLabel,
-    String? divisionTwoLabel,
-    String? divisionThreeLabel,
-    bool? status,
-  }) {
-    return CountryModel(
-      id: id ?? this.id,
-      country: country ?? this.country,
-      countryCode: countryCode ?? this.countryCode,
-      countryIsoCode: countryIsoCode ?? this.countryIsoCode,
-      divisionOneLabel: divisionOneLabel ?? this.divisionOneLabel,
-      divisionTwoLabel: divisionTwoLabel ?? this.divisionTwoLabel,
-      divisionThreeLabel: divisionThreeLabel ?? this.divisionThreeLabel,
-      status: status ?? this.status,
-    );
-  }
 
   factory CountryModel.fromJson(Map<String, dynamic> json) {
     return CountryModel(
-      id: json['id'] ?? '',
-      country: json['country'] ?? '',
-      countryCode: json['countryCode'] ?? '',
-      countryIsoCode: json['countryIsoCode'],
-      divisionOneLabel: json['divisionOneLabel'],
-      divisionTwoLabel: json['divisionTwoLabel'],
-      divisionThreeLabel: json['divisionThreeLabel'],
-      status: json['status'] ?? false,
+      id: json['countryId'].toString(),
+      country: json['countryName'] ?? '',
+      countryCode: json['dialCode'] ?? '',
+      countryIsoCode: json['isoAlphaTwo'],
+      divisionOneLabel: json['divisionOne'],
+      divisionTwoLabel: json['divisionTwo'],
+      divisionThreeLabel: json['divisionThree'],
+      status: json['active'] ?? false,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'country': country,
-      'countryCode': countryCode,
-      'countryIsoCode': countryIsoCode,
-      'divisionOneLabel': divisionOneLabel,
-      'divisionTwoLabel': divisionTwoLabel,
-      'divisionThreeLabel': divisionThreeLabel,
-      'status': status,
-    };
   }
 }

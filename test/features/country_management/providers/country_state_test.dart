@@ -15,75 +15,71 @@ void main() {
       ),
     ];
 
-    test('initial state should be created with provided countries', () {
-      final state = CountryState.initial(mockCountries);
-
-      expect(state.countries, mockCountries);
-      expect(state.filtered, mockCountries);
-      expect(state.selectedIds, isEmpty);
-      expect(state.isMultiSelect, false);
+    test('initial state should be created with default values', () {
+      final state = CountryState.initial();
+      expect(state.countries, isEmpty);
+      expect(state.filtered, isEmpty);
+      expect(state.search, '');
+      expect(state.isLoading, false);
+      expect(state.hasMoreData, true);
+      expect(state.currentPage, 1);
+      expect(state.totalCount, 0);
+      expect(state.totalPages, 1);
+      expect(state.error, null);
     });
 
     test('copyWith should create new state with updated fields', () {
-      final state = CountryState.initial(mockCountries);
+      final state = CountryState(
+        countries: mockCountries,
+        filtered: mockCountries,
+        search: '',
+        isLoading: false,
+        hasMoreData: true,
+        currentPage: 1,
+        totalCount: 3,
+        totalPages: 1,
+        error: null,
+      );
       final filteredList = [mockCountries[0]];
 
       final newState = state.copyWith(
         filtered: filteredList,
-        isMultiSelect: true,
+        isLoading: true,
+        currentPage: 2,
+        error: 'Some error',
       );
 
       expect(newState.countries, mockCountries);
       expect(newState.filtered, filteredList);
-      expect(newState.isMultiSelect, true);
-      expect(newState.selectedIds, isEmpty);
+      expect(newState.isLoading, true);
+      expect(newState.currentPage, 2);
+      expect(newState.error, 'Some error');
     });
 
     test('copyWith should keep original values when not specified', () {
       final state = CountryState(
         countries: mockCountries,
         filtered: mockCountries,
-        selectedIds: {'1', '2'},
-        isMultiSelect: true,
+        search: 'abc',
+        isLoading: false,
+        hasMoreData: true,
+        currentPage: 1,
+        totalCount: 3,
+        totalPages: 1,
+        error: null,
       );
 
-      final newState = state.copyWith(isMultiSelect: false);
+      final newState = state.copyWith();
 
       expect(newState.countries, mockCountries);
       expect(newState.filtered, mockCountries);
-      expect(newState.selectedIds, {'1', '2'});
-      expect(newState.isMultiSelect, false);
-    });
-
-    test('should handle selectedIds updates', () {
-      final state = CountryState.initial(mockCountries);
-      final newState = state.copyWith(selectedIds: {'1', '2'});
-
-      expect(newState.selectedIds, {'1', '2'});
-      expect(newState.selectedIds.length, 2);
-    });
-
-    test('should handle empty selectedIds', () {
-      final state = CountryState(
-        countries: mockCountries,
-        filtered: mockCountries,
-        selectedIds: {'1', '2'},
-        isMultiSelect: true,
-      );
-
-      final newState = state.copyWith(selectedIds: <String>{});
-
-      expect(newState.selectedIds, isEmpty);
-    });
-
-    test('should handle multi-select mode', () {
-      final state = CountryState.initial(mockCountries);
-
-      final multiSelectOn = state.copyWith(isMultiSelect: true);
-      expect(multiSelectOn.isMultiSelect, true);
-
-      final multiSelectOff = multiSelectOn.copyWith(isMultiSelect: false);
-      expect(multiSelectOff.isMultiSelect, false);
+      expect(newState.search, 'abc');
+      expect(newState.isLoading, false);
+      expect(newState.hasMoreData, true);
+      expect(newState.currentPage, 1);
+      expect(newState.totalCount, 3);
+      expect(newState.totalPages, 1);
+      expect(newState.error, null);
     });
   });
 }
