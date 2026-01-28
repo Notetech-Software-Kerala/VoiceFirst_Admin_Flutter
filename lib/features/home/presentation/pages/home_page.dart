@@ -41,7 +41,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
         ), // 2 (Users)
-        ProfilePage(), // 3 (Settings/Profile)
+        ProfilePage(), // 3 (Settings/Profile)        
         ViewBusinessActivityPage(), // 4 (Business Activity)
         CountryView(),
         ProgramActionView(),
