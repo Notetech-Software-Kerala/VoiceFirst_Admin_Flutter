@@ -59,3 +59,5 @@ class CountryState {
     );
   }
 }
+
+// CountryNotifier and provider logic moved to country_provider.dart

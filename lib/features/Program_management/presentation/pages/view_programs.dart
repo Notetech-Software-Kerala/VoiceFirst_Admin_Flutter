@@ -370,6 +370,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       floatingActionButton: state.isMultiSelect
           ? null
           : FloatingActionButton(
+              heroTag: 'program_fab',
               backgroundColor: primaryColor,
               onPressed: () {
                 Navigator.push(

@@ -12,7 +12,7 @@ class CountryNotifier extends Notifier<CountryState> {
 
   @override
   CountryState build() {
-    loadAll(filter: const CountryFilter(pageNumber: 1, pageSize: 10));
+    // Do NOT call loadAll here! Initial load should be triggered from the widget's initState.
     return CountryState.initial();
   }
 
