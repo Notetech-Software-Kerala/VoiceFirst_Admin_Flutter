@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/profile_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -10,6 +11,12 @@ class ProfilePage extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final secondaryText = theme.colorScheme.onSurfaceVariant;
+
+    final themeMode = ref.watch(themeModeProvider);
+    final isDarkMode =
+        themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system &&
+            MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     // Watch the profile state
     final profileState = ref.watch(profileProvider);
@@ -193,7 +200,24 @@ class ProfilePage extends ConsumerWidget {
                         iconColor: Colors.purple,
                         title: "Time Zone",
                         trailing: _buildTrailingText(context, "UTC-5"),
+                      ),
+                      _buildTile(
+                        context,
+                        icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                        iconColor: Colors.indigo,
+                        title: "Dark Mode",
                         isLast: true,
+                        trailing: Switch.adaptive(
+                          value: isDarkMode,
+                          activeTrackColor: theme.primaryColor,
+                          onChanged: (val) {
+                            ref
+                                .read(themeModeProvider.notifier)
+                                .setTheme(
+                                  val ? ThemeMode.dark : ThemeMode.light,
+                                );
+                          },
+                        ),
                       ),
                     ],
                   ),

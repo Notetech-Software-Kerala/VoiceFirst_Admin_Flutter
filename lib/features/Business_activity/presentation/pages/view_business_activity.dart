@@ -8,7 +8,7 @@ import '../dialogs/bulk_delete_dialog.dart';
 import '../widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
 
-class ViewBusinessActivityPage extends ConsumerWidget {
+class ViewBusinessActivityPage extends ConsumerStatefulWidget {
   const ViewBusinessActivityPage({super.key});
 
   @override

@@ -18,49 +18,33 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
   // State Variables
   List<PostOffice> _postOffices = [];
   bool _isLoading = false;
-  bool _hasMore = true; // For pagination
   int _pageNumber = 1;
   final int _limit = 10;
+  int _totalItems = 0;
   String _searchQuery = "";
 
   // Controllers
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _fetchPostOffices();
-
-    // Pagination Listener
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent - 200 &&
-          !_isLoading &&
-          _hasMore) {
-        _fetchPostOffices(isNextPage: true);
-      }
-    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _scrollController.dispose();
     _debounce?.cancel();
     super.dispose();
   }
 
   // --- API FETCH LOGIC ---
-  Future<void> _fetchPostOffices({bool isNextPage = false}) async {
+  Future<void> _fetchPostOffices() async {
     if (_isLoading) return;
 
     setState(() => _isLoading = true);
-
-    if (!isNextPage) {
-      _pageNumber = 1; // Reset if new search/refresh
-    }
 
     try {
       final queryParams = {
@@ -86,38 +70,45 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
         final dataWrapper = jsonMap['data'];
         final List<dynamic> items = dataWrapper['items'] ?? [];
 
+        // Try to get total count for pagination
+        // Adjust key 'totalItems' if backend uses something else like 'count' or 'total'
+        final totalCount =
+            dataWrapper['totalCount'] ?? dataWrapper['totalItems'] ?? 0;
+
         final newItems = items
             .map((json) => PostOffice.fromJson(json))
             .toList();
 
         setState(() {
-          if (isNextPage) {
-            _postOffices.addAll(newItems);
-          } else {
-            _postOffices = newItems;
-          }
-
-          _hasMore = newItems.length >= _limit;
-          if (_hasMore) _pageNumber++;
+          _postOffices = newItems; // Replace items for current page
+          _totalItems = totalCount;
         });
       } else {
-        debugPrint("Error: ${response.statusCode}");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to load: ${response.statusCode}')),
-          );
-        }
+        _showSnack('Failed to load: ${response.statusCode}', isError: true);
       }
     } catch (e) {
-      debugPrint("Connection Error: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Connection Error: $e')));
-      }
+      _showSnack('Connection Error: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _onPageChanged(int newPage) {
+    if (newPage < 1) return;
+    setState(() {
+      _pageNumber = newPage;
+    });
+    _fetchPostOffices();
+  }
+
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.red : null,
+      ),
+    );
   }
 
   // --- DELETE LOGIC ---
@@ -126,9 +117,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Delete Post Office?"),
-        content: const Text(
-          "Are you sure you want to delete this post office? This action cannot be undone.",
-        ),
+        content: const Text("Are you sure? this cannot be undone."),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -150,33 +139,13 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
       final response = await http.delete(uri);
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        setState(() {
-          _postOffices.removeWhere((p) => p.id == id);
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Post office deleted successfully"),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        _showSnack("Post office deleted successfully");
+        _fetchPostOffices(); // Refresh current page
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to delete: ${response.statusCode}"),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        _showSnack("Failed to delete: ${response.statusCode}", isError: true);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
-        );
-      }
+      _showSnack("Error: $e", isError: true);
     }
   }
 
@@ -184,12 +153,11 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-    // Wait 500ms after user stops typing to call API
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (query != _searchQuery) {
         setState(() {
           _searchQuery = query;
-          _postOffices.clear(); // Clear old results
+          _pageNumber = 1; // Reset to page 1 on search
         });
         _fetchPostOffices();
       }
@@ -201,14 +169,13 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Use MediaQuery for responsive height, but ensure min 120 to prevent overflow
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double bottomHeight = screenHeight * 0.15;
-    final double safeBottomHeight = bottomHeight < 120 ? 120 : bottomHeight;
+    // Calculate pagination info
+    final totalPages = (_totalItems / _limit).ceil();
+    // Safety check just in case totalItems is 0 but we have items (fallback)
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
     return Scaffold(
       body: CustomScrollView(
-        controller: _scrollController,
         slivers: [
           // --- STICKY HEADER ---
           SliverAppBar(
@@ -220,11 +187,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
             title: Row(
               children: [
                 InkWell(
-                  onTap: () {
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    }
-                  },
+                  onTap: () => Navigator.maybePop(context),
                   borderRadius: BorderRadius.circular(50),
                   child: Container(
                     width: 40,
@@ -255,7 +218,9 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
               ],
             ),
             bottom: PreferredSize(
-              preferredSize: Size.fromHeight(safeBottomHeight),
+              preferredSize: const Size.fromHeight(
+                120,
+              ), // Approx height for Search + Filters
               child: Column(
                 children: [
                   // Search Bar
@@ -281,7 +246,6 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
                                 fillColor: isDark
                                     ? const Color(0xFF282E39)
                                     : Colors.white,
-                                // Clear button
                                 suffixIcon: _searchQuery.isNotEmpty
                                     ? IconButton(
                                         icon: const Icon(Icons.clear, size: 18),
@@ -307,17 +271,13 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
                           ),
                           child: IconButton(
                             icon: const Icon(Icons.refresh),
-                            onPressed: () {
-                              _postOffices.clear();
-                              _fetchPostOffices();
-                            },
+                            onPressed: _fetchPostOffices,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  // Filter Chips
+                  // Filters
                   SizedBox(
                     height: 50,
                     child: ListView(
@@ -341,7 +301,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
           ),
 
           // --- LIST CONTENT ---
-          if (_isLoading && _postOffices.isEmpty)
+          if (_isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             )
@@ -365,43 +325,63 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    // Loader at bottom for pagination
-                    if (index == _postOffices.length) {
-                      return _hasMore
-                          ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: CircularProgressIndicator(),
-                              ),
-                            )
-                          : const SizedBox(height: 50); // Spacer at end
-                    }
-
-                    final office = _postOffices[index];
-                    return _PostOfficeCard(
-                      office: office,
-                      onDelete: () => _deletePostOffice(office.id),
-                      onEdit: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                AddPostOfficePage(postOffice: office),
-                          ),
-                        ).then((_) {
-                          _postOffices.clear();
-                          _fetchPostOffices();
-                        });
-                      },
-                    );
-                  },
-                  childCount: _postOffices.length + 1, // +1 for loader
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final office = _postOffices[index];
+                  return _PostOfficeCard(
+                    office: office,
+                    onDelete: () => _deletePostOffice(office.id),
+                    onEdit: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              AddPostOfficePage(postOffice: office),
+                        ),
+                      ).then((_) => _fetchPostOffices());
+                    },
+                  );
+                }, childCount: _postOffices.length),
               ),
             ),
         ],
+      ),
+
+      // Pagination Bottom Bar
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.chevron_left),
+              onPressed: _pageNumber > 1
+                  ? () => _onPageChanged(_pageNumber - 1)
+                  : null,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              "Page $_pageNumber of $safeTotalPages",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 10),
+            IconButton(
+              icon: const Icon(Icons.chevron_right),
+              onPressed: _pageNumber < safeTotalPages
+                  ? () => _onPageChanged(_pageNumber + 1)
+                  : null,
+            ),
+          ],
+        ),
       ),
 
       // FAB
@@ -410,11 +390,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddPostOfficePage()),
-          ).then((_) {
-            // Refresh list when returning from Add Page
-            _postOffices.clear();
-            _fetchPostOffices();
-          });
+          ).then((_) => _fetchPostOffices());
         },
         backgroundColor: theme.primaryColor,
         elevation: 4,
@@ -531,18 +507,24 @@ class _PostOfficeCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Bottom Row: Zip Codes
-          if (office.zipCodes.isNotEmpty)
+          if (office.zipCodes.any((z) => z.active))
             Row(
               children: [
                 Icon(Icons.pin_drop, size: 14, color: theme.disabledColor),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    // Show first 3 zips, then "..."
-                    office.zipCodes.take(3).map((z) => z.code).join(", ") +
-                        (office.zipCodes.length > 3
-                            ? " +${office.zipCodes.length - 3} more"
-                            : ""),
+                    // Show first 3 ACTIVE zips, then "..."
+                    (() {
+                      final activeZips = office.zipCodes
+                          .where((z) => z.active)
+                          .toList();
+                      if (activeZips.isEmpty) return "No active zip codes";
+                      return activeZips.take(3).map((z) => z.code).join(", ") +
+                          (activeZips.length > 3
+                              ? " +${activeZips.length - 3} more"
+                              : "");
+                    })(),
                     style: TextStyle(
                       fontSize: 12,
                       fontFamily: 'monospace',
@@ -588,14 +570,11 @@ class _ActionButton extends StatelessWidget {
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
-
   const _FilterChip({required this.label, required this.isSelected});
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
