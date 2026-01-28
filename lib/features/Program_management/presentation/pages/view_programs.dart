@@ -33,7 +33,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
     });
   }
 
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -83,7 +82,13 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: notifier.exitSelectionMode,
               )
-            : null,
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                tooltip: 'Back to Dashboard',
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+              ),
         actions: [
           if (!state.isMultiSelect)
             TextButton(
@@ -423,7 +428,6 @@ class _ApplicationFilter extends ConsumerWidget {
     );
   }
 }
-
 
 class _CompanyFilter extends ConsumerWidget {
   @override

@@ -74,12 +74,12 @@ class _ViewBusinessActivityPageState
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          // onPressed: () => Navigator.pop(context),
+          tooltip: 'Back to Dashboard',
           onPressed: () {
             if (state.isMultiSelect) {
               notifier.exitSelectionMode();
             } else {
-              Navigator.pop(context);
+              Navigator.of(context).popUntil((route) => route.isFirst);
             }
           },
         ),
