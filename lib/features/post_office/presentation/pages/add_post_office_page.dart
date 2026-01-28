@@ -1,37 +1,34 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/post_office_model.dart';
+import '../providers/post_office_provider.dart';
 
 // --- MAIN SCREEN ---
 
-class AddPostOfficePage extends StatefulWidget {
+class AddPostOfficePage extends ConsumerStatefulWidget {
   final PostOffice? postOffice; // If provided, we are in Edit Mode
 
   const AddPostOfficePage({super.key, this.postOffice});
 
   @override
-  State<AddPostOfficePage> createState() => _AddPostOfficePageState();
+  ConsumerState<AddPostOfficePage> createState() => _AddPostOfficePageState();
 }
 
-class _AddPostOfficePageState extends State<AddPostOfficePage> {
+class _AddPostOfficePageState extends ConsumerState<AddPostOfficePage> {
   final TextEditingController _nameController = TextEditingController();
 
   // Refactored State for Zip Codes (Web Style)
-  // We track all zips: Active (Blue), Inactive (Grey), New (Blue)
   final List<_ZipChipData> _zipChips = [];
   final TextEditingController _zipInputController = TextEditingController();
 
   bool _isSubmitting = false;
 
   // Country State
-  List<Country> _countryList = [];
+  List<dynamic> _countryList =
+      []; // dynamic for now as we just need basic fields
   bool _isLoadingCountries = true;
-  Country? _selectedCountry; // Nullable until selected
-
-  // API Configuration
-  // Ideally this should be in a global config/constant file
-  static const String _baseUrl = 'http://192.168.0.202:8010/api';
+  Country? _selectedCountry; // Mapped to local model
 
   @override
   void initState() {
@@ -63,22 +60,15 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
   // --- API: FETCH COUNTRIES ---
   Future<void> _fetchCountries() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/country/lookup'));
+      final repo = ref.read(postOfficeRepositoryProvider);
+      final data = await repo.getCountries();
 
-      if (response.statusCode == 200) {
-        final jsonMap = jsonDecode(response.body);
-        final List<dynamic> data = jsonMap['data'] ?? [];
-
-        if (mounted) {
-          setState(() {
-            _countryList = data.map((json) => Country.fromJson(json)).toList();
-            _isLoadingCountries = false;
-            _selectInitialCountry();
-          });
-        }
-      } else {
-        debugPrint("Failed to load countries: ${response.statusCode}");
-        if (mounted) setState(() => _isLoadingCountries = false);
+      if (mounted) {
+        setState(() {
+          _countryList = data.map((json) => Country.fromJson(json)).toList();
+          _isLoadingCountries = false;
+          _selectInitialCountry();
+        });
       }
     } catch (e) {
       debugPrint("Error fetching countries: $e");
@@ -89,21 +79,24 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
   void _selectInitialCountry() {
     if (_countryList.isEmpty) return;
 
+    // Use a simpler approach: Match by ID if editing, else default to 'US' or first
+    final typedList = _countryList.cast<Country>();
+
     if (widget.postOffice != null) {
       try {
-        _selectedCountry = _countryList.firstWhere(
+        _selectedCountry = typedList.firstWhere(
           (c) => c.id == widget.postOffice!.countryId,
         );
       } catch (_) {
-        _selectedCountry = _countryList.firstWhere(
+        _selectedCountry = typedList.firstWhere(
           (c) => c.isoCode == 'US',
-          orElse: () => _countryList.first,
+          orElse: () => typedList.first,
         );
       }
     } else {
-      _selectedCountry = _countryList.firstWhere(
+      _selectedCountry = typedList.firstWhere(
         (c) => c.isoCode == 'US',
-        orElse: () => _countryList.first,
+        orElse: () => typedList.first,
       );
     }
   }
@@ -111,7 +104,6 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
   // --- API: SUBMIT LOGIC ---
   Future<void> _submitPostOffice() async {
     // 1. Validation
-    // Must have at least one ACTIVE zip code
     final hasActiveZip = _zipChips.any((z) => z.isActive);
 
     if (_nameController.text.isEmpty ||
@@ -128,13 +120,15 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
 
     try {
       final isEdit = widget.postOffice != null;
+      bool success;
+
       if (isEdit) {
-        await _handleEditFlow();
+        success = await _handleEditFlow();
       } else {
-        await _handleCreateFlow();
+        success = await _handleCreateFlow();
       }
 
-      if (mounted) {
+      if (success && mounted) {
         _showSnack('Saved Successfully!', isError: false);
         Navigator.pop(context, true);
       }
@@ -146,8 +140,7 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
   }
 
   // --- CREATE FLOW ---
-  Future<void> _handleCreateFlow() async {
-    // Only send ACTIVE zip codes for creation
+  Future<bool> _handleCreateFlow() async {
     final List<String> activeZips = _zipChips
         .where((z) => z.isActive)
         .map((z) => z.code)
@@ -157,36 +150,25 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
       "postOfficeName": _nameController.text,
       "countryId": _selectedCountry!.id,
       "active": true,
-      "zipCodes": activeZips, // List<String> as verified earlier
+      "zipCodes": activeZips,
     };
 
-    debugPrint("Sending Create Body: ${jsonEncode(body)}");
-
-    final response = await http.post(
-      Uri.parse('$_baseUrl/post-office'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
-
-    _validateResponse(response, "Create Post Office");
+    return await ref.read(postOfficeProvider.notifier).createPostOffice(body);
   }
 
   // --- EDIT FLOW ---
-  Future<void> _handleEditFlow() async {
+  Future<bool> _handleEditFlow() async {
     final poId = widget.postOffice!.id;
     List<Map<String, dynamic>> consolidatedZips = [];
 
     for (final chip in _zipChips) {
-      // 1. Existing Zips (Active or Inactive)
       if (!chip.isNew) {
         consolidatedZips.add({
           "zipCodeId": chip.id,
           "zipCode": chip.code,
           "active": chip.isActive,
         });
-      }
-      // 2. New Zips (Must be Active to be relevant, ignored if added then 'deleted' before save)
-      else if (chip.isActive) {
+      } else if (chip.isActive) {
         consolidatedZips.add({
           "zipCodeId": 0,
           "zipCode": chip.code,
@@ -202,39 +184,12 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
       "zipCodes": consolidatedZips,
     };
 
-    debugPrint("Sending Unified PATCH Body: ${jsonEncode(body)}");
-
-    final response = await http.patch(
-      Uri.parse('$_baseUrl/post-office/$poId'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(body),
-    );
-
-    _validateResponse(response, "Update Post Office");
+    return await ref
+        .read(postOfficeProvider.notifier)
+        .updatePostOffice(poId, body);
   }
 
   // --- HELPERS ---
-
-  void _validateResponse(http.Response response, String action) {
-    if (!_isSuccess(response)) {
-      throw "$action Failed. Status: ${response.statusCode}. Body: ${response.body}";
-    }
-  }
-
-  bool _isSuccess(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      try {
-        if (response.body.isEmpty) return true;
-        final json = jsonDecode(response.body);
-        final internalCode = json['StatusCode'] ?? json['statusCode'] ?? 0;
-        return (internalCode == 0 ||
-            (internalCode >= 200 && internalCode < 300));
-      } catch (_) {
-        return true;
-      }
-    }
-    return false;
-  }
 
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
@@ -335,7 +290,7 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
             const SizedBox(height: 8),
             _CountrySelector(
               selectedCountry: _selectedCountry,
-              countries: _countryList,
+              countries: _countryList.cast<Country>(),
               isLoading: _isLoadingCountries,
               onCountryChanged: (c) => setState(() => _selectedCountry = c),
             ),
@@ -355,7 +310,6 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Chip Wrap
                   if (_zipChips.isNotEmpty)
                     Wrap(
                       spacing: 8,
@@ -387,7 +341,6 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
                                   : theme.primaryColor.withOpacity(0.3),
                             ),
                           ),
-                          // Icon Logic
                           deleteIcon: Icon(
                             isDeleted ? Icons.restore : Icons.close,
                             size: 18,
@@ -398,10 +351,8 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
                           onDeleted: () {
                             setState(() {
                               if (isDeleted) {
-                                // Restore
                                 chip.isActive = true;
                               } else {
-                                // Soft Delete (or Remove if New)
                                 if (chip.isNew) {
                                   _zipChips.remove(chip);
                                 } else {
@@ -416,7 +367,6 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
 
                   if (_zipChips.isNotEmpty) const SizedBox(height: 12),
 
-                  // Input Field
                   Row(
                     children: [
                       Expanded(
@@ -467,7 +417,6 @@ class _AddPostOfficePageState extends State<AddPostOfficePage> {
     final code = val.trim();
     if (code.isEmpty) return;
 
-    // Duplicates check
     if (_zipChips.any((z) => z.code == code && z.isActive)) {
       _showSnack("Zip code already exists", isError: true);
       return;

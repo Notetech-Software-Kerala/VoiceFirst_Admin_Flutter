@@ -1,37 +1,23 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/post_office_model.dart';
+import '../providers/post_office_provider.dart';
 import 'add_post_office_page.dart';
 
 // --- MAIN SCREEN ---
-
-class PostOfficeListScreen extends StatefulWidget {
+class PostOfficeListScreen extends ConsumerStatefulWidget {
   const PostOfficeListScreen({super.key});
 
   @override
-  State<PostOfficeListScreen> createState() => _PostOfficeListScreenState();
+  ConsumerState<PostOfficeListScreen> createState() =>
+      _PostOfficeListScreenState();
 }
 
-class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
-  // State Variables
-  List<PostOffice> _postOffices = [];
-  bool _isLoading = false;
-  int _pageNumber = 1;
-  final int _limit = 10;
-  int _totalItems = 0;
-  String _searchQuery = "";
-
+class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
   // Controllers
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchPostOffices();
-  }
 
   @override
   void dispose() {
@@ -40,78 +26,15 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
     super.dispose();
   }
 
-  // --- API FETCH LOGIC ---
-  Future<void> _fetchPostOffices() async {
-    if (_isLoading) return;
+  // --- ACTIONS ---
 
-    setState(() => _isLoading = true);
-
-    try {
-      final queryParams = {
-        'PageNumber': _pageNumber.toString(),
-        'Limit': _limit.toString(),
-        'SortOrder': 'Desc',
-        'Deleted': 'false',
-        if (_searchQuery.isNotEmpty) 'SearchText': _searchQuery,
-      };
-
-      final uri = Uri.http(
-        '192.168.0.202:8010',
-        '/api/post-office',
-        queryParams,
-      );
-
-      debugPrint("Fetching: $uri");
-
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final jsonMap = jsonDecode(response.body);
-        final dataWrapper = jsonMap['data'];
-        final List<dynamic> items = dataWrapper['items'] ?? [];
-
-        // Try to get total count for pagination
-        // Adjust key 'totalItems' if backend uses something else like 'count' or 'total'
-        final totalCount =
-            dataWrapper['totalCount'] ?? dataWrapper['totalItems'] ?? 0;
-
-        final newItems = items
-            .map((json) => PostOffice.fromJson(json))
-            .toList();
-
-        setState(() {
-          _postOffices = newItems; // Replace items for current page
-          _totalItems = totalCount;
-        });
-      } else {
-        _showSnack('Failed to load: ${response.statusCode}', isError: true);
-      }
-    } catch (e) {
-      _showSnack('Connection Error: $e', isError: true);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _onPageChanged(int newPage) {
-    if (newPage < 1) return;
-    setState(() {
-      _pageNumber = newPage;
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      ref.read(postOfficeProvider.notifier).setSearch(query);
     });
-    _fetchPostOffices();
   }
 
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: isError ? Colors.red : null,
-      ),
-    );
-  }
-
-  // --- DELETE LOGIC ---
   Future<void> _deletePostOffice(int id) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -134,34 +57,17 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
 
     if (confirmed != true) return;
 
-    try {
-      final uri = Uri.http('192.168.0.202:8010', '/api/post-office/$id');
-      final response = await http.delete(uri);
-
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        _showSnack("Post office deleted successfully");
-        _fetchPostOffices(); // Refresh current page
-      } else {
-        _showSnack("Failed to delete: ${response.statusCode}", isError: true);
-      }
-    } catch (e) {
-      _showSnack("Error: $e", isError: true);
+    final success = await ref
+        .read(postOfficeProvider.notifier)
+        .deletePostOffice(id);
+    if (success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Post office deleted successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
-  }
-
-  // --- SEARCH HANDLER ---
-  void _onSearchChanged(String query) {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      if (query != _searchQuery) {
-        setState(() {
-          _searchQuery = query;
-          _pageNumber = 1; // Reset to page 1 on search
-        });
-        _fetchPostOffices();
-      }
-    });
   }
 
   @override
@@ -169,10 +75,33 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // Calculate pagination info
-    final totalPages = (_totalItems / _limit).ceil();
-    // Safety check just in case totalItems is 0 but we have items (fallback)
+    // Watch Provider
+    final state = ref.watch(postOfficeProvider);
+    final postOffices = state.postOffices;
+    final totalItems = state.totalCount;
+    final isLoading = state.isLoading;
+
+    // Check for errors
+    ref.listen(postOfficeProvider, (prev, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+
+    // Pagination Info
+    final totalPages = (totalItems / state.limit).ceil();
     final safeTotalPages = totalPages > 0 ? totalPages : 1;
+
+    // Responsive dimensions
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double bottomHeight = screenHeight * 0.15;
+    final double safeBottomHeight = bottomHeight < 120 ? 120 : bottomHeight;
 
     return Scaffold(
       body: CustomScrollView(
@@ -218,9 +147,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
               ],
             ),
             bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(
-                120,
-              ), // Approx height for Search + Filters
+              preferredSize: Size.fromHeight(safeBottomHeight),
               child: Column(
                 children: [
                   // Search Bar
@@ -246,7 +173,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
                                 fillColor: isDark
                                     ? const Color(0xFF282E39)
                                     : Colors.white,
-                                suffixIcon: _searchQuery.isNotEmpty
+                                suffixIcon: state.searchText.isNotEmpty
                                     ? IconButton(
                                         icon: const Icon(Icons.clear, size: 18),
                                         onPressed: () {
@@ -271,7 +198,9 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
                           ),
                           child: IconButton(
                             icon: const Icon(Icons.refresh),
-                            onPressed: _fetchPostOffices,
+                            onPressed: () => ref
+                                .read(postOfficeProvider.notifier)
+                                .fetchPostOffices(),
                           ),
                         ),
                       ],
@@ -301,11 +230,11 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
           ),
 
           // --- LIST CONTENT ---
-          if (_isLoading)
+          if (isLoading)
             const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()),
             )
-          else if (_postOffices.isEmpty)
+          else if (postOffices.isEmpty)
             SliverFillRemaining(
               child: Center(
                 child: Column(
@@ -326,7 +255,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
-                  final office = _postOffices[index];
+                  final office = postOffices[index];
                   return _PostOfficeCard(
                     office: office,
                     onDelete: () => _deletePostOffice(office.id),
@@ -337,10 +266,10 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
                           builder: (context) =>
                               AddPostOfficePage(postOffice: office),
                         ),
-                      ).then((_) => _fetchPostOffices());
+                      );
                     },
                   );
-                }, childCount: _postOffices.length),
+                }, childCount: postOffices.length),
               ),
             ),
         ],
@@ -364,33 +293,36 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left),
-              onPressed: _pageNumber > 1
-                  ? () => _onPageChanged(_pageNumber - 1)
+              onPressed: state.pageNumber > 1
+                  ? () => ref
+                        .read(postOfficeProvider.notifier)
+                        .fetchPostOffices(page: state.pageNumber - 1)
                   : null,
             ),
             const SizedBox(width: 10),
             Text(
-              "Page $_pageNumber of $safeTotalPages",
+              "Page ${state.pageNumber} of $safeTotalPages",
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 10),
             IconButton(
               icon: const Icon(Icons.chevron_right),
-              onPressed: _pageNumber < safeTotalPages
-                  ? () => _onPageChanged(_pageNumber + 1)
+              onPressed: state.pageNumber < safeTotalPages
+                  ? () => ref
+                        .read(postOfficeProvider.notifier)
+                        .fetchPostOffices(page: state.pageNumber + 1)
                   : null,
             ),
           ],
         ),
       ),
 
-      // FAB
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddPostOfficePage()),
-          ).then((_) => _fetchPostOffices());
+          );
         },
         backgroundColor: theme.primaryColor,
         elevation: 4,
@@ -400,8 +332,7 @@ class _PostOfficeListScreenState extends State<PostOfficeListScreen> {
   }
 }
 
-// --- HELPER WIDGETS ---
-
+// ... [Helper Widgets Unchanged] ...
 class _PostOfficeCard extends StatelessWidget {
   final PostOffice office;
   final VoidCallback onDelete;
@@ -416,8 +347,6 @@ class _PostOfficeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Logic to choose an icon based on something (random for now, or based on office type if you had it)
     final IconData icon = Icons.local_post_office;
 
     return Container(
@@ -438,11 +367,9 @@ class _PostOfficeCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Row: Icon + Title + Actions
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Icon Box
               Container(
                 width: 40,
                 height: 40,
@@ -453,8 +380,6 @@ class _PostOfficeCard extends StatelessWidget {
                 child: Icon(icon, color: theme.primaryColor, size: 20),
               ),
               const SizedBox(width: 12),
-
-              // Text Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,8 +408,6 @@ class _PostOfficeCard extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Action Buttons
               Row(
                 children: [
                   _ActionButton(
@@ -503,10 +426,7 @@ class _PostOfficeCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Bottom Row: Zip Codes
           if (office.zipCodes.any((z) => z.active))
             Row(
               children: [
@@ -514,7 +434,6 @@ class _PostOfficeCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    // Show first 3 ACTIVE zips, then "..."
                     (() {
                       final activeZips = office.zipCodes
                           .where((z) => z.active)

@@ -202,8 +202,8 @@ class SidebarWidget extends StatelessWidget {
                       title: "Business Activity",
                       subtitle: "Manage Business Activity",
                       icon: Icons.business_center_outlined,
-                      isSelected: currentIndex == 4,
-                      onTap: () => onNavigate(4),
+                      isSelected: currentIndex == 5,
+                      onTap: () => onNavigate(5),
                     ),
                     _SidebarSubItem(
                       title: "Manage Country",
