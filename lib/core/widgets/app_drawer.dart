@@ -198,6 +198,35 @@ class SidebarWidget extends StatelessWidget {
                       subtitle: "Manage global locations",
                       icon: Icons.account_tree,
                     ),
+                    _SidebarSubItem(
+                      title: "Business Activity",
+                      subtitle: "Manage Business Activity",
+                      icon: Icons.business_center_outlined,
+                      isSelected: currentIndex == 4,
+                      onTap: () => onNavigate(4),
+                    ),
+                    _SidebarSubItem(
+                      title: "Manage Country",
+                      subtitle: "Manage Country",
+                      icon: Icons.business_center_outlined,
+                      isSelected: currentIndex == 5,
+                      onTap: () => onNavigate(5),
+                    ),
+
+                    _SidebarSubItem(
+                      title: "Program Action",
+                      icon: Icons.playlist_play,
+                      isSelected: currentIndex == 6,
+                      onTap: () => onNavigate(6),
+                      subtitle: 'Manage Program Action',
+                    ),
+                    _SidebarSubItem(
+                      title: "Program Management",
+                      icon: Icons.settings_applications,
+                      isSelected: currentIndex == 7,
+                      onTap: () => onNavigate(7),
+                      subtitle: 'Manage Programs',
+                    ),
                   ],
                 ),
 

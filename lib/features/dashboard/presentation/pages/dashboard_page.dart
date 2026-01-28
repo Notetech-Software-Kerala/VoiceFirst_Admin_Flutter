@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/pages/view_business_activity.dart';
+import 'package:voice_first_admin/features/Program_Action/presentation/pages/view_program_action.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 class DashboardPage extends StatelessWidget {
@@ -406,6 +407,19 @@ class _GridMenuSection extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) => const ViewBusinessActivityPage(),
+                    ),
+                  );
+                },
+              ),
+              _MenuButton(
+                icon: Icons.business,
+                color: Colors.teal,
+                label: "Program Actions",
+                onTap: (context) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProgramActionView(),
                     ),
                   );
                 },

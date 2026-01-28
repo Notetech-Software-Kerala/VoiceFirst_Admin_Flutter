@@ -1,20 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/presentation/pages/view_division1.dart';
 import '../providers/country_provider.dart';
-import '../dialogs/delete_country_dialog.dart';
-import '../dialogs/edit_country_dialog.dart';
+import '../providers/country_state.dart';
+import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
+import 'package:voice_first_admin/features/Country%20Management/country/models/country_filter.dart';
 import 'country_detail_view.dart';
+// Only listing + navigation to Division 1 required
 
-class CountryView extends ConsumerWidget {
+// Local search state (UI-only)
+final countrySearchQueryProvider = StateProvider<String>((ref) => '');
+
+class CountryView extends ConsumerStatefulWidget {
   const CountryView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CountryView> createState() => _CountryViewState();
+}
+
+class _CountryViewState extends ConsumerState<CountryView> {
+  final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(countryProvider.notifier)
+          .loadAll(
+            filter: const CountryFilter(pageNumber: 1, pageSize: _pageSize),
+          );
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int page) {
+    ref
+        .read(countryProvider.notifier)
+        .loadAll(
+          filter: CountryFilter(
+            pageNumber: page,
+            pageSize: _pageSize,
+            searchText: ref.read(countrySearchQueryProvider),
+          ),
+        );
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(countryProvider);
-    final notifier = ref.read(countryProvider.notifier);
+    final searchQuery = ref.watch(countrySearchQueryProvider);
 
     final primaryColor = const Color(0xFF0D7FF2);
 
@@ -25,59 +73,7 @@ class CountryView extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: primaryColor,
         elevation: 0,
-        title: Text(
-          state.isMultiSelect
-              ? '${state.selectedIds.length} selected'
-              : 'Countries',
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            if (state.isMultiSelect) {
-              notifier.exitSelectionMode();
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        actions: [
-          /// Select
-          if (!state.isMultiSelect)
-            TextButton(
-              onPressed: notifier.enterSelectionMode,
-              child: const Text(
-                'Select',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// Select All / Clear All
-          if (state.isMultiSelect)
-            TextButton(
-              onPressed: () => notifier.enterSelectionMode(
-                selectAll: !notifier.allVisibleSelected,
-              ),
-              child: Text(
-                notifier.allVisibleSelected ? 'Clear All' : 'Select All',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// Delete
-          if (state.isMultiSelect)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.white),
-              onPressed: () {
-                notifier.deleteSelected();
-                CustomSnackbar.show(
-                  context,
-                  message: 'Selected countries deleted',
-                  type: SnackBarType.success,
-                );
-              },
-            ),
-        ],
+        title: Text('Countries', style: const TextStyle(color: Colors.white)),
       ),
 
       // ───────────────── Body ─────────────────
@@ -94,7 +90,10 @@ class CountryView extends ConsumerWidget {
               ),
             ),
             child: TextField(
-              onChanged: notifier.search,
+              onChanged: (value) {
+                ref.read(countrySearchQueryProvider.notifier).state = value;
+                ref.read(countryProvider.notifier).search(value);
+              },
               decoration: InputDecoration(
                 hintText: 'Search countries...',
                 prefixIcon: const Icon(Icons.search),
@@ -107,196 +106,159 @@ class CountryView extends ConsumerWidget {
               ),
             ),
           ),
-
           // 📋 List
           Expanded(
-            child: state.filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      'No countries found',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: state.filtered.length,
-                    itemBuilder: (context, index) {
-                      final CountryModel c = state.filtered[index];
-                      final bool selected = state.selectedIds.contains(c.id);
-
-                      // Division labels
-                      final d1 = (c.divisionOneLabel ?? '').trim();
-                      final d2 = (c.divisionTwoLabel ?? '').trim();
-                      final d3 = (c.divisionThreeLabel ?? '').trim();
-
-                      String divisions = '';
-                      if (d1.isNotEmpty) divisions = d1;
-                      if (d2.isNotEmpty) {
-                        divisions += (divisions.isEmpty ? '' : ' > ') + d2;
-                      }
-                      if (d3.isNotEmpty) {
-                        divisions += (divisions.isEmpty ? '' : ' > ') + d3;
-                      }
-
-                      return GestureDetector(
-                        onLongPress: () => notifier.toggleSelection(c.id),
-                        onTap: () {
-                          if (state.isMultiSelect) {
-                            notifier.toggleSelection(c.id);
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => DivisionOneView(country: c),
-                              ),
-                            );
-                          }
+            child: state.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state.error != null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          'Error: ${state.error}',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(color: Colors.red),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {
+                          ref
+                              .read(countryProvider.notifier)
+                              .loadAll(
+                                filter: CountryFilter(
+                                  pageNumber: state.currentPage,
+                                  pageSize: _pageSize,
+                                  searchText: searchQuery,
+                                ),
+                              );
                         },
-                        child: Card(
-                          color: selected
-                              ? primaryColor.withAlpha(51)
-                              : Colors.white,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: selected
-                                ? BorderSide(color: primaryColor, width: 1.5)
-                                : BorderSide.none,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                // ☐ Checkbox
-                                if (state.isMultiSelect)
-                                  Checkbox(
-                                    value: selected,
-                                    onChanged: (_) =>
-                                        notifier.toggleSelection(c.id),
-                                    activeColor: primaryColor,
-                                  ),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    children: [
+                      ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.only(
+                          left: 12,
+                          right: 12,
+                          top: 12,
+                          bottom: 60,
+                        ),
+                        itemCount: state.filtered.length,
+                        itemBuilder: (context, index) {
+                          final c = state.filtered[index];
 
-                                // 📄 Country info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        c.country,
-                                        style: const TextStyle(
-                                          color: Colors.black,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                          final d1 = (c.divisionOneLabel ?? '').trim();
+                          final d2 = (c.divisionTwoLabel ?? '').trim();
+                          final d3 = (c.divisionThreeLabel ?? '').trim();
+
+                          String divisions = '';
+                          if (d1.isNotEmpty) divisions = d1;
+                          if (d2.isNotEmpty) {
+                            divisions += (divisions.isEmpty ? '' : ' > ') + d2;
+                          }
+                          if (d3.isNotEmpty) {
+                            divisions += (divisions.isEmpty ? '' : ' > ') + d3;
+                          }
+
+                          return ListTile(
+                            title: Text(c.country),
+                            subtitle: divisions.isNotEmpty
+                                ? Text(divisions)
+                                : null,
+                            trailing: TextButton.icon(
+                              icon: const Icon(Icons.visibility),
+                              label: const Text('View'),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        CountryDetailPage(countryId: c.id),
+                                  ),
+                                );
+                              },
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DivisionOneView(country: c),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      if (state.filtered.isNotEmpty)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.shade300,
+                                  blurRadius: 6,
+                                  offset: const Offset(0, -2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Builder(
+                                    builder: (_) {
+                                      final start =
+                                          (state.currentPage - 1) * _pageSize +
+                                          1;
+                                      final end =
+                                          start + state.filtered.length - 1;
+
+                                      return Text(
+                                        '$start-$end of ${state.totalCount}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade700,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ),
-                                      if (divisions.isNotEmpty) ...[
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          divisions,
-                                          style: const TextStyle(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                        overflow: TextOverflow.ellipsis,
+                                      );
+                                    },
                                   ),
                                 ),
-
-                                // 🔀 Status toggle
-                                if (!state.isMultiSelect)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Transform.scale(
-                                        scale:
-                                            0.75, // 👈 adjust between 0.6 – 0.8
-                                        child: Switch(
-                                          value: c.status ?? false,
-                                          onChanged: (val) {
-                                            notifier.toggleStatus(c.id, val);
-                                            CustomSnackbar.show(
-                                              context,
-                                              message:
-                                                  '${c.country} ${val ? 'enabled' : 'disabled'}',
-                                              type: SnackBarType.info,
-                                            );
-                                          },
-                                          activeThumbColor: Colors.green,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-
-                                      PopupMenuButton<String>(
-                                        icon: const Icon(Icons.more_vert),
-                                        onSelected: (value) {
-                                          if (value == 'view') {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    CountryDetailPage(
-                                                      countryId: c.id,
-                                                    ),
-                                              ),
-                                            );
-                                          } else if (value == 'update') {
-                                            EditCountryDialog.show(
-                                              context,
-                                              ref,
-                                              c,
-                                            );
-                                          } else if (value == 'delete') {
-                                            DeleteCountryDialog.show(
-                                              context,
-                                              ref,
-                                              c.id,
-                                              c.country,
-                                            );
-                                          }
-                                        },
-                                        itemBuilder: (context) => const [
-                                          PopupMenuItem(
-                                            value: 'view',
-                                            child: Text('View Details'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'update',
-                                            child: Text('Update'),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete',
-                                            child: Text('Delete'),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                PaginationControls(
+                                  currentPage: state.currentPage,
+                                  totalCount: state.totalCount,
+                                  pageSize: _pageSize,
+                                  isLoading: state.isLoading,
+                                  hasMoreData: state.hasMoreData,
+                                  onPageChanged: _goToPage,
+                                  primaryColor: primaryColor,
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      );
-                    },
+                    ],
                   ),
           ),
         ],
-      ),
-
-      // ➕ FAB
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: primaryColor,
-        onPressed: () {
-          CustomSnackbar.show(
-            context,
-            message: 'Add Country (mock)',
-            type: SnackBarType.info,
-          );
-        },
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

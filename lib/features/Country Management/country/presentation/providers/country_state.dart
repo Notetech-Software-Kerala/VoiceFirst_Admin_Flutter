@@ -3,36 +3,59 @@ import 'package:voice_first_admin/features/Country%20Management/country/models/c
 class CountryState {
   final List<CountryModel> countries;
   final List<CountryModel> filtered;
-  final bool isMultiSelect;
-  final Set<String> selectedIds;
+  final String search;
+  final bool isLoading;
+  final bool hasMoreData;
+  final int currentPage;
+  final int totalCount;
+  final int totalPages;
+  final String? error;
 
-  CountryState({
+  const CountryState({
     required this.countries,
     required this.filtered,
-    required this.isMultiSelect,
-    required this.selectedIds,
+    required this.search,
+    required this.isLoading,
+    required this.hasMoreData,
+    required this.currentPage,
+    required this.totalCount,
+    required this.totalPages,
+    this.error,
   });
 
-  factory CountryState.initial(List<CountryModel> mockData) {
-    return CountryState(
-      countries: mockData,
-      filtered: mockData,
-      isMultiSelect: false,
-      selectedIds: {},
-    );
-  }
+  factory CountryState.initial() => const CountryState(
+    countries: [],
+    filtered: [],
+    search: '',
+    isLoading: false,
+    hasMoreData: true,
+    currentPage: 1,
+    totalCount: 0,
+    totalPages: 1,
+    error: null,
+  );
 
   CountryState copyWith({
     List<CountryModel>? countries,
     List<CountryModel>? filtered,
-    bool? isMultiSelect,
-    Set<String>? selectedIds,
+    String? search,
+    bool? isLoading,
+    bool? hasMoreData,
+    int? currentPage,
+    int? totalCount,
+    int? totalPages,
+    String? error,
   }) {
     return CountryState(
       countries: countries ?? this.countries,
       filtered: filtered ?? this.filtered,
-      isMultiSelect: isMultiSelect ?? this.isMultiSelect,
-      selectedIds: selectedIds ?? this.selectedIds,
+      search: search ?? this.search,
+      isLoading: isLoading ?? this.isLoading,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
+      currentPage: currentPage ?? this.currentPage,
+      totalCount: totalCount ?? this.totalCount,
+      totalPages: totalPages ?? this.totalPages,
+      error: error ?? this.error,
     );
   }
 }

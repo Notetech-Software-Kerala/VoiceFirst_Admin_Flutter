@@ -1,16 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/features/Program_management/presentation/dialogs/delete_program_dialog.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/program_detail_page.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/dialogs/delete_program_dialog.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
+import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
+import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
 
-class ProgramManagementView extends ConsumerWidget {
+class ProgramManagementView extends ConsumerStatefulWidget {
   const ProgramManagementView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProgramManagementView> createState() =>
+      _ProgramManagementViewState();
+}
+
+class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
+  final ScrollController _scrollController = ScrollController();
+  static const int _pageSize = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(programProvider.notifier)
+          .loadAll(
+            filter: const ProgramFilter(pageNumber: 1, pageSize: _pageSize),
+          );
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _goToPage(int page) {
+    final currentSearch = ref.read(programProvider).search;
+    ref
+        .read(programProvider.notifier)
+        .loadAll(
+          filter: ProgramFilter(
+            pageNumber: page,
+            pageSize: _pageSize,
+            searchText: currentSearch.isEmpty ? null : currentSearch,
+          ),
+        );
+
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final state = ref.watch(programProvider);
     final notifier = ref.read(programProvider.notifier);
     final theme = Theme.of(context);
@@ -81,7 +131,7 @@ class ProgramManagementView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
-                  onChanged: notifier.search,
+                  onChanged: (q) => notifier.search(q),
                   decoration: InputDecoration(
                     hintText: 'Search programs by name, label or route...',
                     prefixIcon: const Icon(Icons.search),
@@ -91,21 +141,6 @@ class ProgramManagementView extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 160,
-                        height: 55,
-                        child: _ApplicationFilter(),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(width: 130, height: 55, child: _CompanyFilter()),
-                    ],
                   ),
                 ),
               ],
@@ -120,120 +155,214 @@ class ProgramManagementView extends ConsumerWidget {
                       style: theme.textTheme.bodyMedium,
                     ),
                   )
-                : ListView.builder(
-                    itemCount: state.filtered.length,
-                    itemBuilder: (context, index) {
-                      final program = state.filtered[index];
-                      final id = program.sysProgramId;
-                      final selected =
-                          id != null && state.selectedIds.contains(id);
+                : Stack(
+                    children: [
+                      ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.only(
+                          left: 0,
+                          right: 0,
+                          top: 0,
+                          bottom: 60,
+                        ),
+                        itemCount: state.filtered.length,
+                        itemBuilder: (context, index) {
+                          final program = state.filtered[index];
+                          final id = program.sysProgramId;
+                          final isDeleted = program.deleted ?? false;
+                          final selected =
+                              id != null && state.selectedIds.contains(id);
+                          return GestureDetector(
+                            onLongPress: id == null
+                                ? null
+                                : () => notifier.toggleSelection(id),
+                            onTap: () {
+                              if (id == null) return;
 
-                      return GestureDetector(
-                        onLongPress: id == null
-                            ? null
-                            : () => notifier.toggleSelection(id),
-                        onTap: () {
-                          // if (!state.isMultiSelect && id != null) {
-                          //   Navigator.push(
-                          //     context,
-                          //     MaterialPageRoute(
-                          //       builder: (_) =>
-                          //           ProgramDetailPage(program: program),
-                          //     ),
-                          //   );
-                          // }
+                              // If selection mode is ON → toggle checkbox
+                              if (state.isMultiSelect) {
+                                notifier.toggleSelection(id);
+                                return;
+                              }
+
+                              // Otherwise → navigate to detail view
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      ProgramDetailPage(program: program),
+                                ),
+                              );
+                            },
+
+                            child: Card(
+                              color: selected
+                                  ? primaryColor.withOpacity(0.12)
+                                  : Colors.white,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: selected
+                                    ? BorderSide(
+                                        color: primaryColor,
+                                        width: 1.5,
+                                      )
+                                    : BorderSide.none,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    if (state.isMultiSelect && id != null)
+                                      Checkbox(
+                                        value: selected,
+                                        onChanged: (_) =>
+                                            notifier.toggleSelection(id),
+                                        activeColor: primaryColor,
+                                      ),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            program.programName,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: isDeleted
+                                                  ? Colors.red
+                                                  : Colors.black,
+                                            ),
+                                          ),
+
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            program.labelName,
+                                            style: TextStyle(
+                                              color: Colors.grey[700],
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                        ],
+                                      ),
+                                    ),
+
+                                    if (!state.isMultiSelect &&
+                                        id != null &&
+                                        !isDeleted)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // 🔘 ACTIVE TOGGLE (only if NOT deleted)
+                                          if (!isDeleted)
+                                            Transform.scale(
+                                              scale: 0.75,
+                                              child: Switch(
+                                                value: program.active ?? true,
+                                                onChanged: (val) async {
+                                                  final error = await notifier
+                                                      .toggleStatus(id, val);
+                                                  if (error != null &&
+                                                      context.mounted) {
+                                                    CustomSnackbar.show(
+                                                      context,
+                                                      message: error,
+                                                      type: SnackBarType.error,
+                                                    );
+                                                  }
+                                                },
+                                                activeThumbColor: Colors.green,
+                                              ),
+                                            ),
+
+                                          // 🗑 DELETE
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                              size: 20,
+                                            ),
+                                            onPressed: () {
+                                              DeleteProgramDialog.show(
+                                                context,
+                                                ref,
+                                                id,
+                                                program.programName,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
                         },
-                        child: Card(
-                          color: selected
-                              ? primaryColor.withOpacity(0.12)
-                              : Colors.white,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: selected
-                                ? BorderSide(color: primaryColor, width: 1.5)
-                                : BorderSide.none,
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
+                      ),
+                      if (state.filtered.isNotEmpty)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.shade300,
+                                  blurRadius: 6,
+                                  offset: const Offset(0, -2),
+                                ),
+                              ],
+                            ),
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                if (state.isMultiSelect && id != null)
-                                  Checkbox(
-                                    value: selected,
-                                    onChanged: (_) =>
-                                        notifier.toggleSelection(id),
-                                    activeColor: primaryColor,
-                                  ),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        program.programName,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        program.labelName,
+                                Flexible(
+                                  child: Builder(
+                                    builder: (_) {
+                                      final start =
+                                          (state.currentPage - 1) * _pageSize +
+                                          1;
+                                      final end =
+                                          start + state.filtered.length - 1;
+                                      return Text(
+                                        '$start-$end of ${state.totalCount}',
                                         style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 13,
+                                          fontSize: 11,
+                                          color: Colors.grey.shade700,
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      // Text(
-                                      //   'Route: ${program.programRoute}',
-                                      //   style: TextStyle(
-                                      //     color: Colors.grey[600],
-                                      //     fontSize: 12,
-                                      //   ),
-                                      // ),
-                                      // const SizedBox(height: 2),
-                                      // Text(
-                                      //   'App: ${program.applicationId}${program.companyId != null ? ' | Company: ${program.companyId}' : ''}',
-                                      //   style: TextStyle(
-                                      //     color: Colors.grey[600],
-                                      //     fontSize: 11,
-                                      //   ),
-                                      // ),
-                                    ],
+                                        overflow: TextOverflow.ellipsis,
+                                      );
+                                    },
                                   ),
                                 ),
-                                if (!state.isMultiSelect && id != null)
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                          size: 20,
-                                        ),
-                                        onPressed: () {
-                                          DeleteProgramDialog.show(
-                                            context,
-                                            ref,
-                                            id,
-                                            program.programName,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
+                                PaginationControls(
+                                  currentPage: state.currentPage,
+                                  totalCount: state.totalCount,
+                                  pageSize: _pageSize,
+                                  isLoading: state.isLoading,
+                                  hasMoreData: state.hasMoreData,
+                                  onPageChanged: _goToPage,
+                                  primaryColor: primaryColor,
+                                ),
                               ],
                             ),
                           ),
                         ),
-                      );
-                    },
+                    ],
                   ),
           ),
         ],
@@ -243,10 +372,10 @@ class ProgramManagementView extends ConsumerWidget {
           : FloatingActionButton(
               backgroundColor: primaryColor,
               onPressed: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(builder: (_) => const AddProgramPage()),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddProgramPage()),
+                );
               },
               child: const Icon(Icons.add, color: Colors.white),
             ),
@@ -259,21 +388,36 @@ class _ApplicationFilter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(programProvider);
     final notifier = ref.read(programProvider.notifier);
+    final appsAsync = ref.watch(applicationProvider);
 
-    return DropdownButtonFormField<int?>(
-      value: state.selectedApplicationId,
-      decoration: const InputDecoration(
-        labelText: 'Application',
-        border: OutlineInputBorder(),
-        filled: true,
-      ),
-      items: const [
-        DropdownMenuItem<int?>(value: null, child: Text('All Apps')),
-        DropdownMenuItem<int?>(value: 1, child: Text('App 1')),
-        DropdownMenuItem<int?>(value: 2, child: Text('App 2')),
-        DropdownMenuItem<int?>(value: 3, child: Text('App 3')),
-      ],
-      onChanged: (val) => notifier.setApplicationFilter(val),
+    return appsAsync.when(
+      data: (apps) {
+        return DropdownButtonFormField<int?>(
+          value: apps.any((a) => a.platformId == state.selectedApplicationId)
+              ? state.selectedApplicationId
+              : null,
+          decoration: const InputDecoration(
+            labelText: 'Application',
+            border: OutlineInputBorder(),
+            filled: true,
+          ),
+          items: [
+            const DropdownMenuItem<int?>(
+              value: null,
+              child: Text('All Applications'),
+            ),
+            ...apps.map(
+              (a) => DropdownMenuItem<int?>(
+                value: a.platformId,
+                child: Text(a.platformName),
+              ),
+            ),
+          ],
+          onChanged: notifier.setApplicationFilter,
+        );
+      },
+      loading: () => const SizedBox(height: 56),
+      error: (_, __) => const Text('Failed to load applications'),
     );
   }
 }
@@ -301,6 +445,153 @@ class _CompanyFilter extends ConsumerWidget {
           notifier.setCompanyFilter(int.tryParse(value.trim()));
         }
       },
+    );
+  }
+}
+
+class _ProgramCard extends StatelessWidget {
+  final String name;
+  final String label;
+  final bool isDeleted;
+  final bool isActive;
+  final bool selected;
+  final bool showCheckbox;
+  final VoidCallback? onTap;
+  final VoidCallback? onDelete;
+  final ValueChanged<bool>? onToggle;
+
+  const _ProgramCard({
+    required this.name,
+    required this.label,
+    required this.isDeleted,
+    required this.isActive,
+    required this.selected,
+    required this.showCheckbox,
+    this.onTap,
+    this.onDelete,
+    this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF0D7FF2);
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selected ? primaryColor.withOpacity(0.12) : theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: selected ? Border.all(color: primaryColor, width: 1.5) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showCheckbox)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Checkbox(value: selected, onChanged: (_) {}),
+              ),
+
+            /// ICON
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.extension_rounded, color: primaryColor),
+            ),
+
+            const SizedBox(width: 16),
+
+            /// TEXT CONTENT
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDeleted ? Colors.red : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: theme.colorScheme.secondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  /// STATUS CHIP
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDeleted
+                          ? Colors.red.withOpacity(0.15)
+                          : isActive
+                          ? Colors.green.withOpacity(0.15)
+                          : Colors.orange.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      isDeleted
+                          ? 'DELETED'
+                          : isActive
+                          ? 'ACTIVE'
+                          : 'INACTIVE',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: isDeleted
+                            ? Colors.red
+                            : isActive
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            /// ACTIONS
+            if (!isDeleted)
+              Column(
+                children: [
+                  Transform.scale(
+                    scale: 0.75,
+                    child: Switch(value: isActive, onChanged: onToggle),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                    onPressed: onDelete,
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import '../providers/business_activity_provider.dart';
 import '../dialogs/add_activity_dialog.dart';
@@ -391,128 +392,14 @@ class _ViewBusinessActivityPageState
                                 ),
 
                                 // Page controls
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Previous button
-                                    IconButton(
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(
-                                        minWidth: 36,
-                                        minHeight: 36,
-                                      ),
-                                      onPressed:
-                                          state.currentPage > 1 &&
-                                              !state.isLoading
-                                          ? () =>
-                                                _goToPage(state.currentPage - 1)
-                                          : null,
-                                      icon: Icon(
-                                        Icons.chevron_left,
-                                        color: state.currentPage > 1
-                                            ? primaryColor
-                                            : Colors.grey.shade400,
-                                      ),
-                                      iconSize: 24,
-                                    ),
-
-                                    // Current page
-                                    Container(
-                                      constraints: const BoxConstraints(
-                                        minWidth: 60,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: primaryColor.withAlpha(20),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: state.isLoading
-                                          ? Center(
-                                              child: SizedBox(
-                                                width: 14,
-                                                height: 14,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                      color: primaryColor,
-                                                    ),
-                                              ),
-                                            )
-                                          : Text(
-                                              '${state.currentPage} / ${(state.totalCount / _pageSize).ceil()}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
-                                                color: primaryColor,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                    ),
-
-                                    // Next button
-                                    IconButton(
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(
-                                        minWidth: 36,
-                                        minHeight: 36,
-                                      ),
-                                      onPressed:
-                                          state.hasMoreData && !state.isLoading
-                                          ? () =>
-                                                _goToPage(state.currentPage + 1)
-                                          : null,
-                                      icon: Icon(
-                                        Icons.chevron_right,
-                                        color: state.hasMoreData
-                                            ? primaryColor
-                                            : Colors.grey.shade400,
-                                      ),
-                                      iconSize: 24,
-                                    ),
-
-                                    // Page selector dropdown
-                                    PopupMenuButton<int>(
-                                      padding: EdgeInsets.zero,
-                                      icon: Icon(
-                                        Icons.more_vert,
-                                        color: primaryColor,
-                                        size: 20,
-                                      ),
-                                      iconSize: 20,
-                                      offset: const Offset(0, -10),
-                                      enabled: !state.isLoading,
-                                      onSelected: (page) => _goToPage(page),
-                                      itemBuilder: (context) {
-                                        final totalPages =
-                                            (state.totalCount / _pageSize)
-                                                .ceil();
-                                        return List.generate(
-                                          totalPages,
-                                          (index) => PopupMenuItem<int>(
-                                            value: index + 1,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text('Page ${index + 1}'),
-                                                if (state.currentPage ==
-                                                    index + 1)
-                                                  Icon(
-                                                    Icons.check,
-                                                    color: primaryColor,
-                                                    size: 16,
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                PaginationControls(
+                                  currentPage: state.currentPage,
+                                  totalCount: state.totalCount,
+                                  pageSize: _pageSize,
+                                  isLoading: state.isLoading,
+                                  hasMoreData: state.hasMoreData,
+                                  onPageChanged: _goToPage,
+                                  primaryColor: primaryColor,
                                 ),
                               ],
                             ),
