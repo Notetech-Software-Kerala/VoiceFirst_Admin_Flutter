@@ -412,6 +412,7 @@ class _ViewBusinessActivityPageState
       ),
 
       floatingActionButton: FloatingActionButton(
+        heroTag: 'business_activity_fab', // <-- Add a unique tag here
         onPressed: () => AddActivityDialog.show(context, ref),
         backgroundColor: primaryColor,
         elevation: 4,
