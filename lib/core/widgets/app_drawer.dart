@@ -183,9 +183,15 @@ class SidebarWidget extends StatelessWidget {
                       title: "Org Setup",
                       subtitle: "Manage Permissions & Roles",
                       icon: Icons.admin_panel_settings,
-                      // We map "Roles" page to index 1 for now
                       isSelected: currentIndex == 1,
                       onTap: () => onNavigate(1),
+                    ),
+                    _SidebarSubItem(
+                      title: "Post Office",
+                      subtitle: "Setup Locations",
+                      icon: Icons.local_post_office,
+                      isSelected: currentIndex == 4,
+                      onTap: () => onNavigate(4),
                     ),
                     _SidebarSubItem(
                       title: "Branches",
@@ -196,8 +202,8 @@ class SidebarWidget extends StatelessWidget {
                       title: "Business Activity",
                       subtitle: "Manage Business Activity",
                       icon: Icons.business_center_outlined,
-                      isSelected: currentIndex == 4,
-                      onTap: () => onNavigate(4),
+                      isSelected: currentIndex == 5,
+                      onTap: () => onNavigate(5),
                     ),
                     _SidebarSubItem(
                       title: "Manage Country",
