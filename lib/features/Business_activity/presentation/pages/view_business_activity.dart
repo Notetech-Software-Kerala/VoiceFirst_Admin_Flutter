@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/Business_activity/models/activity_filter_option.dart';
+import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/providers/business_activity_notifier.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/widgets/activity_querybar.dart';
 import '../providers/business_activity_provider.dart';
 import '../dialogs/add_activity_dialog.dart';
 import '../dialogs/delete_activity_dialog.dart';
@@ -19,404 +23,429 @@ class ViewBusinessActivityPage extends ConsumerStatefulWidget {
 
 class _ViewBusinessActivityPageState
     extends ConsumerState<ViewBusinessActivityPage> {
-  final ScrollController _scrollController = ScrollController();
   static const int _pageSize = 10;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref
-          .read(businessActivityProvider.notifier)
-          .loadAll(
-            filter: BusinessActivityFilter(pageNumber: 1, limit: _pageSize),
-          );
+      ref.read(businessActivityProvider.notifier).load();
     });
   }
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _goToPage(int page) {
-    ref
-        .read(businessActivityProvider.notifier)
-        .loadAll(
-          filter: BusinessActivityFilter(pageNumber: page, limit: _pageSize),
-        );
-
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final state = ref.watch(businessActivityProvider);
     final notifier = ref.read(businessActivityProvider.notifier);
-    final primaryColor = const Color(0xFF0D7FF2);
 
     return Scaffold(
-      backgroundColor: Colors.white,
-
-      appBar: AppBar(
-        title: Text(
-          style: TextStyle(color: Colors.white),
-          state.isMultiSelect
-              ? '${state.selectedIds.length} selected'
-              : 'Business Activities',
-        ),
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          tooltip: 'Back to Dashboard',
-          onPressed: () {
-            if (state.isMultiSelect) {
-              notifier.exitSelectionMode();
-            } else {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            }
-          },
-        ),
-        actions: [
-          /// BEFORE long-press → Select
-          if (!state.isMultiSelect)
-            TextButton(
-              onPressed: () => notifier.enterSelectionMode(),
-              child: const Text(
-                'Select',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// AFTER long-press → Select All / Clear All
-          if (state.isMultiSelect)
-            TextButton(
-              onPressed: () => notifier.enterSelectionMode(
-                selectAll: !notifier.allVisibleSelected,
-              ),
-              child: Text(
-                notifier.allVisibleSelected ? 'Clear All' : 'Select All',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// Bulk delete
-          if (state.isMultiSelect)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.white),
-              onPressed: () =>
-                  BulkDeleteDialog.show(context, ref, state.selectedIds.length),
-            ),
-        ],
-      ),
-      body: Column(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: primaryColor.withAlpha(20),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: TextField(
-              onChanged: (value) {
-                notifier.loadAll(
-                  filter: BusinessActivityFilter(
-                    searchText: value,
-                    pageNumber: 1,
-                  ),
-                );
-              },
+          Column(
+            children: [
+              // ───────── HEADER ─────────
+              _Header(
+                theme: theme,
+                title: state.isMultiSelect
+                    ? '${state.selectedIds.length} selected'
+                    : 'Business Activities',
+                onBack: () {
+                  if (state.isMultiSelect) {
+                    notifier.exitSelectionMode();
+                  } else {
+                    Navigator.of(context).popUntil((r) => r.isFirst);
+                  }
+                },
 
-              // onChanged: notifier.search,
-              decoration: InputDecoration(
-                hintText: 'Search activities...',
-                prefixIcon: Icon(Icons.search, color: primaryColor),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor.withAlpha(77)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: state.filtered.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: primaryColor.withAlpha(26),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.inbox,
-                            size: 40,
-                            color: primaryColor.withAlpha(128),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No activities found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap the + button to add a new activity',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
+                onRefresh: () =>
+                    ref.read(businessActivityProvider.notifier).load(),
+
+                actions: [
+                  if (!state.isMultiSelect)
+                    TextButton(
+                      onPressed: notifier.enterSelectionMode,
+                      child: const Text('Select'),
                     ),
-                  )
-                : Stack(
-                    children: [
-                      ListView.builder(
+                  if (state.isMultiSelect)
+                    TextButton(
+                      onPressed: () => notifier.enterSelectionMode(
+                        selectAll: !notifier.allVisibleSelected,
+                      ),
+                      child: Text(
+                        notifier.allVisibleSelected
+                            ? 'Clear All'
+                            : 'Select All',
+                      ),
+                    ),
+                  if (state.isMultiSelect)
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      color: colorScheme.error,
+                      onPressed: () => BulkDeleteDialog.show(
+                        context,
+                        ref,
+                        state.selectedIds.length,
+                      ),
+                    ),
+                ],
+              ),
+              const ActivityQueryBar(),
+
+              // ───────── LIST ─────────
+              Expanded(
+                child: state.isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : state.items.isEmpty
+                    ? _EmptyState(theme: theme)
+                    : ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.only(
-                          left: 12,
-                          right: 12,
-                          top: 12,
-                          bottom: 60, // Space for pagination controls
-                        ),
-                        itemCount: state.filtered.length,
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+
+                        itemCount: state.items.length,
                         itemBuilder: (_, i) {
-                          final a = state.filtered[i];
+                          final a = state.items[i];
                           final selected = state.selectedIds.contains(
                             a.activityId,
                           );
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 12, top: 2),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
-                                    color: selected
-                                        ? primaryColor.withAlpha(128)
-                                        : Colors.grey.shade200,
-                                    width: selected ? 2 : 1,
-                                  ),
-                                ),
-                                tileColor: selected
-                                    ? primaryColor.withAlpha(20)
-                                    : Colors.white,
-
-                                leading: state.isMultiSelect
-                                    ? Checkbox(
-                                        value: selected,
-                                        onChanged: (_) => notifier
-                                            .toggleSelection(a.activityId),
-                                        activeColor: primaryColor,
-                                      )
-                                    : null,
-
-                                title: Text(
-                                  a.activityName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: a.isDeleted
-                                        ? Colors.red
-                                        : Colors.grey.shade800,
-                                  ),
-                                ),
-
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    /// detail view Eye
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.remove_red_eye_outlined,
-                                        color: primaryColor,
-                                        // size: 27,
-                                      ),
-                                      iconSize: 27,
-                                      onPressed: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              ActivityDetailPage(activity: a),
-                                        ),
-                                      ),
-                                    ),
-
-                                    if (!a.isDeleted) ...[
-                                      /// Toggle
-                                      Transform.scale(
-                                        scale: 0.8,
-                                        child: Switch(
-                                          value: a.active,
-                                          onChanged: (val) async {
-                                            final error = await notifier.update(
-                                              id: a.activityId,
-                                              active: val,
-                                            );
-                                            if (!mounted) return;
-
-                                            if (error != null) {
-                                              CustomSnackbar.show(
-                                                context,
-                                                message: error,
-                                                type: SnackBarType.error,
-                                              );
-                                            } else {
-                                              CustomSnackbar.show(
-                                                context,
-                                                message:
-                                                    '${a.activityName} ${val ? 'enabled' : 'disabled'}',
-                                                type: SnackBarType.info,
-                                              );
-                                            }
-                                          },
-                                          activeThumbColor:
-                                              Colors.green.shade600,
-                                          inactiveThumbColor:
-                                              Colors.grey.shade400,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                      ),
-
-                                      ///  Delete
-                                      IconButton(
-                                        icon: Icon(
-                                          Icons.delete_rounded,
-                                          color: Colors.red.shade600,
-                                          // size: 27,
-                                        ),
-                                        iconSize: 22,
-                                        onPressed: () =>
-                                            DeleteActivityDialog.show(
-                                              context,
-                                              ref,
-                                              a.activityId,
-                                              a.activityName,
-                                            ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-
-                                onLongPress: () =>
-                                    notifier.toggleSelection(a.activityId),
-                                // onTap: state.isMultiSelect ? null : () {},
-                                onTap: () {
-                                  if (state.isMultiSelect) {
-                                    notifier.toggleSelection(a.activityId);
-                                  }
-                                },
+                          return _ActivityCard(
+                            activity: a,
+                            selected: selected,
+                            isMultiSelect: state.isMultiSelect,
+                            onTap: state.isMultiSelect
+                                ? () => notifier.toggleSelection(a.activityId)
+                                : null,
+                            onLongPress: () =>
+                                notifier.toggleSelection(a.activityId),
+                            onView: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ActivityDetailPage(activity: a),
                               ),
                             ),
+                            onDelete: () async {
+                              DeleteActivityDialog.show(
+                                context,
+                                ref,
+                                a.activityId,
+                                a.activityName,
+                              );
+                            },
+                            onSwitch: (val) async {
+                              final error = await notifier.update(
+                                id: a.activityId,
+                                active: val,
+                              );
+
+                              if (!mounted) return;
+
+                              CustomSnackbar.show(
+                                context,
+                                message:
+                                    error ??
+                                    '${a.activityName} ${val ? 'enabled' : 'disabled'}',
+                                type: error == null
+                                    ? SnackBarType.info
+                                    : SnackBarType.error,
+                              );
+                            },
+                            onEdit: () {
+                              EditActivityDialog.show(context, ref, a);
+                            },
                           );
                         },
                       ),
-                      // Pagination controls
-                      if (state.filtered.isNotEmpty)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade300,
-                                  blurRadius: 6,
-                                  offset: const Offset(0, -2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // Page info
-                                Flexible(
-                                  child: Builder(
-                                    builder: (_) {
-                                      final start =
-                                          (state.currentPage - 1) * _pageSize +
-                                          1;
-                                      final end =
-                                          start + state.filtered.length - 1;
+              ),
+            ],
+          ),
 
-                                      return Text(
-                                        '$start-$end of ${state.totalCount}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      );
-                                    },
-                                  ),
-                                ),
-
-                                // Page controls
-                                PaginationControls(
-                                  currentPage: state.currentPage,
-                                  totalCount: state.totalCount,
-                                  pageSize: _pageSize,
-                                  isLoading: state.isLoading,
-                                  hasMoreData: state.hasMoreData,
-                                  onPageChanged: _goToPage,
-                                  primaryColor: primaryColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+          // ───────── FAB ─────────
+          Positioned(
+            bottom: 24,
+            right: 16,
+            child: FloatingActionButton(
+              heroTag: 'business_activity_list_fab',
+              onPressed: () => AddActivityDialog.show(context, ref),
+              backgroundColor: colorScheme.primary,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
           ),
         ],
       ),
 
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'business_activity_fab', // <-- Add a unique tag here
-        onPressed: () => AddActivityDialog.show(context, ref),
-        backgroundColor: primaryColor,
-        elevation: 4,
-        child: const Icon(Icons.add, color: Colors.white),
+      // ───────── PAGINATION ─────────
+      bottomNavigationBar: (state.isLoading || state.items.isEmpty)
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                border: Border(top: BorderSide(color: theme.dividerColor)),
+              ),
+              child: PaginationControls(
+                currentPage: state.currentPage,
+                totalCount: state.totalCount,
+                pageSize: _pageSize,
+                isLoading: state.isLoading,
+                hasMoreData: state.hasMoreData,
+
+                onPageChanged: (page) {
+                  ref.read(businessActivityProvider.notifier).goToPage(page);
+                },
+
+                primaryColor: colorScheme.primary,
+              ),
+            ),
+    );
+  }
+}
+
+// ───────────────── HEADER ─────────────────
+class _Header extends StatelessWidget {
+  final ThemeData theme;
+  final String title;
+  final VoidCallback onBack;
+  final VoidCallback onRefresh;
+  final List<Widget> actions;
+
+  const _Header({
+    required this.theme,
+    required this.title,
+    required this.onBack,
+    required this.onRefresh,
+    this.actions = const [],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 90 + MediaQuery.of(context).padding.top,
+      padding: EdgeInsets.fromLTRB(
+        16,
+        MediaQuery.of(context).padding.top + 16,
+        16,
+        12,
+      ),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
+      child: Row(
+        children: [
+          _HeaderButton(icon: Icons.arrow_back_ios_new, onTap: onBack),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ...actions,
+          const SizedBox(width: 8),
+          _HeaderButton(icon: Icons.refresh, onTap: onRefresh),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HeaderButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          border: Border.all(color: theme.dividerColor),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 18),
+      ),
+    );
+  }
+}
+
+// ───────────────── CARD ─────────────────
+class _ActivityCard extends StatelessWidget {
+  final activity;
+  final bool selected;
+  final bool isMultiSelect;
+  final VoidCallback? onTap;
+  final VoidCallback onLongPress;
+  final VoidCallback onView;
+  final VoidCallback onDelete;
+  final ValueChanged<bool> onSwitch;
+  final VoidCallback onEdit;
+
+  const _ActivityCard({
+    required this.activity,
+    required this.selected,
+    required this.isMultiSelect,
+    required this.onTap,
+    required this.onLongPress,
+    required this.onView,
+    required this.onDelete,
+    required this.onSwitch,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: isMultiSelect ? null : onView,
+      // onLongPress: onLongPress,
+      onLongPress: activity.isDeleted ? null : onLongPress,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isMultiSelect)
+              Checkbox(value: selected, onChanged: (_) => onTap?.call()),
+
+            // else
+            //   Container(
+            //     width: 48,
+            //     height: 48,
+            //     decoration: BoxDecoration(
+            //       color: colorScheme.primary.withValues(alpha: 0.1),
+            //       borderRadius: BorderRadius.circular(8),
+            //     ),
+            //     // child: Icon(Icons.work_outline, color: colorScheme.primary),
+            //   ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          activity.activityName,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: activity.isDeleted
+                                ? theme.colorScheme.error
+                                : theme.textTheme.bodyLarge?.color,
+                          ),
+                        ),
+                      ),
+                      if (!activity.isDeleted)
+                        Transform.scale(
+                          scale: 0.7,
+                          child: Switch(
+                            value: activity.active,
+                            onChanged: onSwitch,
+                            activeThumbColor: Colors.green[600],
+                            inactiveThumbColor: theme.disabledColor,
+                            inactiveTrackColor: theme.dividerColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (!activity.isDeleted)
+              Padding(
+                padding: const EdgeInsets.only(left: 8, top: 4),
+                child: Row(
+                  children: [
+                    InkWell(
+                      onTap: onEdit,
+                      borderRadius: BorderRadius.circular(99),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.edit,
+                          size: 18,
+                          color: theme.primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: onDelete,
+                      borderRadius: BorderRadius.circular(99),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.delete,
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────────── EMPTY ─────────────────
+class _EmptyState extends StatelessWidget {
+  final ThemeData theme;
+  const _EmptyState({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_outlined, size: 64, color: theme.disabledColor),
+          const SizedBox(height: 16),
+          Text('No activities found', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 6),
+          Text('Tap + to add a new activity', style: theme.textTheme.bodySmall),
+        ],
       ),
     );
   }

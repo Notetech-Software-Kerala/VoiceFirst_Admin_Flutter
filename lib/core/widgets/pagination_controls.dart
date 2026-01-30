@@ -1,19 +1,4 @@
 import 'package:flutter/material.dart';
-
-/// Reusable pagination controls widget
-///
-/// Example usage:
-/// ```dart
-/// PaginationControls(
-///   currentPage: state.currentPage,
-///   totalCount: state.totalCount,
-///   pageSize: 10,
-///   isLoading: state.isLoading,
-///   hasMoreData: state.hasMoreData,
-///   onPageChanged: (page) => _goToPage(page),
-///   primaryColor: const Color(0xFF0D7FF2),
-/// )
-/// ```
 class PaginationControls extends StatelessWidget {
   final int currentPage;
   final int totalCount;
