@@ -82,7 +82,13 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: notifier.exitSelectionMode,
               )
-            : null,
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                tooltip: 'Back to Dashboard',
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+              ),
         actions: [
           if (!state.isMultiSelect)
             TextButton(
@@ -121,7 +127,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.08),
+              color: primaryColor.withAlpha(20),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(16),
                 bottomRight: Radius.circular(16),
@@ -197,7 +203,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
 
                             child: Card(
                               color: selected
-                                  ? primaryColor.withOpacity(0.12)
+                                  ? primaryColor.withAlpha(31)
                                   : Colors.white,
                               margin: const EdgeInsets.symmetric(
                                 horizontal: 16,
@@ -450,6 +456,7 @@ class _CompanyFilter extends ConsumerWidget {
   }
 }
 
+// ignore: unused_element
 class _ProgramCard extends StatelessWidget {
   final String name;
   final String label;
@@ -485,12 +492,12 @@ class _ProgramCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? primaryColor.withOpacity(0.12) : theme.cardColor,
+          color: selected ? primaryColor.withAlpha(31) : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: selected ? Border.all(color: primaryColor, width: 1.5) : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withAlpha(8),
               blurRadius: 6,
               offset: const Offset(0, 3),
             ),
@@ -510,7 +517,7 @@ class _ProgramCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.1),
+                color: primaryColor.withAlpha(26),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.extension_rounded, color: primaryColor),
@@ -549,10 +556,10 @@ class _ProgramCard extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isDeleted
-                          ? Colors.red.withOpacity(0.15)
+                          ? Colors.red.withAlpha(38)
                           : isActive
-                          ? Colors.green.withOpacity(0.15)
-                          : Colors.orange.withOpacity(0.15),
+                          ? Colors.green.withAlpha(38)
+                          : Colors.orange.withAlpha(38),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(

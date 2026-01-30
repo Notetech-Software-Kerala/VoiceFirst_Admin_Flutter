@@ -1,7 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/business_activity_service/business_activity_service.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/Business_activity/models/activity_filter_option.dart';
+import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
+import '../../business_activity_service/business_activity_service.dart';
+import '../../models/business_activity_model.dart';
+import 'business_activity_query.dart';
 import 'business_activity_state.dart';
 
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
@@ -9,87 +12,128 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
   @override
   BusinessActivityState build() {
-    // Initialize service
     _service = BusinessActivityService();
-
     return BusinessActivityState.initial();
   }
 
-  Future<void> loadAll({BusinessActivityFilter? filter}) async {
+  // ───────────────── LOAD ─────────────────
+
+  Future<void> load({BusinessActivityQuery? query}) async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true);
+    final nextQuery = query ?? state.query;
+
+    state = state.copyWith(isLoading: true, query: nextQuery);
 
     try {
-      final response = await _service.getAllActivities(
-        filter ?? BusinessActivityFilter(pageNumber: 1, limit: 10),
-      );
+      final response = await _service.getAllActivities(nextQuery.toApiFilter());
 
       state = state.copyWith(
-        activities: response.items,
-        filtered: response.items, // backend already filtered
-        isLoading: false,
-        hasMoreData: response.hasNextPage,
-        currentPage: response.currentPage,
+        items: response.items,
         totalCount: response.totalCount,
-      );
-      debugPrint(
-        'PAGE=${response.currentPage}, TOTAL_PAGES=${response.totalPages}, HAS_NEXT=${response.hasNextPage}',
+        currentPage: response.currentPage,
+        hasMoreData: response.hasNextPage,
+        isLoading: false,
       );
     } catch (e) {
+      debugPrint('❌ Load failed: $e');
       state = state.copyWith(isLoading: false);
     }
   }
 
-  // ♻️ Recover
-  Future<String?> recover(int activityId) async {
-    try {
-      // Call the API to recover the activity
-      await _service.recoverActivity(activityId);
+  // ───────────────── SEARCH / FILTER / SORT ─────────────────
 
-      // ✅ Update state locally (NO reload)
-      state = state.copyWith(
-        activities: state.activities.map((activity) {
-          if (activity.activityId == activityId) {
-            return activity.copyWith(isDeleted: false, clearDeletedMeta: true);
-          }
-          return activity;
-        }).toList(),
-        filtered: state.filtered.map((activity) {
-          if (activity.activityId == activityId) {
-            return activity.copyWith(isDeleted: false, clearDeletedMeta: true);
-          }
-          return activity;
-        }).toList(),
-      );
-
-      return null; // Success
-    } catch (e) {
-      debugPrint('💥 Failed to recover activity: $e');
-      return 'Failed to recover activity';
-    }
+  void search({required ActivitySearchBy searchBy, required String text}) {
+    load(
+      query: state.query.copyWith(
+        searchBy: text.isEmpty ? null : searchBy,
+        searchText: text.isEmpty ? null : text,
+        pageNumber: 1,
+      ),
+    );
   }
 
-  // ➕ Add
+  void sort({String? sortBy, String? sortOrder}) {
+    load(
+      query: state.query.copyWith(
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        pageNumber: 1,
+      ),
+    );
+  }
+
+  void setFilter(ActivityFilterOption option) {
+    BusinessActivityQuery query;
+
+    switch (option) {
+      case ActivityFilterOption.all:
+        query = BusinessActivityQuery.initial();
+        break;
+
+      case ActivityFilterOption.active:
+        query = const BusinessActivityQuery(active: true, deleted: false);
+        break;
+
+      case ActivityFilterOption.inactive:
+        query = const BusinessActivityQuery(active: false, deleted: false);
+        break;
+
+      case ActivityFilterOption.available:
+        query = const BusinessActivityQuery(deleted: false);
+        break;
+
+      case ActivityFilterOption.deleted:
+        query = const BusinessActivityQuery(deleted: true);
+        break;
+    }
+
+    load(query: query);
+  }
+
+  void filterByDates({
+    DateTime? createdFromDate,
+    DateTime? createdToDate,
+    DateTime? updatedFromDate,
+    DateTime? updatedToDate,
+    DateTime? deletedFromDate,
+    DateTime? deletedToDate,
+  }) {
+    load(
+      query: state.query.copyWith(
+        createdFromDate: createdFromDate,
+        createdToDate: createdToDate,
+        updatedFromDate: updatedFromDate,
+        updatedToDate: updatedToDate,
+        deletedFromDate: deletedFromDate,
+        deletedToDate: deletedToDate,
+        pageNumber: 1,
+      ),
+    );
+  }
+
+  // ───────────────── CLEAR ALL FILTERS ─────────────────
+  void clearAllFilters() {
+    load(query: BusinessActivityQuery.initial());
+  }
+
+  void goToPage(int page) {
+    load(query: state.query.copyWith(pageNumber: page));
+  }
+
+  // ───────────────── CRUD ─────────────────
+
   Future<String?> add(String name) async {
-    debugPrint('Starting add operation for: "$name"');
-
     try {
-      debugPrint('Calling service.createActivity...');
-      final activity = await _service.createActivity(name);
-
-      final list = [...state.activities, activity];
-      state = state.copyWith(activities: list);
-
-      debugPrint(' Activity added. Total activities: ${list.length}');
-
-      return null; // ✅ success
+      await _service.createActivity(name);
+      // Reload to respect sort order and pagination
+      await load();
+      return null;
     } catch (e) {
-      debugPrint('💥 Exception caught: $e');
       return 'Failed to add activity';
     }
   }
-  // Update
+
   Future<String?> update({
     required int id,
     String? activityName,
@@ -102,63 +146,80 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
         active: active,
       );
 
-      // final list = state.activities
-      //     .map((a) => a.activityId == updated.activityId ? updated : a)
-      //     .toList();
-
-      // state = state.copyWith(activities: list);
       state = state.copyWith(
-        activities: state.activities
-            .map((a) => a.activityId == updated.activityId ? updated : a)
+        items: state.items
+            .map((a) => a.activityId == id ? updated : a)
             .toList(),
       );
       return null;
     } catch (e) {
-      debugPrint(' Failed to update activity: $e');
       return 'Failed to update activity';
     }
   }
 
-  // 🔄 Status
-  Future<String?> toggleStatus(int activityId, bool active) async {
+  // Future<String?> delete(int id) async {
+  //   try {
+  //     await _service.deleteActivity(id);
+
+  //     state = state.copyWith(
+  //       items: state.items
+  //           .map((a) => a.activityId == id ? a.copyWith(isDeleted: true) : a)
+  //           .toList(),
+  //     );
+  //     return null;
+  //   } catch (e) {
+  //     return 'Failed to delete activity';
+  //   }
+  // }
+
+  Future<String?> delete(int id) async {
     try {
-      await _service.toggleStatus(activityId, active);
+      final deleted = await _service.deleteActivity(id);
 
-      final list = state.activities
-          .map(
-            (a) => a.activityId == activityId ? a.copyWith(active: active) : a,
-          )
-          .toList();
+      state = state.copyWith(
+        items: state.items
+            .map((a) => a.activityId == id ? deleted : a)
+            .toList(),
+      );
 
-      state = state.copyWith(activities: list);
-
-      debugPrint('✅ Status toggled for activity ID: $activityId');
-      return null; // success
+      return null;
     } catch (e) {
-      debugPrint('💥 Failed to toggle status: $e');
-      return 'Failed to toggle status';
+      return 'Failed to delete activity';
     }
   }
 
-  // ❌ Delete
-  Future<String?> delete(int activityId) async {
-    try {
-      await _service.deleteActivity(activityId);
+  // Future<String?> recover(int id) async {
+  //   try {
+  //     await _service.recoverActivity(id);
 
-      // Reload the current page to get fresh data with deleted status
-      await loadAll(
-        filter: BusinessActivityFilter(
-          pageNumber: state.currentPage,
-          limit: 10,
-          searchText: state.search.isEmpty ? null : state.search,
-        ),
+  //     state = state.copyWith(
+  //       items: state.items
+  //           .map(
+  //             (a) => a.activityId == id
+  //                 ? a.copyWith(isDeleted: false, clearDeletedMeta: true)
+  //                 : a,
+  //           )
+  //           .toList(),
+  //     );
+  //     return null;
+  //   } catch (e) {
+  //     return 'Failed to recover activity';
+  //   }
+  // }
+
+  Future<String?> recover(int id) async {
+    try {
+      final updated = await _service.recoverActivity(id);
+
+      state = state.copyWith(
+        items: state.items
+            .map((a) => a.activityId == id ? updated : a)
+            .toList(),
       );
 
-      debugPrint('✅ Activity deleted: $activityId');
-      return null; // success
+      return null;
     } catch (e) {
-      debugPrint('💥 Failed to delete activity: $e');
-      return 'Failed to delete activity';
+      return 'Failed to recover activity';
     }
   }
 
@@ -167,55 +228,20 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
     try {
       await _service.bulkDelete(state.selectedIds.toList());
-
-      // Clear selection first
-      state = state.copyWith(selectedIds: {}, isMultiSelect: false);
-
-      // Reload the current page to get fresh data with deleted status
-      await loadAll(
-        filter: BusinessActivityFilter(
-          pageNumber: state.currentPage,
-          limit: 10,
-          searchText: state.search.isEmpty ? null : state.search,
-        ),
-      );
-
-      debugPrint('✅ Bulk delete completed');
-      return null; // success
+      await load();
+      return null;
     } catch (e) {
-      debugPrint('💥 Failed to delete selected activities: $e');
-      return 'Failed to delete activities';
+      return 'Failed to delete selected activities';
     }
   }
 
-  // ☑️ Selection
-  void toggleSelection(int id) {
-    final selected = {...state.selectedIds};
-    selected.contains(id) ? selected.remove(id) : selected.add(id);
-
-    state = state.copyWith(
-      selectedIds: selected,
-      isMultiSelect: selected.isNotEmpty,
-    );
-  }
-
-  void clearSelection() {
-    state = state.copyWith(selectedIds: {}, isMultiSelect: false);
-  }
-
-  // 🔧 Helper
-  // List<BusinessActivity> _applyFilter(List<BusinessActivity> list) {
-  //   if (state.search.isEmpty) return list;
-  //   return list
-  //       .where((a) => a.name.toLowerCase().contains(state.search.toLowerCase()))
-  //       .toList();
-  // }
+  // ───────────────── SELECTION MODE ─────────────────
 
   void enterSelectionMode({bool selectAll = false}) {
     final selected = <int>{};
 
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.activityId));
+      selected.addAll(state.items.map((e) => e.activityId));
     }
 
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
@@ -225,7 +251,17 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
     state = state.copyWith(isMultiSelect: false, selectedIds: {});
   }
 
+  void toggleSelection(int id) {
+    final selected = {...state.selectedIds};
+
+    selected.contains(id) ? selected.remove(id) : selected.add(id);
+
+    state = state.copyWith(
+      selectedIds: selected,
+      isMultiSelect: selected.isNotEmpty,
+    );
+  }
+
   bool get allVisibleSelected =>
-      state.filtered.isNotEmpty &&
-      state.selectedIds.length == state.filtered.length;
+      state.items.isNotEmpty && state.selectedIds.length == state.items.length;
 }

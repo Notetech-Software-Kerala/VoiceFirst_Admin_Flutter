@@ -4,7 +4,7 @@ import 'package:voice_first_admin/core/config/api_endpints.dart';
 import '../models/application_model.dart';
 
 class ApplicationService {
-  static const _path = '/application/lookup';
+  static const _path = '/platform/lookup';
 
   Future<List<ApplicationModel>> getAll() async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');

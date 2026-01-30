@@ -74,6 +74,13 @@ class _CountryViewState extends ConsumerState<CountryView> {
         backgroundColor: primaryColor,
         elevation: 0,
         title: Text('Countries', style: const TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          tooltip: 'Back to Dashboard',
+          onPressed: () {
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        ),
       ),
 
       // ───────────────── Body ─────────────────

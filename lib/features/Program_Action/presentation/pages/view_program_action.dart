@@ -76,7 +76,13 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: notifier.exitSelectionMode,
               )
-            : null, // Let the default menu icon show
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                tooltip: 'Back to Dashboard',
+                onPressed: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                },
+              ),
         actions: [
           /// Select
           if (!state.isMultiSelect)
