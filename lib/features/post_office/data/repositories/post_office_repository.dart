@@ -107,6 +107,59 @@ class PostOfficeRepository {
     }
   }
 
+  // --- DIVISION LOOKUPS ---
+
+  Future<List<dynamic>> getDivisionOne(String countryId) async {
+    try {
+      final uri = Uri.parse(
+        '${ApiEndpoints.baseUrl}/division/one/lookup/$countryId',
+      );
+      final response = await http.get(uri);
+
+      if (_isSuccess(response)) {
+        final json = jsonDecode(response.body);
+        return json['data'] ?? [];
+      }
+      throw "Failed to load Division 1";
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<dynamic>> getDivisionTwo(String divOneId) async {
+    try {
+      final uri = Uri.parse(
+        '${ApiEndpoints.baseUrl}/division/two/lookup/$divOneId',
+      );
+      final response = await http.get(uri);
+
+      if (_isSuccess(response)) {
+        final json = jsonDecode(response.body);
+        return json['data'] ?? [];
+      }
+      throw "Failed to load Division 2";
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<dynamic>> getDivisionThree(String divTwoId) async {
+    try {
+      final uri = Uri.parse(
+        '${ApiEndpoints.baseUrl}/division/three/lookup/$divTwoId',
+      );
+      final response = await http.get(uri);
+
+      if (_isSuccess(response)) {
+        final json = jsonDecode(response.body);
+        return json['data'] ?? [];
+      }
+      throw "Failed to load Division 3";
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   bool _isSuccess(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return true;

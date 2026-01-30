@@ -78,11 +78,19 @@ class Country {
   final String isoCode; // e.g., "US", "IN"
   final String dialCode;
 
+  // Dynamic Division Labels
+  final String? divisionOneLabel;
+  final String? divisionTwoLabel;
+  final String? divisionThreeLabel;
+
   Country({
     required this.id,
     required this.name,
     required this.isoCode,
     required this.dialCode,
+    this.divisionOneLabel,
+    this.divisionTwoLabel,
+    this.divisionThreeLabel,
   });
 
   factory Country.fromJson(Map<String, dynamic> json) {
@@ -91,6 +99,9 @@ class Country {
       name: json['countryName'],
       isoCode: json['isoAlphaTwo'],
       dialCode: json['dialCode'],
+      divisionOneLabel: json['divisionOne'],
+      divisionTwoLabel: json['divisionTwo'],
+      divisionThreeLabel: json['divisionThree'],
     );
   }
 
