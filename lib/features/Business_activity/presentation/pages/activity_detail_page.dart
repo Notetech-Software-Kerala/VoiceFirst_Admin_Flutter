@@ -13,258 +13,190 @@ class ActivityDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final primaryColor = const Color(0xFF0D7FF2);
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     final state = ref.watch(businessActivityProvider);
 
-    // Get the latest version of this activity from the provider
-    final updatedActivity =
-        state.activities
-            .where((a) => a.activityId == activity.activityId)
-            .cast<BusinessActivity?>()
-            .firstOrNull ??
-        state.filtered
-            .where((a) => a.activityId == activity.activityId)
-            .cast<BusinessActivity?>()
-            .firstOrNull ??
-        activity;
+    final updatedActivity = state.items.firstWhere(
+      (a) => a.activityId == activity.activityId,
+      orElse: () => activity,
+    );
 
-    // Determine if activity is deleted
     final isDeleted = updatedActivity.isDeleted;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Activity Details',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          updatedActivity.activityName,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        backgroundColor: cs.primary,
+        foregroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: primaryColor.withAlpha(20),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          updatedActivity.activityName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: updatedActivity.active
-                                ? Colors.green.withAlpha(38)
-                                : Colors.red.withAlpha(38),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            updatedActivity.active ? 'Active' : 'Inactive',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: updatedActivity.active
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _DetailSection(
-                    title: 'Basic Information',
-                    primaryColor: primaryColor,
-                    children: [
-                      _DetailItem(
-                        label: 'Activity Name',
-                        value: updatedActivity.activityName,
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Active Status',
-                        value: updatedActivity.active ? 'Active' : 'Inactive',
-                        primaryColor: primaryColor,
-                        valueColor: updatedActivity.active
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                      _DetailItem(
-                        label: 'Delete Status',
-                        value: isDeleted ? 'Deleted' : 'Not Deleted',
-                        primaryColor: primaryColor,
-                        valueColor: isDeleted ? Colors.red : Colors.green,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _DetailSection(
-                    title: 'Created Information',
-                    primaryColor: primaryColor,
-                    children: [
-                      _DetailItem(
-                        label: 'Created By',
-                        value: updatedActivity.createdUser,
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Created Date',
-                        value: _formatDateTime(updatedActivity.createdDate),
-                        primaryColor: primaryColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _DetailSection(
-                    title: 'Modified Information',
-                    primaryColor: primaryColor,
-                    children: [
-                      _DetailItem(
-                        label: 'Modified By',
-                        value: updatedActivity.modifiedUser ?? 'N/A',
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Modified Date',
-                        value: updatedActivity.modifiedDate != null
-                            ? _formatDateTime(updatedActivity.modifiedDate!)
-                            : 'Not modified',
-                        primaryColor: primaryColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (isDeleted) ...[
-                    _DetailSection(
-                      title: 'Deleted Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Deleted By',
-                          value: updatedActivity.deletedUser?.isEmpty ?? true
-                              ? 'N/A'
-                              : updatedActivity.deletedUser!,
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Deleted Date',
-                          value: updatedActivity.deletedDate != null
-                              ? _formatDateTime(updatedActivity.deletedDate!)
-                              : 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if (isDeleted)
-                        // RECOVER BUTTON
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => RecoverActivityDialog.show(
-                              context,
-                              ref,
-                              updatedActivity.activityId,
-                              updatedActivity.activityName,
-                            ),
-                            icon: const Icon(
-                              Icons.restore,
-                              color: Colors.white,
-                            ),
-                            label: const Text('Recover Activity'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade600,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        )
-                      else ...[
-                        /// ✏️ EDIT
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => EditActivityDialog.show(
-                              context,
-                              ref,
-                              updatedActivity,
-                            ),
-                            icon: const Icon(Icons.edit, color: Colors.white),
-                            label: const Text('Edit Activity'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+            const SizedBox(height: 24),
 
-                        /// 🗑 DELETE
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => DeleteActivityDialog.show(
-                              context,
-                              ref,
-                              updatedActivity.activityId,
-                              updatedActivity.activityName,
-                            ),
-                            icon: const Icon(Icons.delete, color: Colors.white),
-                            label: const Text('Delete Activity'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade600,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
+            _SectionCard(
+              title: 'Basic Information',
+              children: [
+                _RowItem(
+                  label: 'Activity Name',
+                  value: updatedActivity.activityName,
+                ),
+                _RowItem(
+                  label: 'Status',
+                  value: isDeleted
+                      ? 'Deleted'
+                      : (updatedActivity.active ? 'Active' : 'Inactive'),
+                  valueColor: isDeleted
+                      ? cs.error
+                      : (updatedActivity.active ? Colors.green : cs.error),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            _SectionCard(
+              title: 'Created Information',
+              children: [
+                _RowItem(
+                  label: 'Created By',
+                  value: updatedActivity.createdUser,
+                ),
+                _RowItem(
+                  label: 'Created Date',
+                  value: _format(updatedActivity.createdDate),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            _SectionCard(
+              title: 'Modified Information',
+              children: [
+                _RowItem(
+                  label: 'Modified By',
+                  value: updatedActivity.modifiedUser ?? 'N/A',
+                ),
+                _RowItem(
+                  label: 'Modified Date',
+                  value: updatedActivity.modifiedDate != null
+                      ? _format(updatedActivity.modifiedDate!)
+                      : 'Not modified',
+                ),
+              ],
+            ),
+
+            if (isDeleted) ...[
+              const SizedBox(height: 20),
+              _SectionCard(
+                title: 'Deleted Information',
+                children: [
+                  _RowItem(
+                    label: 'Deleted By',
+                    value: updatedActivity.deletedUser ?? 'N/A',
+                  ),
+                  _RowItem(
+                    label: 'Deleted Date',
+                    value: updatedActivity.deletedDate != null
+                        ? _format(updatedActivity.deletedDate!)
+                        : 'N/A',
                   ),
                 ],
               ),
+            ],
+
+            const SizedBox(height: 32),
+
+            // ───── ACTIONS ─────
+            Row(
+              children: [
+                if (isDeleted)
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => RecoverActivityDialog.show(
+                        context,
+                        ref,
+                        updatedActivity.activityId,
+                        updatedActivity.activityName,
+                      ),
+                      icon: const Icon(Icons.restore, color: Colors.white),
+                      label: const Text(
+                        'Recover',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color.fromARGB(
+                          255,
+                          56,
+                          126,
+                          218,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => EditActivityDialog.show(
+                        context,
+                        ref,
+                        updatedActivity,
+                      ),
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      label: const Text(
+                        'Edit',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => DeleteActivityDialog.show(
+                        context,
+                        ref,
+                        updatedActivity.activityId,
+                        updatedActivity.activityName,
+                      ),
+                      icon: const Icon(Icons.delete, color: Colors.white),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -272,95 +204,84 @@ class ActivityDetailPage extends ConsumerWidget {
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day.toString().padLeft(2, '0')}/'
-        '${dateTime.month.toString().padLeft(2, '0')}/'
-        '${dateTime.year} '
-        '${dateTime.hour.toString().padLeft(2, '0')}:'
-        '${dateTime.minute.toString().padLeft(2, '0')}';
+  String _format(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/'
+        '${dt.month.toString().padLeft(2, '0')}/'
+        '${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
 
-class _DetailSection extends StatelessWidget {
+// ───────────────── UI HELPERS ─────────────────
+
+class _SectionCard extends StatelessWidget {
   final String title;
-  final Color primaryColor;
   final List<Widget> children;
 
-  const _DetailSection({
-    required this.title,
-    required this.primaryColor,
-    required this.children,
-  });
+  const _SectionCard({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(12),
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(14),
           ),
-          child: Column(
-            children: [
-              for (int i = 0; i < children.length; i++) ...[
-                children[i],
-                if (i < children.length - 1)
-                  Divider(height: 0, color: Colors.grey.shade200),
-              ],
-            ],
-          ),
+          child: Column(children: children),
         ),
       ],
     );
   }
 }
 
-class _DetailItem extends StatelessWidget {
+class _RowItem extends StatelessWidget {
   final String label;
   final String value;
-  final Color primaryColor;
   final Color? valueColor;
 
-  const _DetailItem({
-    required this.label,
-    required this.value,
-    required this.primaryColor,
-    this.valueColor,
-  });
+  const _RowItem({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final isLight = theme.brightness == Brightness.light;
+    final isActivityName = label == 'Activity Name';
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isLight ? Colors.black : Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: valueColor ?? Colors.grey.shade900,
-            ),
+            style: isActivityName
+                ? theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: valueColor ?? theme.textTheme.bodyMedium?.color,
+                  )
+                : theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: valueColor ?? theme.textTheme.bodyMedium?.color,
+                  ),
           ),
         ],
       ),

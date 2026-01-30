@@ -1,11 +1,15 @@
 class BusinessActivityFilter {
+  final String? searchBy;
   final String? searchText;
+
   final String? sortBy;
   final String? sortOrder;
-  final int pageNumber;
-  final int limit;
+
   final bool? active;
   final bool? deleted;
+
+  final int pageNumber;
+  final int limit;
 
   final DateTime? createdFromDate;
   final DateTime? createdToDate;
@@ -14,47 +18,60 @@ class BusinessActivityFilter {
   final DateTime? deletedFromDate;
   final DateTime? deletedToDate;
 
-  BusinessActivityFilter({
+  const BusinessActivityFilter({
+    this.searchBy,
     this.searchText,
     this.sortBy,
     this.sortOrder,
     this.active,
     this.deleted,
+    required this.pageNumber,
+    required this.limit,
     this.createdFromDate,
     this.createdToDate,
     this.updatedFromDate,
     this.updatedToDate,
     this.deletedFromDate,
     this.deletedToDate,
-    this.pageNumber = 1,
-    this.limit = 20,
   });
 
   Map<String, String> toQueryParams() {
-    final map = <String, String>{
+    final Map<String, String> params = {
       'PageNumber': pageNumber.toString(),
-      'Limit': limit.toString(),
+      'PageSize': limit.toString(),
     };
 
-    void add(String key, dynamic value) {
-      if (value == null) return;
-      map[key] = value is DateTime
-          ? value.toIso8601String()
-          : value.toString();
+    void add(String key, String? value) {
+      if (value != null && value.isNotEmpty) {
+        params[key] = value;
+      }
     }
 
+    void addDate(String key, DateTime? value) {
+      if (value != null) {
+        params[key] = value.toIso8601String();
+      }
+    }
+
+    add('SearchBy', searchBy);
     add('SearchText', searchText);
     add('SortBy', sortBy);
     add('SortOrder', sortOrder);
-    add('Active', active);
-    add('Deleted', deleted);
-    add('CreatedFromDate', createdFromDate);
-    add('CreatedToDate', createdToDate);
-    add('UpdatedFromDate', updatedFromDate);
-    add('UpdatedToDate', updatedToDate);
-    add('DeletedFromDate', deletedFromDate);
-    add('DeletedToDate', deletedToDate);
 
-    return map;
+    if (active != null) {
+      params['Active'] = active.toString();
+    }
+    if (deleted != null) {
+      params['Deleted'] = deleted.toString();
+    }
+
+    addDate('CreatedFromDate', createdFromDate);
+    addDate('CreatedToDate', createdToDate);
+    addDate('UpdatedFromDate', updatedFromDate);
+    addDate('UpdatedToDate', updatedToDate);
+    addDate('DeletedFromDate', deletedFromDate);
+    addDate('DeletedToDate', deletedToDate);
+
+    return params;
   }
 }

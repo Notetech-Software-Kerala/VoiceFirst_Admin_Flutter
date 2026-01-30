@@ -20,7 +20,6 @@ class PaginatedResponse<T> {
     required this.totalPages,
   });
 
-  // ✅ DERIVED FLAGS
   bool get hasNextPage => currentPage < totalPages;
   bool get hasPreviousPage => currentPage > 1;
 
@@ -32,7 +31,7 @@ class PaginatedResponse<T> {
       items: (json['items'] as List)
           .map((e) => fromJsonT(e as Map<String, dynamic>))
           .toList(),
-      currentPage: json['pageNumber'], // ✅ MATCH API
+      currentPage: json['pageNumber'], // API compatible
       pageSize: json['pageSize'],
       totalCount: json['totalCount'],
       totalPages: json['totalPages'],
@@ -53,7 +52,7 @@ class BusinessActivityService {
       body: jsonEncode({'activityName': name}),
     );
 
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
       return BusinessActivity.fromJson(json['data']);
     } else {
@@ -157,12 +156,10 @@ class BusinessActivityService {
     }
   }
 
-  Future<void> recoverActivity(int id) async {
+  Future<BusinessActivity> recoverActivity(int id) async {
     final url = Uri.parse(
       '${ApiEndpoints.baseUrl}/business-activity/recover/$id',
     );
-
-    debugPrint('API REQUEST: PATCH $url');
 
     final response = await http.patch(
       url,
@@ -172,12 +169,13 @@ class BusinessActivityService {
     if (response.statusCode != 200) {
       throw Exception('Failed to recover activity');
     }
+
+    final json = jsonDecode(response.body);
+    return BusinessActivity.fromJson(json['data']);
   }
 
-  Future<void> deleteActivity(int id) async {
+  Future<BusinessActivity> deleteActivity(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
-
-    debugPrint('API REQUEST: DELETE $url');
 
     final response = await http.delete(
       url,
@@ -185,8 +183,11 @@ class BusinessActivityService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete activity: ${response.statusCode}');
+      throw Exception('Failed to delete activity');
     }
+
+    final json = jsonDecode(response.body);
+    return BusinessActivity.fromJson(json['data']);
   }
 
   Future<void> bulkDelete(List<int> ids) async {
