@@ -31,6 +31,15 @@ class PostOffice {
   final bool isActive;
   final List<PostOfficeZipCode> zipCodes;
 
+  // Detailed Fields
+  final String? divOneName;
+  final String? divTwoName;
+  final String? divThreeName;
+  final String? createdDate;
+  final String? createdUser;
+  final String? modifiedDate;
+  final String? modifiedUser;
+
   PostOffice({
     required this.id,
     required this.name,
@@ -39,6 +48,13 @@ class PostOffice {
     required this.countryIso,
     required this.isActive,
     required this.zipCodes,
+    this.divOneName,
+    this.divTwoName,
+    this.divThreeName,
+    this.createdDate,
+    this.createdUser,
+    this.modifiedDate,
+    this.modifiedUser,
   });
 
   factory PostOffice.fromJson(Map<String, dynamic> json) {
@@ -54,6 +70,13 @@ class PostOffice {
               ?.map((e) => PostOfficeZipCode.fromJson(e))
               .toList() ??
           [],
+      divOneName: json['divOneName'],
+      divTwoName: json['divTwoName'],
+      divThreeName: json['divThreeName'],
+      createdDate: json['createdDate'],
+      createdUser: json['createdUser'],
+      modifiedDate: json['modifiedDate'],
+      modifiedUser: json['modifiedUser'],
     );
   }
 
