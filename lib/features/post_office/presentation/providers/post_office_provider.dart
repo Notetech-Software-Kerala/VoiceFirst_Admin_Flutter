@@ -131,4 +131,13 @@ class PostOfficeNotifier extends Notifier<PostOfficeState> {
       return false;
     }
   }
+
+  Future<PostOffice?> getPostOfficeById(int id) async {
+    try {
+      final data = await _repository.getPostOfficeById(id);
+      return PostOffice.fromJson(data['data']);
+    } catch (e) {
+      return null;
+    }
+  }
 }

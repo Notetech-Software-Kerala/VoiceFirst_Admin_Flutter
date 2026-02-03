@@ -25,7 +25,6 @@ class StandardListCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -38,61 +37,71 @@ class StandardListCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Variable Leading (Icon Box)
-              leading,
-
-              const SizedBox(width: 12),
-
-              // Content
-              Expanded(
-                child: Column(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
+                    // Variable Leading (Icon Box)
+                    leading,
+
+                    const SizedBox(width: 12),
+
+                    // Content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  title,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              if (trailing != null) ...[
+                                const SizedBox(width: 8),
+                                trailing!,
+                              ],
+                            ],
                           ),
-                        ),
-                        if (trailing != null) ...[
-                          const SizedBox(width: 8),
-                          trailing!,
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: theme.hintColor,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ],
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: theme.hintColor,
-                        height: 1.3,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
+
+                    // Actions
+                    if (actions != null) ...[
+                      const SizedBox(width: 8),
+                      Row(children: actions!),
+                    ],
                   ],
                 ),
-              ),
-
-              // Actions
-              if (actions != null) ...[
-                const SizedBox(width: 8),
-                Row(children: actions!),
               ],
-            ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }

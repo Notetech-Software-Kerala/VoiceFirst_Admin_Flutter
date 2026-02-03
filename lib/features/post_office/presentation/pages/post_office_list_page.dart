@@ -6,6 +6,7 @@ import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import '../providers/post_office_provider.dart';
 import 'add_post_office_page.dart';
+import 'post_office_details_page.dart';
 
 // --- MAIN SCREEN ---
 class PostOfficeListScreen extends ConsumerStatefulWidget {
@@ -166,6 +167,15 @@ class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
                       onTap: () => _deletePostOffice(office.id, office.name),
                     ),
                   ],
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            PostOfficeDetailsPage(postOffice: office),
+                      ),
+                    );
+                  },
                 );
               }, childCount: postOffices.length),
             ),

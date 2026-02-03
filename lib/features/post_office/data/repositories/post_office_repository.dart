@@ -44,6 +44,21 @@ class PostOfficeRepository {
     }
   }
 
+  Future<Map<String, dynamic>> getPostOfficeById(int id) async {
+    try {
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office/$id');
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw "Failed to load post office details";
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> createPostOffice(Map<String, dynamic> data) async {
     try {
       final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office');
