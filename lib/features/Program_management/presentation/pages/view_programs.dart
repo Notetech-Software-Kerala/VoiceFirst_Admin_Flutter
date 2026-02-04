@@ -181,14 +181,11 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   const SizedBox(width: 10),
                   Builder(
                     builder: (_) {
-                      final totalPages =
-                          (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages =
-                          totalPages > 0 ? totalPages : 1;
+                      final totalPages = (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
                       return Text(
                         'Page ${state.currentPage} of $safeTotalPages',
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       );
                     },
                   ),
@@ -196,10 +193,8 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   IconButton(
                     icon: const Icon(Icons.chevron_right),
                     onPressed: (() {
-                      final totalPages =
-                          (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages =
-                          totalPages > 0 ? totalPages : 1;
+                      final totalPages = (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
                       return state.currentPage < safeTotalPages
                           ? () => _goToPage(state.currentPage + 1)
                           : null;
@@ -308,8 +303,9 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                       : () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>ProgramDetailPage(programId: program.sysProgramId!)
-
+                            builder: (_) => ProgramDetailPage(
+                              programId: program.sysProgramId!,
+                            ),
                           ),
                         ),
                   onLongPress: id == null

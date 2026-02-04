@@ -134,21 +134,18 @@ class _ViewBusinessActivityPageState
                     icon: const Icon(Icons.chevron_left),
                     onPressed: state.currentPage > 1
                         ? () => ref
-                            .read(businessActivityProvider.notifier)
-                            .goToPage(state.currentPage - 1)
+                              .read(businessActivityProvider.notifier)
+                              .goToPage(state.currentPage - 1)
                         : null,
                   ),
                   const SizedBox(width: 10),
                   Builder(
                     builder: (_) {
-                      final totalPages =
-                          (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages =
-                          totalPages > 0 ? totalPages : 1;
+                      final totalPages = (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
                       return Text(
                         'Page ${state.currentPage} of $safeTotalPages',
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       );
                     },
                   ),
@@ -156,14 +153,12 @@ class _ViewBusinessActivityPageState
                   IconButton(
                     icon: const Icon(Icons.chevron_right),
                     onPressed: (() {
-                      final totalPages =
-                          (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages =
-                          totalPages > 0 ? totalPages : 1;
+                      final totalPages = (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
                       return state.currentPage < safeTotalPages
                           ? () => ref
-                              .read(businessActivityProvider.notifier)
-                              .goToPage(state.currentPage + 1)
+                                .read(businessActivityProvider.notifier)
+                                .goToPage(state.currentPage + 1)
                           : null;
                     })(),
                   ),

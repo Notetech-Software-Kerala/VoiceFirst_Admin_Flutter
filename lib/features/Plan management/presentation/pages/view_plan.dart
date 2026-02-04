@@ -128,12 +128,10 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
                   Builder(
                     builder: (_) {
                       final totalPages = state.totalPages;
-                      final safeTotalPages =
-                          totalPages > 0 ? totalPages : 1;
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
                       return Text(
                         'Page ${state.currentPage} of $safeTotalPages',
-                        style:
-                            const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       );
                     },
                   ),
