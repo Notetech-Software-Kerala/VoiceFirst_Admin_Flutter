@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
 import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_lookup_provider.dart';
 
 class ProgramDetailPage extends ConsumerStatefulWidget {
-  const ProgramDetailPage({super.key, required this.program});
+  const ProgramDetailPage({super.key, required this.programId});
 
-  final ProgramModel program;
+  final int programId;
 
   @override
   ConsumerState<ProgramDetailPage> createState() => _ProgramDetailPageState();
@@ -27,18 +29,32 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
   bool _isEditing = false;
 
+  ProgramModel _getProgram() {
+    return ref
+        .read(programProvider)
+        .all
+        .firstWhere(
+          (p) => p.sysProgramId == widget.programId,
+          orElse: () => throw Exception("Program not found"),
+        );
+  }
+
   @override
   void initState() {
     super.initState();
-    _nameCtrl = TextEditingController(text: widget.program.programName);
-    _labelCtrl = TextEditingController(text: widget.program.labelName);
-    _routeCtrl = TextEditingController(text: widget.program.programRoute);
 
-    _applicationId = widget.program.applicationId > 0
-        ? widget.program.applicationId
-        : 1;
+    final program = _getProgram();
 
-    _selectedActionIds = widget.program.programActionIds.toSet();
+    _nameCtrl = TextEditingController(text: program.programName);
+    _labelCtrl = TextEditingController(text: program.labelName);
+    _routeCtrl = TextEditingController(text: program.programRoute);
+
+    _applicationId = program.applicationId;
+    // Initially select only actions that are active for this program
+    _selectedActionIds = program.actions
+        .where((a) => a.active)
+        .map((a) => a.actionId)
+        .toSet();
   }
 
   @override
@@ -49,7 +65,9 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
+    final program = _getProgram();
+
     final name = _nameCtrl.text.trim();
     final label = _labelCtrl.text.trim();
     var route = _routeCtrl.text.trim();
@@ -65,110 +83,205 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
     if (!route.startsWith('/')) route = '/$route';
 
-    final updated = widget.program.copyWith(
+    // final updated = program.copyWith(
+    //   programName: name,
+    //   labelName: label,
+    //   programRoute: route,
+    //   applicationId: _applicationId,
+    //   programActionIds: _selectedActionIds.toList(),
+    // );
+    final updated = program.copyWith(
       programName: name,
       labelName: label,
       programRoute: route,
       applicationId: _applicationId,
-      actions: widget.program.actions
-          .where((a) => _selectedActionIds.contains(a.actionId))
-          .toList(),
+
+      /// 🔥 rebuild actions correctly
+      actions:
+          program.actions.map((a) {
+            return ProgramActionSummary(
+              actionId: a.actionId,
+              actionName: a.actionName,
+              active: _selectedActionIds.contains(a.actionId),
+              createdUser: a.createdUser,
+              createdDate: a.createdDate,
+              modifiedUser: a.modifiedUser,
+              modifiedDate: a.modifiedDate,
+            );
+          }).toList()..addAll(
+            /// NEW actions
+            _selectedActionIds
+                .where((id) => !program.actions.any((a) => a.actionId == id))
+                .map(
+                  (id) => ProgramActionSummary(
+                    actionId: id,
+                    actionName: '',
+                    active: true,
+                  ),
+                ),
+          ),
     );
 
-    ref
-        .read(programProvider.notifier)
-        .update(updated, updateBasic: true, updateActions: true);
+    try {
+      await ref.read(programProvider.notifier).updateProgram(updated: updated);
 
-    CustomSnackbar.show(
-      context,
-      message: 'Program updated successfully',
-      type: SnackBarType.success,
-    );
+      if (!mounted) return;
 
-    Navigator.pop(context);
+      setState(() {
+        _isEditing = false;
+      });
+
+      CustomSnackbar.show(
+        context,
+        message: 'Program updated successfully',
+        type: SnackBarType.success,
+      );
+    } catch (e) {
+      CustomSnackbar.show(
+        context,
+        message: 'Failed to update program',
+        type: SnackBarType.error,
+      );
+    }
+  }
+
+  void _cancelEdit() {
+    final program = _getProgram();
+
+    setState(() {
+      _nameCtrl.text = program.programName;
+      _labelCtrl.text = program.labelName;
+      _routeCtrl.text = program.programRoute;
+
+      _applicationId = program.applicationId;
+      _selectedActionIds = program.actions
+          .where((a) => a.active)
+          .map((a) => a.actionId)
+          .toSet();
+
+      _isEditing = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final program = ref.watch(
+      programProvider.select(
+        (s) => s.all.firstWhere(
+          (p) => p.sysProgramId == widget.programId,
+          orElse: () => throw Exception("Program not found"),
+        ),
+      ),
+    );
+
+    /// 🔥 VERY ADVANCED FIX — controller sync
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isEditing) {
+        if (_nameCtrl.text != program.programName) {
+          _nameCtrl.text = program.programName;
+        }
+        if (_labelCtrl.text != program.labelName) {
+          _labelCtrl.text = program.labelName;
+        }
+        if (_routeCtrl.text != program.programRoute) {
+          _routeCtrl.text = program.programRoute;
+        }
+
+        _applicationId = program.applicationId;
+        // Keep selection in sync with active program actions
+        _selectedActionIds = program.actions
+            .where((a) => a.active)
+            .map((a) => a.actionId)
+            .toSet();
+      }
+    });
+
     final theme = Theme.of(context);
-    final isDeleted = widget.program.deleted ?? false;
+    final cs = theme.colorScheme;
+    final isDeleted = program.deleted ?? false;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        title: const Text(
-          'Program Details',
-          style: TextStyle(color: Colors.white),
+        title: const Text('Program Details'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: cs.outlineVariant),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          if (!isDeleted)
-            TextButton(
-              onPressed: () => setState(() => _isEditing = !_isEditing),
-              child: Text(
-                _isEditing ? 'View' : 'Edit',
-                style: const TextStyle(color: Colors.white),
-              ),
-            ),
-        ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            /// 🔷 HEADER
-            Container(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 110),
+            child: Padding(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: primaryColor.withAlpha(20),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                ),
-              ),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(
+                  /// PRIMARY INFO CARD (Program Name + Status)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.program.programName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Expanded(child: _Label('PROGRAM NAME')),
+                            const SizedBox(width: 12),
+                            Text(
+                              program.programName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        _statusChip(
-                          isDeleted
-                              ? 'Deleted'
-                              : (widget.program.active ?? true)
-                              ? 'Active'
-                              : 'Inactive',
-                          isDeleted
-                              ? Colors.red
-                              : (widget.program.active ?? true)
-                              ? Colors.green
-                              : Colors.orange,
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Expanded(child: _Label('STATUS')),
+                            const SizedBox(width: 12),
+                            Builder(
+                              builder: (context) {
+                                final bool deleted = isDeleted;
+                                final bool active = program.active ?? true;
+                                String statusText;
+                                Color statusColor;
+                                if (deleted) {
+                                  statusText = 'Deleted';
+                                  statusColor = Colors.red;
+                                } else if (active) {
+                                  statusText = 'Active';
+                                  statusColor = Colors.green;
+                                } else {
+                                  statusText = 'Inactive';
+                                  statusColor = Colors.orange;
+                                }
+
+                                return Text(
+                                  statusText,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor,
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
 
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  /// 🔹 BASIC INFORMATION
+                  const SizedBox(height: 20),
+
+                  /// BASIC INFO
                   _DetailSection(
                     title: 'Basic Information',
                     primaryColor: primaryColor,
@@ -181,17 +294,17 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                         : [
                             _DetailItem(
                               label: 'Program Name',
-                              value: widget.program.programName,
+                              value: program.programName,
                               primaryColor: primaryColor,
                             ),
                             _DetailItem(
                               label: 'Label Name',
-                              value: widget.program.labelName,
+                              value: program.labelName,
                               primaryColor: primaryColor,
                             ),
                             _DetailItem(
                               label: 'Route',
-                              value: widget.program.programRoute,
+                              value: program.programRoute,
                               primaryColor: primaryColor,
                             ),
                           ],
@@ -199,245 +312,492 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
                   const SizedBox(height: 24),
 
-                  /// 🔹 APPLICATION
-                  _DetailSection(
-                    title: 'Application',
-                    primaryColor: primaryColor,
-                    children: [
-                      ref
-                          .watch(applicationProvider)
-                          .when(
-                            data: (apps) {
-                              final current =
-                                  apps.any(
-                                    (a) => a.platformId == _applicationId,
-                                  )
-                                  ? _applicationId
-                                  : null;
+                  /// APPLICATION
+                  ref
+                      .watch(applicationProvider)
+                      .when(
+                        data: (apps) {
+                          // If there are no applications in the system, hide section
+                          if (apps.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
 
-                              return DropdownButtonFormField<int>(
-                                value: current,
-                                items: apps
-                                    .map(
-                                      (a) => DropdownMenuItem<int>(
-                                        value: a.platformId,
-                                        child: Text(a.platformName),
-                                      ),
+                          final hasLinkedApplication =
+                              _applicationId > 0 &&
+                              apps.any((a) => a.platformId == _applicationId);
+
+                          final currentId = hasLinkedApplication
+                              ? _applicationId
+                              : null;
+                          final currentAppName = currentId != null
+                              ? apps
+                                    .firstWhere(
+                                      (a) => a.platformId == currentId,
                                     )
-                                    .toList(),
-                                decoration: const InputDecoration(
-                                  filled: true,
-                                  border: OutlineInputBorder(),
-                                ),
-                                onChanged: !_isEditing
-                                    ? null
-                                    : (val) =>
-                                          setState(() => _applicationId = val!),
-                              );
-                            },
-                            loading: () =>
-                                const LinearProgressIndicator(minHeight: 2),
-                            error: (_, __) =>
-                                const Text('Failed to load applications'),
-                          ),
-                    ],
-                  ),
+                                    .platformName
+                              : null;
 
-                  const SizedBox(height: 24),
-
-                  /// 🔹 PROGRAM ACTIONS
-                  _DetailSection(
-                    title: 'Program Actions',
-                    primaryColor: primaryColor,
-                    children: [
-                      ref
-                          .watch(programActionLookupProvider)
-                          .when(
-                            data: (actions) {
-                              final idToName = {
-                                for (final a in actions)
-                                  a.actionId: a.actionName,
-                              };
-
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: theme.cardColor,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ExpansionTile(
+                              shape: const Border(),
+                              collapsedShape: const Border(),
+                              tilePadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              childrenPadding: const EdgeInsets.fromLTRB(
+                                12,
+                                0,
+                                12,
+                                12,
+                              ),
+                              title: Row(
                                 children: [
-                                  /// Selected actions
-                                  if (_selectedActionIds.isEmpty)
-                                    const Text('No actions linked')
-                                  else
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: _selectedActionIds
-                                          .map(
-                                            (id) => Chip(
-                                              label: Text(
-                                                idToName[id] ?? 'Action #$id',
-                                              ),
-                                            ),
-                                          )
-                                          .toList(),
+                                  const Text(
+                                    'Application',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
                                     ),
-                                  if (_isEditing) ...[
-                                    const SizedBox(height: 12),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: FilledButton.tonalIcon(
-                                        icon: const Icon(Icons.settings),
-                                        label: const Text('Manage Actions'),
-                                        onPressed: () => _openActionManager(
-                                          context,
-                                          actions,
+                                  ),
+                                  const Spacer(),
+                                  // if (!_isEditing && currentAppName != null)
+                                  //   Text(
+                                  //     currentAppName,
+                                  //     style: const TextStyle(fontSize: 12),
+                                  //   ),
+                                ],
+                              ),
+                              children: [
+                                const SizedBox(height: 8),
+                                if (!_isEditing)
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      currentAppName ?? 'No application linked',
+                                    ),
+                                  )
+                                else
+                                  DropdownButtonFormField<int>(
+                                    value: currentId,
+                                    items: [
+                                      // const DropdownMenuItem<int>(
+                                      //   value: 0,
+                                      //   child: Text('No Application'),
+                                      // ),
+                                      ...apps.map(
+                                        (a) => DropdownMenuItem<int>(
+                                          value: a.platformId,
+                                          child: Text(a.platformName),
                                         ),
                                       ),
+                                    ],
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: theme.cardColor,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
-                                  ],
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _applicationId = val ?? 0;
+                                      });
+                                    },
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+
+                  const SizedBox(height: 24),
+
+                  /// PROGRAM ACTIONS
+                  Container(
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ref
+                        .watch(programActionLookupProvider)
+                        .when(
+                          data: (actions) {
+                            return ExpansionTile(
+                              shape: const Border(),
+                              collapsedShape: const Border(),
+                              tilePadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              childrenPadding: const EdgeInsets.fromLTRB(
+                                12,
+                                0,
+                                12,
+                                12,
+                              ),
+                              title: Row(
+                                children: [
+                                  const Text(
+                                    'Program Actions',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  // Text(
+                                  //   '${actions.length} actions',
+                                  //   style: const TextStyle(fontSize: 12),
+                                  // ),
                                 ],
-                              );
-                            },
-                            loading: () =>
-                                const LinearProgressIndicator(minHeight: 2),
-                            error: (_, __) =>
-                                const Text('Failed to load actions'),
+                              ),
+                              children: [
+                                const SizedBox(height: 8),
+                                if (actions.isEmpty)
+                                  const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: Text('No actions linked'),
+                                    ),
+                                  )
+                                else if (!_isEditing)
+                                  Builder(
+                                    builder: (context) {
+                                      final activeIds = program.actions
+                                          .where((a) => a.active)
+                                          .map((a) => a.actionId)
+                                          .toSet();
+
+                                      if (activeIds.isEmpty) {
+                                        return const Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(12),
+                                            child: Text('No actions linked'),
+                                          ),
+                                        );
+                                      }
+
+                                      return Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: activeIds.map((id) {
+                                          final action = actions.firstWhere(
+                                            (a) => a.actionId == id,
+                                            orElse: () => actions.first,
+                                          );
+
+                                          return Chip(
+                                            label: Text(action.actionName),
+                                            backgroundColor: primaryColor
+                                                .withOpacity(.08),
+                                            labelStyle: const TextStyle(
+                                              color: primaryColor,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            side: BorderSide.none,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                          );
+                                        }).toList(),
+                                      );
+                                    },
+                                  )
+                                else
+                                  SizedBox(
+                                    height: 260,
+                                    child: ListView.builder(
+                                      itemCount: actions.length,
+                                      itemBuilder: (_, i) {
+                                        final action = actions[i];
+                                        final selected = _selectedActionIds
+                                            .contains(action.actionId);
+
+                                        return CheckboxListTile(
+                                          value: selected,
+                                          title: Text(action.actionName),
+                                          onChanged: (checked) {
+                                            setState(() {
+                                              if (checked == true) {
+                                                _selectedActionIds.add(
+                                                  action.actionId,
+                                                );
+                                              } else {
+                                                _selectedActionIds.remove(
+                                                  action.actionId,
+                                                );
+                                              }
+                                            });
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                              ],
+                            );
+                          },
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: LinearProgressIndicator(minHeight: 2),
                           ),
-                    ],
+                          error: (_, __) => const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text('Failed to load actions'),
+                          ),
+                        ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  /// 🔹 CREATED INFORMATION
-                  if (widget.program.createdUser != null ||
-                      widget.program.createdDate != null) ...[
-                    _DetailSection(
-                      title: 'Created Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Created By',
-                          value: widget.program.createdUser ?? 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Created Date',
-                          value: widget.program.createdDate != null
-                              ? _formatDateTime(widget.program.createdDate!)
-                              : 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
+                  /// HISTORY (Created / Modified info)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 24),
-                  ],
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.history),
+                              SizedBox(width: 8),
+                              Text(
+                                'History',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Spacer(),
+                              Text(
+                                'Audit information',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
+                            childAspectRatio: 2.6,
+                            children: [
+                              _GridItem(
+                                label: 'Created By',
+                                value: program.createdUser ?? 'N/A',
+                              ),
+                              _GridItem(
+                                label: 'Created Date',
+                                value: _fmtDate(program.createdDate),
+                              ),
+                              _GridItem(
+                                label: 'Modified By',
+                                value: program.modifiedUser ?? 'N/A',
+                              ),
+                              _GridItem(
+                                label: 'Modified Date',
+                                value: _fmtDate(program.modifiedDate),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
-                  /// 🔹 MODIFIED INFORMATION
-                  if (widget.program.modifiedUser != null ||
-                      widget.program.modifiedDate != null) ...[
-                    _DetailSection(
-                      title: 'Modified Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Modified By',
-                          value: widget.program.modifiedUser ?? 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Modified Date',
-                          value: widget.program.modifiedDate != null
-                              ? _formatDateTime(widget.program.modifiedDate!)
-                              : 'Not modified',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                  const SizedBox(height: 24),
 
-                  /// 🔹 DELETED INFORMATION
-                  if (isDeleted) ...[
-                    _DetailSection(
-                      title: 'Deleted Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Deleted By',
-                          value: widget.program.deletedUser?.isEmpty ?? true
-                              ? 'N/A'
-                              : widget.program.deletedUser!,
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Deleted Date',
-                          value: widget.program.deletedDate != null
-                              ? _formatDateTime(widget.program.deletedDate!)
-                              : 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
                   if (isDeleted)
-                    FilledButton.icon(
+                    OutlinedButton.icon(
                       onPressed: () async {
                         final error = await ref
                             .read(programProvider.notifier)
-                            .recover(widget.program.sysProgramId!);
+                            .recover(program.sysProgramId!);
 
-                        if (context.mounted) {
-                          if (error != null) {
-                            CustomSnackbar.show(
-                              context,
-                              message: error,
-                              type: SnackBarType.error,
-                            );
-                          } else {
-                            CustomSnackbar.show(
-                              context,
-                              message: 'Program recovered successfully',
-                              type: SnackBarType.success,
-                            );
-                            Navigator.pop(context);
-                          }
+                        if (!mounted) return;
+
+                        if (error != null) {
+                          CustomSnackbar.show(
+                            context,
+                            message: error,
+                            type: SnackBarType.error,
+                          );
+                        } else {
+                          CustomSnackbar.show(
+                            context,
+                            message: 'Program recovered',
+                            type: SnackBarType.success,
+                          );
                         }
                       },
-                      icon: const Icon(Icons.restore),
-                      label: const Text('Recover Program'),
-                    ),
-
-                  /// 🔹 SAVE BUTTON
-                  if (_isEditing)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: _save,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: primaryColor,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text('Save Changes'),
-                          ),
+                      icon: const Icon(Icons.restore, color: Colors.green),
+                      label: const Text(
+                        'Recover Program',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: theme.cardColor,
+                        side: const BorderSide(color: Colors.green),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 16,
                         ),
-                      ],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          /// FOOTER
+          if (!isDeleted)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      theme.scaffoldBackgroundColor,
+                      theme.scaffoldBackgroundColor.withOpacity(.9),
+                      theme.scaffoldBackgroundColor.withOpacity(0),
+                    ],
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    if (_isEditing) ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _cancelEdit,
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: theme.cardColor,
+                            side: BorderSide(color: cs.outline),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _save,
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: theme.cardColor,
+                            side: BorderSide(color: cs.primary),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Save Changes',
+                            style: TextStyle(color: cs.primary),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => setState(() => _isEditing = true),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: theme.cardColor,
+                            side: BorderSide(color: cs.primary),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Edit Program',
+                            style: TextStyle(color: cs.primary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => showDeleteBottomSheet(
+                            context: context,
+                            itemName: program.programName,
+                            onDelete: () async {
+                              try {
+                                await ref
+                                    .read(programProvider.notifier)
+                                    .delete(program.sysProgramId!);
+
+                                if (!mounted) return;
+
+                                CustomSnackbar.show(
+                                  context,
+                                  message: 'Program deleted successfully',
+                                  type: SnackBarType.success,
+                                );
+                              } catch (e) {
+                                if (!mounted) return;
+
+                                CustomSnackbar.show(
+                                  context,
+                                  message: 'Failed to delete program',
+                                  type: SnackBarType.error,
+                                );
+                              }
+                            },
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: theme.cardColor,
+                            side: const BorderSide(color: Colors.redAccent),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  /// 🧩 HELPERS
-
-  Widget _editField(TextEditingController controller, String label) {
+  Widget _editField(TextEditingController c, String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
-        controller: controller,
+        controller: c,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -446,131 +806,15 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
     );
   }
 
-  Widget _statusChip(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withAlpha(38),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
-    );
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day.toString().padLeft(2, '0')}/'
-        '${dateTime.month.toString().padLeft(2, '0')}/'
-        '${dateTime.year} '
-        '${dateTime.hour.toString().padLeft(2, '0')}:'
-        '${dateTime.minute.toString().padLeft(2, '0')}';
-  }
-
-  Future<void> _openActionManager(
-    BuildContext context,
-    List<dynamic> actions,
-  ) async {
-    final tempSelection = Set<int>.from(_selectedActionIds);
-
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Select Program Actions'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: ListView(
-                  shrinkWrap: true,
-                  children: actions.map((a) {
-                    return CheckboxListTile(
-                      value: tempSelection.contains(a.actionId),
-                      title: Text(a.actionName),
-                      onChanged: (checked) {
-                        setStateDialog(() {
-                          checked == true
-                              ? tempSelection.add(a.actionId)
-                              : tempSelection.remove(a.actionId);
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    setState(() {
-                      _selectedActionIds = tempSelection;
-                    });
-                    Navigator.pop(ctx);
-                  },
-                  child: const Text('Apply'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-/// 🔹 SHARED DETAIL UI
-
-class _DetailSection extends StatelessWidget {
-  final String title;
-  final Color primaryColor;
-  final List<Widget> children;
-
-  const _DetailSection({
-    required this.title,
-    required this.primaryColor,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              for (int i = 0; i < children.length; i++) ...[
-                children[i],
-                if (i < children.length - 1)
-                  Divider(height: 0, color: Colors.grey.shade200),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
+  String _fmtDate(DateTime? dt) {
+    if (dt == null) return 'N/A';
+    final d = dt;
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final yyyy = d.year.toString();
+    final hh = d.hour.toString().padLeft(2, '0');
+    final min = d.minute.toString().padLeft(2, '0');
+    return '$dd/$mm/$yyyy $hh:$min';
   }
 }
 
@@ -590,22 +834,24 @@ class _DetailItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
+          const SizedBox(width: 0),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
-          Flexible(
+          const SizedBox(width: 16),
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -615,6 +861,102 @@ class _DetailItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _GridItem extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _GridItem({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(label.toUpperCase(), style: const TextStyle(fontSize: 10)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        letterSpacing: 1.2,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+/// 🔹 SHARED DETAIL UI
+
+class _DetailSection extends StatelessWidget {
+  final String title;
+  final Color primaryColor;
+  final List<Widget> children;
+
+  const _DetailSection({
+    required this.title,
+    required this.primaryColor,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                for (int i = 0; i < children.length; i++) ...[
+                  children[i],
+                  if (i < children.length - 1) const Divider(),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -157,21 +157,6 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
     }
   }
 
-  // Future<String?> delete(int id) async {
-  //   try {
-  //     await _service.deleteActivity(id);
-
-  //     state = state.copyWith(
-  //       items: state.items
-  //           .map((a) => a.activityId == id ? a.copyWith(isDeleted: true) : a)
-  //           .toList(),
-  //     );
-  //     return null;
-  //   } catch (e) {
-  //     return 'Failed to delete activity';
-  //   }
-  // }
-
   Future<String?> delete(int id) async {
     try {
       final deleted = await _service.deleteActivity(id);
@@ -187,25 +172,6 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       return 'Failed to delete activity';
     }
   }
-
-  // Future<String?> recover(int id) async {
-  //   try {
-  //     await _service.recoverActivity(id);
-
-  //     state = state.copyWith(
-  //       items: state.items
-  //           .map(
-  //             (a) => a.activityId == id
-  //                 ? a.copyWith(isDeleted: false, clearDeletedMeta: true)
-  //                 : a,
-  //           )
-  //           .toList(),
-  //     );
-  //     return null;
-  //   } catch (e) {
-  //     return 'Failed to recover activity';
-  //   }
-  // }
 
   Future<String?> recover(int id) async {
     try {

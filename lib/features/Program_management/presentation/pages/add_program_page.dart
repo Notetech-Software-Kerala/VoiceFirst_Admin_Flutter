@@ -37,9 +37,31 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
     if (name.isEmpty || label.isEmpty || route.isEmpty) {
       return;
     }
-    // backend accepts plain route, ensure leading slash if missing
-    if (!route.startsWith('/')) route = '/$route';
+    // Validate route: first and last characters must be letters only
+    // Allowed characters in between: letters, numbers, '/', '_' and '-'
+    final routePattern = RegExp(r'^[A-Za-z](?:[A-Za-z0-9/_-]*[A-Za-z])?$');
+    if (!routePattern.hasMatch(route)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Invalid route. It must start and end with a letter and not have special characters at the beginning or end.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
+    // final program = ProgramModel(
+    //   sysProgramId: null,
+    //   programName: name,
+    //   labelName: label,
+    //   programRoute: route,
+    //   applicationId: _applicationId,
+    //   companyId: null,
+    //   programActionIds: _selectedActionIds.toList(),
+    // );
     final program = ProgramModel(
       sysProgramId: null,
       programName: name,
@@ -47,7 +69,11 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
       programRoute: route,
       applicationId: _applicationId,
       companyId: null,
-      programActionIds: _selectedActionIds.toList(),
+
+      /// 🔥 CREATE fake actions from selected IDs
+      actions: _selectedActionIds.map((id) {
+        return ProgramActionSummary(actionId: id, actionName: '', active: true);
+      }).toList(),
     );
 
     await ref.read(programProvider.notifier).add(program);

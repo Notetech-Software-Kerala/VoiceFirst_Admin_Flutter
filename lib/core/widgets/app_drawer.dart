@@ -227,6 +227,13 @@ class SidebarWidget extends StatelessWidget {
                       onTap: () => onNavigate(8),
                       subtitle: 'Manage Programs',
                     ),
+                    _SidebarSubItem(
+                      title: "Plan Management",
+                      icon: Icons.settings_applications,
+                      isSelected: currentIndex == 9,
+                      onTap: () => onNavigate(9),
+                      subtitle: 'Manage Plans',
+                    ),
                   ],
                 ),
 

@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
-import 'package:voice_first_admin/features/Business_activity/models/activity_filter_option.dart';
-import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/providers/business_activity_notifier.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/activity_querybar.dart';
+import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
+import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import '../providers/business_activity_provider.dart';
-import '../dialogs/add_activity_dialog.dart';
-import '../dialogs/delete_activity_dialog.dart';
-import '../dialogs/bulk_delete_dialog.dart';
-import '../widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/add_activity_dialog.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/widgets/activity_querybar.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
 
 class ViewBusinessActivityPage extends ConsumerStatefulWidget {
@@ -35,6 +33,12 @@ class _ViewBusinessActivityPageState
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -42,143 +46,74 @@ class _ViewBusinessActivityPageState
     final state = ref.watch(businessActivityProvider);
     final notifier = ref.read(businessActivityProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // ───────── HEADER ─────────
-              _Header(
-                theme: theme,
-                title: state.isMultiSelect
-                    ? '${state.selectedIds.length} selected'
-                    : 'Business Activities',
-                onBack: () {
-                  if (state.isMultiSelect) {
-                    notifier.exitSelectionMode();
-                  } else {
-                    Navigator.of(context).popUntil((r) => r.isFirst);
-                  }
-                },
-
-                onRefresh: () =>
-                    ref.read(businessActivityProvider.notifier).load(),
-
-                actions: [
-                  if (!state.isMultiSelect)
-                    TextButton(
-                      onPressed: notifier.enterSelectionMode,
-                      child: const Text('Select'),
-                    ),
-                  if (state.isMultiSelect)
-                    TextButton(
-                      onPressed: () => notifier.enterSelectionMode(
-                        selectAll: !notifier.allVisibleSelected,
-                      ),
-                      child: Text(
-                        notifier.allVisibleSelected
-                            ? 'Clear All'
-                            : 'Select All',
-                      ),
-                    ),
-                  if (state.isMultiSelect)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      color: colorScheme.error,
-                      onPressed: () => BulkDeleteDialog.show(
-                        context,
-                        ref,
-                        state.selectedIds.length,
-                      ),
-                    ),
-                ],
-              ),
-              const ActivityQueryBar(),
-
-              // ───────── LIST ─────────
-              Expanded(
-                child: state.isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : state.items.isEmpty
-                    ? _EmptyState(theme: theme)
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-
-                        itemCount: state.items.length,
-                        itemBuilder: (_, i) {
-                          final a = state.items[i];
-                          final selected = state.selectedIds.contains(
-                            a.activityId,
-                          );
-
-                          return _ActivityCard(
-                            activity: a,
-                            selected: selected,
-                            isMultiSelect: state.isMultiSelect,
-                            onTap: state.isMultiSelect
-                                ? () => notifier.toggleSelection(a.activityId)
-                                : null,
-                            onLongPress: () =>
-                                notifier.toggleSelection(a.activityId),
-                            onView: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ActivityDetailPage(activity: a),
-                              ),
-                            ),
-                            onDelete: () async {
-                              DeleteActivityDialog.show(
-                                context,
-                                ref,
-                                a.activityId,
-                                a.activityName,
-                              );
-                            },
-                            onSwitch: (val) async {
-                              final error = await notifier.update(
-                                id: a.activityId,
-                                active: val,
-                              );
-
-                              if (!mounted) return;
-
-                              CustomSnackbar.show(
-                                context,
-                                message:
-                                    error ??
-                                    '${a.activityName} ${val ? 'enabled' : 'disabled'}',
-                                type: error == null
-                                    ? SnackBarType.info
-                                    : SnackBarType.error,
-                              );
-                            },
-                            onEdit: () {
-                              EditActivityDialog.show(context, ref, a);
-                            },
-                          );
-                        },
-                      ),
-              ),
-            ],
+    return StandardPageLayout(
+      title: state.isMultiSelect
+          ? '${state.selectedIds.length} selected'
+          : 'Business Activities',
+      leading: InkWell(
+        onTap: () {
+          if (state.isMultiSelect) {
+            notifier.exitSelectionMode();
+          } else {
+            Navigator.of(context).popUntil((r) => r.isFirst);
+          }
+        },
+        borderRadius: BorderRadius.circular(50),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.brightness == Brightness.dark
+                ? Colors.white.withAlpha(13)
+                : Colors.grey[100],
           ),
-
-          // ───────── FAB ─────────
-          Positioned(
-            bottom: 24,
-            right: 16,
-            child: FloatingActionButton(
-              heroTag: 'business_activity_list_fab',
-              onPressed: () => AddActivityDialog.show(context, ref),
-              backgroundColor: colorScheme.primary,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
+          child: const Icon(Icons.arrow_back_ios_new, size: 20),
+        ),
+      ),
+      actions: [
+        if (!state.isMultiSelect)
+          TextButton(
+            onPressed: () => notifier.enterSelectionMode(),
+            child: const Text('Select'),
+          ),
+        if (state.isMultiSelect) ...[
+          TextButton(
+            onPressed: () => notifier.exitSelectionMode(),
+            child: const Text('Cancel'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete, color: Colors.red),
+            tooltip: 'Delete Selected',
+            onPressed: () async {
+              final error = await notifier.deleteSelected();
+              if (context.mounted) {
+                if (error != null) {
+                  CustomSnackbar.show(
+                    context,
+                    message: error,
+                    type: SnackBarType.error,
+                  );
+                } else {
+                  CustomSnackbar.show(
+                    context,
+                    message: 'Selected activities deleted',
+                    type: SnackBarType.success,
+                  );
+                }
+              }
+            },
           ),
         ],
+      ],
+      bottom: const ActivityQueryBar(),
+      onRefresh: () async => notifier.load(),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'business_activity_list_fab',
+        onPressed: () => AddActivityDialog.show(context, ref),
+        backgroundColor: colorScheme.primary,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
-
-      // ───────── PAGINATION ─────────
       bottomNavigationBar: (state.isLoading || state.items.isEmpty)
           ? null
           : Container(
@@ -193,238 +128,158 @@ class _ViewBusinessActivityPageState
                 pageSize: _pageSize,
                 isLoading: state.isLoading,
                 hasMoreData: state.hasMoreData,
-
                 onPageChanged: (page) {
                   ref.read(businessActivityProvider.notifier).goToPage(page);
                 },
-
                 primaryColor: colorScheme.primary,
               ),
             ),
-    );
-  }
-}
+      slivers: [
+        if (state.isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (state.items.isEmpty)
+          SliverFillRemaining(child: _EmptyState(theme: theme))
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final a = state.items[index];
+                final selected = state.selectedIds.contains(a.activityId);
 
-// ───────────────── HEADER ─────────────────
-class _Header extends StatelessWidget {
-  final ThemeData theme;
-  final String title;
-  final VoidCallback onBack;
-  final VoidCallback onRefresh;
-  final List<Widget> actions;
+                final leading = state.isMultiSelect
+                    ? Checkbox(
+                        value: selected,
+                        onChanged: (_) =>
+                            notifier.toggleSelection(a.activityId),
+                      )
+                    : const StandardIconBox(
+                        icon: Icons.work_outline,
+                        color: Colors.blue,
+                      );
 
-  const _Header({
-    required this.theme,
-    required this.title,
-    required this.onBack,
-    required this.onRefresh,
-    this.actions = const [],
-  });
+                // final statusChip = Container(
+                //   padding: const EdgeInsets.symmetric(
+                //     horizontal: 10,
+                //     vertical: 4,
+                //   ),
+                //   decoration: BoxDecoration(
+                //     color: a.isDeleted
+                //         ? Colors.red.withAlpha(38)
+                //         : a.active
+                //         ? Colors.green.withAlpha(38)
+                //         : Colors.orange.withAlpha(38),
+                //     borderRadius: BorderRadius.circular(20),
+                //   ),
+                //   child: Text(
+                //     a.isDeleted
+                //         ? 'DELETED'
+                //         : a.active
+                //         ? 'ACTIVE'
+                //         : 'INACTIVE',
+                //     style: TextStyle(
+                //       fontSize: 11,
+                //       fontWeight: FontWeight.bold,
+                //       color: a.isDeleted
+                //           ? Colors.red
+                //           : a.active
+                //           ? Colors.green
+                //           : Colors.orange,
+                //     ),
+                //   ),
+                // );
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 90 + MediaQuery.of(context).padding.top,
-      padding: EdgeInsets.fromLTRB(
-        16,
-        MediaQuery.of(context).padding.top + 16,
-        16,
-        12,
-      ),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
-        border: Border(bottom: BorderSide(color: theme.dividerColor)),
-      ),
-      child: Row(
-        children: [
-          _HeaderButton(icon: Icons.arrow_back_ios_new, onTap: onBack),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                final actions = <Widget>[];
+                if (!a.isDeleted) {
+                  actions.add(
+                    Transform.scale(
+                      scale: 0.8,
+                      child: Switch(
+                        value: a.active,
+                        onChanged: (val) async {
+                          final error = await notifier.update(
+                            id: a.activityId,
+                            active: val,
+                          );
+                          if (context.mounted && error != null) {
+                            CustomSnackbar.show(
+                              context,
+                              message: error,
+                              type: SnackBarType.error,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                  actions.add(
+                    StandardActionButton(
+                      icon: Icons.edit,
+                      color: Colors.grey,
+                      onTap: () => EditActivityDialog.show(context, ref, a),
+                    ),
+                  );
+                  actions.add(
+                    StandardActionButton(
+                      icon: Icons.delete,
+                      color: Colors.red,
+                      onTap: () {
+                        showDeleteBottomSheet(
+                          context: context,
+                          itemName: a.activityName,
+                          onDelete: () async {
+                            final error = await notifier.delete(a.activityId);
+                            if (context.mounted) {
+                              if (error != null) {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: error,
+                                  type: SnackBarType.error,
+                                );
+                              } else {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: 'Activity deleted successfully',
+                                  type: SnackBarType.success,
+                                );
+                              }
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                return InkWell(
+                  onTap: state.isMultiSelect
+                      ? () => notifier.toggleSelection(a.activityId)
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ActivityDetailPage(activity: a),
+                          ),
+                        ),
+                  onLongPress: a.isDeleted
+                      ? null
+                      : () => notifier.toggleSelection(a.activityId),
+                  borderRadius: BorderRadius.circular(12),
+                  child: StandardListCard(
+                    title: a.activityName,
+                    subtitle: a.isDeleted
+                        ? 'Deleted'
+                        : (a.active ? 'Active' : 'Inactive'),
+                    leading: leading,
+                    // trailing: statusChip,
+                    actions: actions,
+                  ),
+                );
+              }, childCount: state.items.length),
             ),
           ),
-          ...actions,
-          const SizedBox(width: 8),
-          _HeaderButton(icon: Icons.refresh, onTap: onRefresh),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeaderButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeaderButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          border: Border.all(color: theme.dividerColor),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 18),
-      ),
-    );
-  }
-}
-
-// ───────────────── CARD ─────────────────
-class _ActivityCard extends StatelessWidget {
-  final activity;
-  final bool selected;
-  final bool isMultiSelect;
-  final VoidCallback? onTap;
-  final VoidCallback onLongPress;
-  final VoidCallback onView;
-  final VoidCallback onDelete;
-  final ValueChanged<bool> onSwitch;
-  final VoidCallback onEdit;
-
-  const _ActivityCard({
-    required this.activity,
-    required this.selected,
-    required this.isMultiSelect,
-    required this.onTap,
-    required this.onLongPress,
-    required this.onView,
-    required this.onDelete,
-    required this.onSwitch,
-    required this.onEdit,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    // final colorScheme = theme.colorScheme;
-
-    return InkWell(
-      onTap: isMultiSelect ? null : onView,
-      // onLongPress: onLongPress,
-      onLongPress: activity.isDeleted ? null : onLongPress,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (isMultiSelect)
-              Checkbox(value: selected, onChanged: (_) => onTap?.call()),
-
-            // else
-            //   Container(
-            //     width: 48,
-            //     height: 48,
-            //     decoration: BoxDecoration(
-            //       color: colorScheme.primary.withValues(alpha: 0.1),
-            //       borderRadius: BorderRadius.circular(8),
-            //     ),
-            //     // child: Icon(Icons.work_outline, color: colorScheme.primary),
-            //   ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          activity.activityName,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: activity.isDeleted
-                                ? theme.colorScheme.error
-                                : theme.textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                      ),
-                      if (!activity.isDeleted)
-                        Transform.scale(
-                          scale: 0.7,
-                          child: Switch(
-                            value: activity.active,
-                            onChanged: onSwitch,
-                            activeThumbColor: Colors.green[600],
-                            inactiveThumbColor: theme.disabledColor,
-                            inactiveTrackColor: theme.dividerColor,
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (!activity.isDeleted)
-              Padding(
-                padding: const EdgeInsets.only(left: 8, top: 4),
-                child: Row(
-                  children: [
-                    InkWell(
-                      onTap: onEdit,
-                      borderRadius: BorderRadius.circular(99),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: theme.primaryColor.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.edit,
-                          size: 18,
-                          color: theme.primaryColor,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    InkWell(
-                      onTap: onDelete,
-                      borderRadius: BorderRadius.circular(99),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.delete,
-                          size: 18,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }

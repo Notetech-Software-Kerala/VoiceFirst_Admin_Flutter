@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
 import '../providers/program_action_provider.dart';
 import '../dialogs/edit_program_action_dialog.dart';
-import '../dialogs/delete_program_action_dialog.dart';
-import '../dialogs/recover_program_action_dialog.dart';
 
 class ProgramActionDetailView extends ConsumerWidget {
   final ProgramActionModel action;
@@ -211,20 +212,43 @@ class ProgramActionDetailView extends ConsumerWidget {
                       if (isDeleted)
                         /// ♻️ RECOVER BUTTON
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => RecoverProgramActionDialog.show(
-                              context,
-                              ref,
-                              updatedAction.actionId,
-                              updatedAction.actionName,
+                          child: OutlinedButton.icon(
+                            onPressed: () => showRecoveryBottomSheet(
+                              context: context,
+                              itemName: updatedAction.actionName,
+                              onRecover: () async {
+                                final error = await ref
+                                    .read(programActionProvider.notifier)
+                                    .recover(updatedAction.actionId);
+                                if (context.mounted) {
+                                  if (error != null) {
+                                    CustomSnackbar.show(
+                                      context,
+                                      message: error,
+                                      type: SnackBarType.error,
+                                    );
+                                  } else {
+                                    CustomSnackbar.show(
+                                      context,
+                                      message:
+                                          '${updatedAction.actionName} recovered successfully',
+                                      type: SnackBarType.success,
+                                    );
+                                  }
+                                }
+                              },
                             ),
                             icon: const Icon(
                               Icons.restore,
-                              color: Colors.white,
+                              color: Colors.green,
                             ),
-                            label: const Text('Recover Action'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green.shade600,
+                            label: const Text(
+                              'Recover Action',
+                              style: TextStyle(color: Colors.green),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.green),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -235,20 +259,23 @@ class ProgramActionDetailView extends ConsumerWidget {
                       else ...[
                         /// ✏️ EDIT
                         Expanded(
-                          child: ElevatedButton.icon(
+                          child: OutlinedButton(
                             onPressed: () => EditProgramActionDialog.show(
                               context,
                               ref,
                               updatedAction,
                             ),
-                            icon: const Icon(Icons.edit, color: Colors.white),
-                            label: const Text('Edit Action'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryColor,
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: BorderSide(color: primaryColor),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                            ),
+                            child: Text(
+                              'Edit Action',
+                              style: TextStyle(color: primaryColor),
                             ),
                           ),
                         ),
@@ -256,21 +283,43 @@ class ProgramActionDetailView extends ConsumerWidget {
 
                         /// 🗑 DELETE
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => DeleteProgramActionDialog.show(
-                              context,
-                              ref,
-                              updatedAction.actionId,
-                              updatedAction.actionName,
+                          child: OutlinedButton(
+                            onPressed: () => showDeleteBottomSheet(
+                              context: context,
+                              itemName: updatedAction.actionName,
+                              onDelete: () async {
+                                final error = await ref
+                                    .read(programActionProvider.notifier)
+                                    .delete(updatedAction.actionId);
+                                if (context.mounted) {
+                                  if (error != null) {
+                                    CustomSnackbar.show(
+                                      context,
+                                      message: error,
+                                      type: SnackBarType.error,
+                                    );
+                                  } else {
+                                    CustomSnackbar.show(
+                                      context,
+                                      message:
+                                          'Program action deleted successfully',
+                                      type: SnackBarType.success,
+                                    );
+                                  }
+                                }
+                              },
                             ),
-                            icon: const Icon(Icons.delete, color: Colors.white),
-                            label: const Text('Delete Action'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade600,
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.redAccent),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                            ),
+                            child: const Text(
+                              'Delete Action',
+                              style: TextStyle(color: Colors.redAccent),
                             ),
                           ),
                         ),

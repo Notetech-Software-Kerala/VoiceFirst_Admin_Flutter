@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
+import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
+import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
+import 'add_plan.dart';
 import '../providers/plan_list_provider.dart';
+import 'plan_detail_page.dart';
 import '../../models/plan_model.dart';
 
 class ViewPlanPage extends ConsumerStatefulWidget {
@@ -11,12 +16,13 @@ class ViewPlanPage extends ConsumerStatefulWidget {
 }
 
 class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
-  final ScrollController _scrollController = ScrollController();
+  late final TextEditingController _searchController;
   static const int _pageSize = 10;
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(planListProvider.notifier).loadAll(page: 1, pageSize: _pageSize);
     });
@@ -24,7 +30,7 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -36,143 +42,191 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
           pageSize: _pageSize,
           search: ref.read(planListProvider).search,
         );
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(planListProvider);
     final notifier = ref.read(planListProvider.notifier);
-    final primaryColor = const Color(0xFF0D7FF2);
+    final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Plans', style: TextStyle(color: Colors.white)),
-        backgroundColor: primaryColor,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          tooltip: 'Back to Dashboard',
+    // Keep search controller in sync (if provider persists search)
+    if (_searchController.text != (state.search)) {
+      _searchController.text = state.search;
+    }
+
+    return StandardPageLayout(
+      title: 'Plans',
+      actions: [
+        TextButton.icon(
           onPressed: () {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddPlanPage()),
+            ).then((_) {
+              notifier.loadAll(
+                page: state.currentPage,
+                pageSize: _pageSize,
+                search: state.search,
+              );
+            });
           },
+          icon: const Icon(Icons.add),
+          label: const Text('Add Plan'),
+        ),
+      ],
+      leading: InkWell(
+        onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
+        borderRadius: BorderRadius.circular(50),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.brightness == Brightness.dark
+                ? Colors.white.withAlpha(13)
+                : Colors.grey[100],
+          ),
+          child: const Icon(Icons.arrow_back_ios_new, size: 20),
         ),
       ),
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: primaryColor.withAlpha(20),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
+      searchController: _searchController,
+      onSearchChanged: (q) =>
+          notifier.loadAll(page: 1, pageSize: _pageSize, search: q),
+      searchHint: 'Search plans...',
+      onRefresh: () async {
+        await notifier.loadAll(
+          page: state.currentPage,
+          pageSize: _pageSize,
+          search: state.search,
+        );
+      },
+      bottomNavigationBar: (state.isLoading || state.plans.isEmpty)
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                border: Border(top: BorderSide(color: theme.dividerColor)),
               ),
-            ),
-            child: TextField(
-              onChanged: (value) {
-                notifier.loadAll(page: 1, pageSize: _pageSize, search: value);
-              },
-              decoration: InputDecoration(
-                hintText: 'Search plans...',
-                prefixIcon: Icon(Icons.search, color: primaryColor),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor.withAlpha(77)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : state.plans.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: primaryColor.withAlpha(26),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.inbox,
-                            size: 40,
-                            color: primaryColor.withAlpha(128),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text('No plans found'),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    itemCount: state.plans.length,
-                    itemBuilder: (context, index) {
-                      final plan = state.plans[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: ListTile(
-                          title: Text(plan.planName),
-                          subtitle: Text('ID: \\${plan.planId ?? '-'}'),
-                          trailing: plan.active == true
-                              ? const Icon(
-                                  Icons.check_circle,
-                                  color: Colors.green,
-                                )
-                              : const Icon(Icons.cancel, color: Colors.red),
-                          onTap: () {
-                            // TODO: Navigate to plan detail or edit
-                          },
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          if (!state.isLoading && state.totalPages > 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios),
-                    onPressed: state.currentPage > 1
-                        ? () => _goToPage(state.currentPage - 1)
-                        : null,
+                  Text(
+                    'Page ${state.currentPage} of ${state.totalPages}',
+                    style: theme.textTheme.bodySmall,
                   ),
-                  Text('Page \\${state.currentPage} of \\${state.totalPages}'),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward_ios),
-                    onPressed: state.currentPage < state.totalPages
-                        ? () => _goToPage(state.currentPage + 1)
-                        : null,
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios),
+                        onPressed: state.currentPage > 1
+                            ? () => _goToPage(state.currentPage - 1)
+                            : null,
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios),
+                        onPressed: state.currentPage < state.totalPages
+                            ? () => _goToPage(state.currentPage + 1)
+                            : null,
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
+      slivers: [
+        if (state.isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (state.plans.isEmpty)
+          SliverFillRemaining(child: _EmptyPlans(theme: theme))
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final PlanModel plan = state.plans[index];
+
+                final leading = const StandardIconBox(
+                  icon: Icons.assignment,
+                  color: Colors.blue,
+                );
+
+                final statusChip = Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (plan.active == true)
+                        ? Colors.green.withAlpha(38)
+                        : Colors.red.withAlpha(38),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    (plan.active == true) ? 'ACTIVE' : 'INACTIVE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: (plan.active == true) ? Colors.green : Colors.red,
+                    ),
+                  ),
+                );
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlanDetailPage(plan: plan),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: StandardListCard(
+                    title: plan.planName,
+                    subtitle: 'Created by ${plan.createdUser ?? 'N/A'}',
+                    leading: leading,
+                    trailing: statusChip,
+                  ),
+                );
+              }, childCount: state.plans.length),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ───────────────── EMPTY ─────────────────
+class _EmptyPlans extends StatelessWidget {
+  final ThemeData theme;
+  const _EmptyPlans({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: theme.primaryColor.withAlpha(25),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.inbox,
+              size: 40,
+              color: theme.primaryColor.withAlpha(128),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text('No plans found'),
         ],
       ),
     );

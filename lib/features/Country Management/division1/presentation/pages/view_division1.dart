@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
+import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
+import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
+import 'package:voice_first_admin/core/widgets/arrow_breadcrumb.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_model.dart';
 import 'package:voice_first_admin/features/Country%20Management/division1/models/division1_filter.dart';
@@ -45,103 +47,170 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
     final state = ref.watch(divisionOneProvider(widget.country.id));
     final notifier = ref.read(divisionOneProvider(widget.country.id).notifier);
 
-    final primaryColor = const Color(0xFF0D7FF2);
+    final theme = Theme.of(context);
     final label = widget.country.divisionOneLabel ?? 'Division';
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        title: Text(
-          state.isMultiSelect ? '${state.selectedIds.length} selected' : label,
-          style: const TextStyle(color: Colors.white),
+    return StandardPageLayout(
+      title: state.isMultiSelect
+          ? '${state.selectedIds.length} selected'
+          : label,
+      leading: InkWell(
+        onTap: state.isMultiSelect
+            ? notifier.exitSelectionMode
+            : () => Navigator.pop(context),
+        borderRadius: BorderRadius.circular(50),
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: theme.brightness == Brightness.dark
+                ? Colors.white.withAlpha(13)
+                : Colors.grey[100],
+          ),
+          child: Icon(
+            state.isMultiSelect ? Icons.close : Icons.arrow_back_ios_new,
+            size: 20,
+          ),
         ),
-        leading: state.isMultiSelect
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: notifier.exitSelectionMode,
-              )
-            : IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
-        actions: [
-          if (!state.isMultiSelect)
-            TextButton(
-              onPressed: notifier.enterSelectionMode,
-              child: const Text(
-                'Select',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          if (state.isMultiSelect)
-            IconButton(
-              onPressed: notifier.exitSelectionMode,
-              icon: const Icon(Icons.close, color: Colors.white),
-            ),
-        ],
       ),
-      body: Column(
+      actions: [
+        if (!state.isMultiSelect)
+          TextButton(
+            onPressed: notifier.enterSelectionMode,
+            child: const Text('Select'),
+          ),
+      ],
+      bottom: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: primaryColor.withAlpha(20),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
+          ArrowBreadcrumb(
+            items: [
+              BreadcrumbItem(
+                label: widget.country.country,
+                onTap: () => Navigator.pop(context),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search $label...',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                    onSubmitted: (value) => notifier.search(value),
-                  ),
+              BreadcrumbItem(label: label, isActive: true),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: TextField(
+              controller: _searchController,
+              onSubmitted: (value) => notifier.search(value),
+              decoration: InputDecoration(
+                hintText: 'Search $label...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: theme.cardColor,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.dividerColor),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => notifier.search(_searchController.text),
-                  child: const Text('Search'),
-                ),
-              ],
+              ),
             ),
           ),
-          Expanded(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : state.error != null
-                ? Center(child: Text(state.error!))
-                : state.filtered.isEmpty
-                ? Center(child: Text('No $label found'))
-                : ListView.builder(
-                    itemCount: state.filtered.length,
-                    itemBuilder: (context, index) {
-                      final DivisionOneModel d = state.filtered[index];
-                      final bool selected = state.selectedIds.contains(d.id);
+          const SizedBox(height: 8),
+        ],
+      ),
+      onRefresh: () async {
+        _goToPage(state.currentPage);
+      },
+      slivers: [
+        if (state.isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (state.error != null)
+          SliverFillRemaining(child: Center(child: Text(state.error!)))
+        else if (state.filtered.isEmpty)
+          SliverFillRemaining(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.inbox_outlined,
+                    size: 64,
+                    color: theme.disabledColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text('No $label found', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Try changing search or filters',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final DivisionOneModel d = state.filtered[index];
+                final bool selected = state.selectedIds.contains(d.id);
 
-                      return GestureDetector(
-                        onLongPress: () => notifier.toggleSelection(d.id),
-                        onTap: () {
-                          if (state.isMultiSelect) {
-                            notifier.toggleSelection(d.id);
-                          } else {
+                return InkWell(
+                  onLongPress: () => notifier.toggleSelection(d.id),
+                  onTap: () {
+                    if (state.isMultiSelect) {
+                      notifier.toggleSelection(d.id);
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DivisionTwoView(
+                            country: widget.country,
+                            divisionOne: d,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: StandardListCard(
+                    title: d.name,
+                    subtitle: '',
+                    leading: const SizedBox.shrink(),
+                    trailing: selected
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(
+                                0.12,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'Selected',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        : null,
+                    actions: [
+                      PopupMenuButton<int>(
+                        itemBuilder: (context) => const [
+                          PopupMenuItem<int>(
+                            value: 1,
+                            child: Text('View Details'),
+                          ),
+                        ],
+                        onSelected: (value) {
+                          if (value == 1) {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => DivisionTwoView(
+                                builder: (_) => Division1DetailPage(
                                   country: widget.country,
                                   divisionOne: d,
                                 ),
@@ -149,91 +218,62 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
                             );
                           }
                         },
-                        child: Card(
-                          color: selected
-                              ? primaryColor.withAlpha(20)
-                              : Colors.white,
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: selected
-                                ? BorderSide(color: primaryColor, width: 1.5)
-                                : BorderSide.none,
-                          ),
-                          child: ListTile(
-                            title: Text(d.name),
-                            trailing: TextButton.icon(
-                              icon: const Icon(Icons.visibility),
-                              label: const Text('View'),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => Division1DetailPage(
-                                      country: widget.country,
-                                      divisionOne: d,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
+                );
+              }, childCount: state.filtered.length),
+            ),
           ),
-          if (state.filtered.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      ],
+      bottomNavigationBar: state.filtered.isEmpty
+          ? null
+          : Container(
+              height: 60,
               decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
+                color: theme.scaffoldBackgroundColor,
+                boxShadow: const [
                   BoxShadow(
-                    color: Colors.grey.shade300,
-                    blurRadius: 6,
-                    offset: const Offset(0, -2),
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, -2),
                   ),
                 ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Flexible(
-                    child: Builder(
-                      builder: (_) {
-                        final start = (state.currentPage - 1) * _pageSize + 1;
-                        final end = start + state.filtered.length - 1;
-                        return Text(
-                          '$start-$end of ${state.totalCount}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade700,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        );
-                      },
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: state.currentPage > 1
+                        ? () => _goToPage(state.currentPage - 1)
+                        : null,
                   ),
-                  PaginationControls(
-                    currentPage: state.currentPage,
-                    totalCount: state.totalCount,
-                    pageSize: _pageSize,
-                    isLoading: state.isLoading,
-                    hasMoreData: state.hasMoreData,
-                    onPageChanged: _goToPage,
-                    primaryColor: primaryColor,
+                  const SizedBox(width: 10),
+                  Builder(
+                    builder: (_) {
+                      final totalPages = (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
+                      return Text(
+                        'Page ${state.currentPage} of $safeTotalPages',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: (() {
+                      final totalPages = (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
+                      return state.currentPage < safeTotalPages
+                          ? () => _goToPage(state.currentPage + 1)
+                          : null;
+                    })(),
                   ),
                 ],
               ),
             ),
-        ],
-      ),
     );
   }
 }
