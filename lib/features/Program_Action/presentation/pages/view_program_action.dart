@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
+import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_filter.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_provider.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/add_program_action_dialog.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/edit_program_action_dialog.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/delete_program_action_dialog.dart';
 import 'program_action_detail_view.dart';
 
 class ProgramActionView extends ConsumerStatefulWidget {
@@ -54,63 +56,33 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final state = ref.watch(programActionProvider);
     final notifier = ref.read(programActionProvider.notifier);
 
-    final primaryColor = const Color(0xFF0D7FF2);
+    final searchController = TextEditingController(text: state.search);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        title: Text(
-          state.isMultiSelect
-              ? '${state.selectedIds.length} selected'
-              : 'Program Actions',
-          style: const TextStyle(color: Colors.white),
-        ),
-        leading: state.isMultiSelect
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: notifier.exitSelectionMode,
-              )
-            : IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                tooltip: 'Back to Dashboard',
-                onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-              ),
-        actions: [
-          /// Select
-          if (!state.isMultiSelect)
-            TextButton(
-              onPressed: notifier.enterSelectionMode,
-              child: const Text(
-                'Select',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// Cancel
-          if (state.isMultiSelect)
-            TextButton(
-              onPressed: notifier.exitSelectionMode,
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-
-          /// Delete
-          if (state.isMultiSelect && state.selectedIds.isNotEmpty)
+    return StandardPageLayout(
+      title: state.isMultiSelect
+          ? '${state.selectedIds.length} selected'
+          : 'Program Actions',
+      actions: [
+        if (!state.isMultiSelect)
+          TextButton(
+            onPressed: notifier.enterSelectionMode,
+            child: const Text('Select'),
+          ),
+        if (state.isMultiSelect) ...[
+          TextButton(
+            onPressed: notifier.exitSelectionMode,
+            child: const Text('Cancel'),
+          ),
+          if (state.selectedIds.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.white),
+              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () async {
                 final error = await notifier.deleteSelected();
-
                 if (context.mounted) {
                   if (error != null) {
                     CustomSnackbar.show(
@@ -129,361 +101,226 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
               },
             ),
         ],
-      ),
-
-      // ───────────────── Body ─────────────────
-      body: Column(
-        children: [
-          // 🔍 Search
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.08),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: TextField(
-              onChanged: (value) {
-                ref
-                    .read(programActionProvider.notifier)
-                    .loadAll(
-                      filter: ProgramActionFilter(
-                        search: value,
-                        pageNumber: 1,
-                        pageSize: _pageSize,
-                      ),
-                    );
-              },
-              decoration: InputDecoration(
-                hintText: 'Search program actions...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
+      ],
+      searchController: searchController,
+      searchHint: 'Search program actions...',
+      onSearchChanged: (value) {
+        notifier.loadAll(
+          filter: ProgramActionFilter(
+            search: value,
+            pageNumber: 1,
+            pageSize: _pageSize,
           ),
-
-          // ☑️ Select All/Deselect All Checkbox
-          if (state.isMultiSelect)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  Checkbox(
-                    value: notifier.allVisibleSelected,
-                    onChanged: (_) {
-                      notifier.enterSelectionMode(
-                        selectAll: !notifier.allVisibleSelected,
-                      );
-                    },
-                    activeColor: primaryColor,
-                  ),
-                  Text(
-                    notifier.allVisibleSelected ? 'Deselect All' : 'Select All',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // 📋 List
-          Expanded(
-            child: state.filtered.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.inbox,
-                            size: 40,
-                            color: primaryColor.withOpacity(0.5),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No program actions found',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Tap the + button to add a new action',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : Stack(
-                    children: [
-                      ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.only(
-                          left: 12,
-                          right: 12,
-                          top: 12,
-                          bottom: 60, // Space for pagination controls
-                        ),
-                        itemCount: state.filtered.length,
-                        itemBuilder: (context, index) {
-                          final action = state.filtered[index];
-                          final bool isDeleted = action.deleted;
-                          final bool selected = state.selectedIds.contains(
-                            action.actionId,
-                          );
-
-                          return GestureDetector(
-                            onLongPress: () =>
-                                notifier.toggleSelection(action.actionId),
-                            child: Card(
-                              color: selected
-                                  ? primaryColor.withOpacity(0.2)
-                                  : Colors.white,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: selected
-                                    ? BorderSide(
-                                        color: primaryColor,
-                                        width: 1.5,
-                                      )
-                                    : BorderSide.none,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    // ☐ Checkbox
-                                    if (state.isMultiSelect)
-                                      Checkbox(
-                                        value: selected,
-                                        onChanged: (_) => notifier
-                                            .toggleSelection(action.actionId),
-                                        activeColor: primaryColor,
-                                      ),
-
-                                    // 📄 Action info
-                                    Expanded(
-                                      child: Text(
-                                        action.actionName,
-                                        style: TextStyle(
-                                          color: isDeleted
-                                              ? Colors.red
-                                              : Colors.black,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-
-                                    // 🔀 Status toggle & Action buttons
-                                    if (!state.isMultiSelect)
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (!isDeleted) ...[
-                                            Transform.scale(
-                                              scale: 0.75,
-                                              child: Switch(
-                                                value: action.active,
-                                                onChanged: (val) async {
-                                                  final error = await notifier
-                                                      .toggleStatus(
-                                                        action.actionId,
-                                                        val,
-                                                      );
-                                                  if (!mounted) return;
-
-                                                  if (error != null) {
-                                                    CustomSnackbar.show(
-                                                      context,
-                                                      message: error,
-                                                      type: SnackBarType.error,
-                                                    );
-                                                  } else {
-                                                    CustomSnackbar.show(
-                                                      context,
-                                                      message:
-                                                          '${action.actionName} ${val ? 'enabled' : 'disabled'}',
-                                                      type: SnackBarType.info,
-                                                    );
-                                                  }
-                                                },
-                                                activeThumbColor: Colors.green,
-                                                materialTapTargetSize:
-                                                    MaterialTapTargetSize
-                                                        .shrinkWrap,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                          ],
-
-                                          // View button
-                                          IconButton(
-                                            icon: const Icon(
-                                              Icons.remove_red_eye_outlined,
-                                              color: Color(0xFF0D7FF2),
-                                              size: 22,
-                                            ),
-                                            onPressed: () => Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    ProgramActionDetailView(
-                                                      action: action,
-                                                    ),
-                                              ),
-                                            ),
-                                            tooltip: 'View Details',
-                                          ),
-
-                                          if (!isDeleted) ...[
-                                            // Edit button
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.edit,
-                                                color: Colors.blue,
-                                                size: 20,
-                                              ),
-                                              onPressed: () {
-                                                EditProgramActionDialog.show(
-                                                  context,
-                                                  ref,
-                                                  action,
-                                                );
-                                              },
-                                              tooltip: 'Edit',
-                                            ),
-
-                                            // Delete button
-                                            IconButton(
-                                              icon: const Icon(
-                                                Icons.delete,
-                                                color: Colors.red,
-                                                size: 20,
-                                              ),
-                                              onPressed: () {
-                                                DeleteProgramActionDialog.show(
-                                                  context,
-                                                  ref,
-                                                  action.actionId,
-                                                  action.actionName,
-                                                );
-                                              },
-                                              tooltip: 'Delete',
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      // Pagination controls
-                      if (state.filtered.isNotEmpty)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.shade300,
-                                  blurRadius: 6,
-                                  offset: const Offset(0, -2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // Page info
-                                Flexible(
-                                  child: Builder(
-                                    builder: (_) {
-                                      final start =
-                                          (state.currentPage - 1) * _pageSize +
-                                          1;
-                                      final end =
-                                          start + state.filtered.length - 1;
-
-                                      return Text(
-                                        '$start-$end of ${state.totalCount}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey.shade700,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      );
-                                    },
-                                  ),
-                                ),
-
-                                // Pagination buttons
-                                PaginationControls(
-                                  currentPage: state.currentPage,
-                                  totalCount: state.totalCount,
-                                  pageSize: _pageSize,
-                                  isLoading: state.isLoading,
-                                  hasMoreData: state.hasMoreData,
-                                  onPageChanged: _goToPage,
-                                  primaryColor: primaryColor,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+        );
+      },
+      onRefresh: () async {
+        await notifier.loadAll(
+          filter: ProgramActionFilter(
+            pageNumber: state.currentPage,
+            pageSize: _pageSize,
+            search: state.search.isEmpty ? null : state.search,
           ),
-        ],
-      ),
-
-      // ➕ FAB
+        );
+      },
       floatingActionButton: state.isMultiSelect
           ? null
           : FloatingActionButton(
-              backgroundColor: primaryColor,
-              onPressed: () {
-                AddProgramActionDialog.show(context, ref);
-              },
+              heroTag: 'program_action_list_fab',
+              backgroundColor: colorScheme.primary,
+              onPressed: () => AddProgramActionDialog.show(context, ref),
               child: const Icon(Icons.add, color: Colors.white),
             ),
+      bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                border: Border(top: BorderSide(color: theme.dividerColor)),
+              ),
+              child: PaginationControls(
+                currentPage: state.currentPage,
+                totalCount: state.totalCount,
+                pageSize: _pageSize,
+                isLoading: state.isLoading,
+                hasMoreData: state.hasMoreData,
+                onPageChanged: _goToPage,
+                primaryColor: colorScheme.primary,
+              ),
+            ),
+      slivers: [
+        if (state.isLoading)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (state.filtered.isEmpty)
+          const SliverFillRemaining(
+            child: Center(child: Text('No program actions found')),
+          )
+        else
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              8,
+              16,
+              kBottomNavigationBarHeight + 8,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final action = state.filtered[index];
+                final isDeleted = action.deleted;
+                final selected = state.selectedIds.contains(action.actionId);
+
+                final leading = state.isMultiSelect
+                    ? Checkbox(
+                        value: selected,
+                        onChanged: (_) =>
+                            notifier.toggleSelection(action.actionId),
+                      )
+                    : const StandardIconBox(
+                        icon: Icons.extension_rounded,
+                        color: Colors.blue,
+                      );
+
+                // final statusChip = Container(
+                //   padding:
+                //       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                //   decoration: BoxDecoration(
+                //     color: isDeleted
+                //         ? Colors.red.withAlpha(38)
+                //         : action.active
+                //             ? Colors.green.withAlpha(38)
+                //             : Colors.orange.withAlpha(38),
+                //     borderRadius: BorderRadius.circular(20),
+                //   ),
+                //   child: Text(
+                //     isDeleted
+                //         ? 'DELETED'
+                //         : action.active
+                //             ? 'ACTIVE'
+                //             : 'INACTIVE',
+                //     style: TextStyle(
+                //       fontSize: 11,
+                //       fontWeight: FontWeight.bold,
+                //       color: isDeleted
+                //           ? Colors.red
+                //           : action.active
+                //               ? Colors.green
+                //               : Colors.orange,
+                //     ),
+                //   ),
+                // );
+
+                final actions = <Widget>[];
+                if (!isDeleted) {
+                  actions.add(
+                    Transform.scale(
+                      scale: 0.8,
+                      child: Switch(
+                        value: action.active,
+                        onChanged: (val) async {
+                          final error = await notifier.toggleStatus(
+                            action.actionId,
+                            val,
+                          );
+                          if (context.mounted && error != null) {
+                            CustomSnackbar.show(
+                              context,
+                              message: error,
+                              type: SnackBarType.error,
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                }
+
+                // actions.add(
+                //   StandardActionButton(
+                //     icon: Icons.remove_red_eye_outlined,
+                //     color: const Color(0xFF0D7FF2),
+                //     onTap: () => Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (_) => ProgramActionDetailView(action: action),
+                //       ),
+                //     ),
+                //   ),
+                // );
+
+                if (!isDeleted) {
+                  actions.add(
+                    StandardActionButton(
+                      icon: Icons.edit,
+                      color: Colors.blue,
+                      onTap: () =>
+                          EditProgramActionDialog.show(context, ref, action),
+                    ),
+                  );
+                  actions.add(
+                    StandardActionButton(
+                      icon: Icons.delete,
+                      color: Colors.red,
+                      onTap: () {
+                        showDeleteBottomSheet(
+                          context: context,
+                          itemName: action.actionName,
+                          onDelete: () async {
+                            final error = await notifier.delete(
+                              action.actionId,
+                            );
+                            if (context.mounted) {
+                              if (error != null) {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: error,
+                                  type: SnackBarType.error,
+                                );
+                              } else {
+                                CustomSnackbar.show(
+                                  context,
+                                  message:
+                                      'Program action deleted successfully',
+                                  type: SnackBarType.success,
+                                );
+                              }
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                return InkWell(
+                  onTap: state.isMultiSelect
+                      ? () => notifier.toggleSelection(action.actionId)
+                      : () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ProgramActionDetailView(action: action),
+                          ),
+                        ),
+                  onLongPress: isDeleted
+                      ? null
+                      : () => notifier.toggleSelection(action.actionId),
+                  borderRadius: BorderRadius.circular(12),
+                  child: StandardListCard(
+                    title: action.actionName,
+                    subtitle: isDeleted
+                        ? 'Deleted'
+                        : (action.active ? 'Active' : 'Inactive'),
+                    leading: leading,
+                    // trailing: statusChip,
+                    actions: actions,
+                  ),
+                );
+              }, childCount: state.filtered.length),
+            ),
+          ),
+      ],
     );
   }
 }

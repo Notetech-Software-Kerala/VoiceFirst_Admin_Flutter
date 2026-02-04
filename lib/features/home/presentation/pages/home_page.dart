@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/pages/view_business_activity.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/presentation/pages/view_country.dart';
+import 'package:voice_first_admin/features/Plan%20management/presentation/pages/view_plan.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/pages/view_program_action.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/view_programs.dart';
 import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
@@ -48,6 +49,7 @@ class _HomePageState extends State<HomePage> {
         CountryView(),
         ProgramActionView(),
         ProgramManagementView(),
+        ViewPlanPage(),
       ],
     );
 

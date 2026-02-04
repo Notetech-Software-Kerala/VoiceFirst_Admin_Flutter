@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 import '../providers/business_activity_provider.dart';
 import '../dialogs/edit_activity_dialog.dart';
-import '../dialogs/delete_activity_dialog.dart';
-import '../dialogs/recover_activity_dialog.dart';
+import '../../../../core/widgets/custom_snackbar.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
   final BusinessActivity activity;
@@ -28,178 +29,262 @@ class ActivityDetailPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(
-          updatedActivity.activityName,
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: cs.primary,
-        foregroundColor: Colors.black,
+        title: const Text('Activity Details'),
+        elevation: 0,
+        leading: const BackButton(),
+        toolbarHeight: kToolbarHeight,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 24),
-
-            _SectionCard(
-              title: 'Basic Information',
-              children: [
-                _RowItem(
-                  label: 'Activity Name',
-                  value: updatedActivity.activityName,
+      body: Stack(
+        children: [
+          ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+            children: [
+              // PRIMARY INFO CARD
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                _RowItem(
-                  label: 'Status',
-                  value: isDeleted
-                      ? 'Deleted'
-                      : (updatedActivity.active ? 'Active' : 'Inactive'),
-                  valueColor: isDeleted
-                      ? cs.error
-                      : (updatedActivity.active ? Colors.green : cs.error),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Activity Name Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(child: _Label('ACTIVITY NAME')),
+                        const SizedBox(width: 12),
+                        Text(
+                          updatedActivity.activityName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Status Row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(child: _Label('STATUS')),
+                        const SizedBox(width: 12),
+                        Text(
+                          isDeleted
+                              ? 'Deleted'
+                              : (updatedActivity.active
+                                    ? 'Active'
+                                    : 'Inactive'),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isDeleted
+                                ? Colors.red
+                                : (updatedActivity.active
+                                      ? Colors.green
+                                      : Colors.orange),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
 
-            const SizedBox(height: 20),
-
-            _SectionCard(
-              title: 'Created Information',
-              children: [
-                _RowItem(
-                  label: 'Created By',
-                  value: updatedActivity.createdUser,
-                ),
-                _RowItem(
-                  label: 'Created Date',
-                  value: _format(updatedActivity.createdDate),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            _SectionCard(
-              title: 'Modified Information',
-              children: [
-                _RowItem(
-                  label: 'Modified By',
-                  value: updatedActivity.modifiedUser ?? 'N/A',
-                ),
-                _RowItem(
-                  label: 'Modified Date',
-                  value: updatedActivity.modifiedDate != null
-                      ? _format(updatedActivity.modifiedDate!)
-                      : 'Not modified',
-                ),
-              ],
-            ),
-
-            if (isDeleted) ...[
               const SizedBox(height: 20),
-              _SectionCard(
-                title: 'Deleted Information',
-                children: [
-                  _RowItem(
-                    label: 'Deleted By',
-                    value: updatedActivity.deletedUser ?? 'N/A',
+
+              // HISTORY (Created/Modified [+ Deleted if deleted])
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(Icons.history),
+                          SizedBox(width: 8),
+                          Text(
+                            'History',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Spacer(),
+                          Text(
+                            'Audit information',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 2.6,
+                        children: [
+                          _GridItem(
+                            label: 'Created By',
+                            value: updatedActivity.createdUser,
+                          ),
+                          _GridItem(
+                            label: 'Created Date',
+                            value: _format(updatedActivity.createdDate),
+                          ),
+                          _GridItem(
+                            label: 'Modified By',
+                            value: updatedActivity.modifiedUser ?? 'N/A',
+                          ),
+                          _GridItem(
+                            label: 'Modified Date',
+                            value: updatedActivity.modifiedDate != null
+                                ? _format(updatedActivity.modifiedDate!)
+                                : 'Not modified',
+                          ),
+                          if (isDeleted) ...[
+                            _GridItem(
+                              label: 'Deleted By',
+                              value: updatedActivity.deletedUser ?? 'N/A',
+                            ),
+                            _GridItem(
+                              label: 'Deleted Date',
+                              value: updatedActivity.deletedDate != null
+                                  ? _format(updatedActivity.deletedDate!)
+                                  : 'N/A',
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                  _RowItem(
-                    label: 'Deleted Date',
-                    value: updatedActivity.deletedDate != null
-                        ? _format(updatedActivity.deletedDate!)
-                        : 'N/A',
-                  ),
-                ],
+                ),
               ),
             ],
+          ),
 
-            const SizedBox(height: 32),
-
-            // ───── ACTIONS ─────
-            Row(
-              children: [
-                if (isDeleted)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => RecoverActivityDialog.show(
-                        context,
-                        ref,
-                        updatedActivity.activityId,
-                        updatedActivity.activityName,
-                      ),
-                      icon: const Icon(Icons.restore, color: Colors.white),
-                      label: const Text(
-                        'Recover',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(
-                          255,
-                          56,
-                          126,
-                          218,
+          // STICKY FOOTER ACTIONS
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    theme.scaffoldBackgroundColor,
+                    theme.scaffoldBackgroundColor.withOpacity(.9),
+                    theme.scaffoldBackgroundColor.withOpacity(0),
+                  ],
+                ),
+              ),
+              child: Row(
+                children: [
+                  if (isDeleted)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => showRecoveryBottomSheet(
+                          context: context,
+                          itemName: updatedActivity.activityName,
+                          onRecover: () {
+                            ref
+                                .read(businessActivityProvider.notifier)
+                                .recover(updatedActivity.activityId);
+                            CustomSnackbar.show(
+                              context,
+                              message:
+                                  '${updatedActivity.activityName} recovered successfully',
+                              type: SnackBarType.success,
+                            );
+                          },
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        icon: const Icon(Icons.restore, color: Colors.green),
+                        label: const Text(
+                          'Recover',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: theme.cardColor,
+                          side: const BorderSide(color: Colors.green),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                else ...[
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => EditActivityDialog.show(
-                        context,
-                        ref,
-                        updatedActivity,
-                      ),
-                      icon: const Icon(Icons.edit, color: Colors.white),
-                      label: const Text(
-                        'Edit',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: cs.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    )
+                  else ...[
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => EditActivityDialog.show(
+                          context,
+                          ref,
+                          updatedActivity,
                         ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => DeleteActivityDialog.show(
-                        context,
-                        ref,
-                        updatedActivity.activityId,
-                        updatedActivity.activityName,
-                      ),
-                      icon: const Icon(Icons.delete, color: Colors.white),
-                      label: const Text(
-                        'Delete',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: theme.cardColor,
+                          side: BorderSide(color: cs.primary),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Edit',
+                          style: TextStyle(color: cs.primary),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => showDeleteBottomSheet(
+                          context: context,
+                          itemName: updatedActivity.activityName,
+                          onDelete: () {
+                            ref
+                                .read(businessActivityProvider.notifier)
+                                .delete(updatedActivity.activityId);
+                            CustomSnackbar.show(
+                              context,
+                              message:
+                                  '${updatedActivity.activityName} deleted successfully',
+                              type: SnackBarType.success,
+                            );
+                          },
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: theme.cardColor,
+                          side: const BorderSide(color: Colors.redAccent),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.redAccent),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -213,76 +298,46 @@ class ActivityDetailPage extends ConsumerWidget {
 
 // ───────────────── UI HELPERS ─────────────────
 
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _SectionCard({required this.title, required this.children});
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(children: children),
-        ),
-      ],
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        letterSpacing: 1.2,
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 }
 
-class _RowItem extends StatelessWidget {
+class _GridItem extends StatelessWidget {
   final String label;
   final String value;
-  final Color? valueColor;
 
-  const _RowItem({required this.label, required this.value, this.valueColor});
+  const _GridItem({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    final isLight = theme.brightness == Brightness.light;
-    final isActivityName = label == 'Activity Name';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isLight ? Colors.black : Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: isActivityName
-                ? theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: valueColor ?? theme.textTheme.bodyMedium?.color,
-                  )
-                : theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? theme.textTheme.bodyMedium?.color,
-                  ),
-          ),
+          Text(label.toUpperCase(), style: const TextStyle(fontSize: 10)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );

@@ -85,7 +85,8 @@ class _ActivityQueryBarState extends ConsumerState<ActivityQueryBar> {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      // Slightly reduce vertical padding to avoid SliverAppBar overflow
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Column(
         children: [
           // ───────── SEARCH ROW ─────────
@@ -107,51 +108,54 @@ class _ActivityQueryBarState extends ConsumerState<ActivityQueryBar> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: (_) => _apply(),
-                  decoration: InputDecoration(
-                    hintText: 'Search',
-                    prefixIcon: const Icon(Icons.search),
+                child: SizedBox(
+                  height: 48,
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (_) => _apply(),
+                    decoration: InputDecoration(
+                      hintText: 'Search',
+                      prefixIcon: const Icon(Icons.search),
 
-                    // 🔥 FILTER BUTTON INSIDE SEARCH BAR
-                    suffixIcon: PopupMenuButton<ActivityFilterOption>(
-                      tooltip: 'Filter',
-                      icon: const Icon(Icons.tune),
-                      onSelected: (option) {
-                        ref
-                            .read(businessActivityProvider.notifier)
-                            .setFilter(option);
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: ActivityFilterOption.all,
-                          child: Text('All'),
-                        ),
-                        PopupMenuItem(
-                          value: ActivityFilterOption.active,
-                          child: Text('Active'),
-                        ),
-                        PopupMenuItem(
-                          value: ActivityFilterOption.inactive,
-                          child: Text('Inactive'),
-                        ),
-                        PopupMenuItem(
-                          value: ActivityFilterOption.available,
-                          child: Text('Available'),
-                        ),
-                        PopupMenuItem(
-                          value: ActivityFilterOption.deleted,
-                          child: Text('Deleted'),
-                        ),
-                      ],
-                    ),
+                      // 🔥 FILTER BUTTON INSIDE SEARCH BAR
+                      suffixIcon: PopupMenuButton<ActivityFilterOption>(
+                        tooltip: 'Filter',
+                        icon: const Icon(Icons.tune),
+                        onSelected: (option) {
+                          ref
+                              .read(businessActivityProvider.notifier)
+                              .setFilter(option);
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: ActivityFilterOption.all,
+                            child: Text('All'),
+                          ),
+                          PopupMenuItem(
+                            value: ActivityFilterOption.active,
+                            child: Text('Active'),
+                          ),
+                          PopupMenuItem(
+                            value: ActivityFilterOption.inactive,
+                            child: Text('Inactive'),
+                          ),
+                          PopupMenuItem(
+                            value: ActivityFilterOption.available,
+                            child: Text('Available'),
+                          ),
+                          PopupMenuItem(
+                            value: ActivityFilterOption.deleted,
+                            child: Text('Deleted'),
+                          ),
+                        ],
+                      ),
 
-                    filled: true,
-                    fillColor: theme.colorScheme.surfaceVariant,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                      filled: true,
+                      fillColor: theme.colorScheme.surfaceVariant,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
@@ -159,7 +163,7 @@ class _ActivityQueryBarState extends ConsumerState<ActivityQueryBar> {
             ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
           // ───────── FILTER ROW ─────────
           SingleChildScrollView(
