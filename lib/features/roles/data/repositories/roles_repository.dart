@@ -1,34 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/role_model.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:voice_first_admin/core/config/api_endpints.dart';
+import 'package:voice_first_admin/features/roles/models/role_filter_model.dart';
 // import 'package:dio/dio.dart'; // Uncomment when real API is ready
 
 class RolesRepository {
   // final Dio _dio;
   // RolesRepository(this._dio);
 
-  // Mock data for now to "bring the looks" without crashing on missing backend
-  Future<List<RoleModel>> getRoles() async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate latency
-    return [
-      RoleModel(
-        id: '1',
-        name: 'Super Admin',
-        allLocationAccess: true,
-        allIssueAccess: true,
-        permissions: [],
-        status: true,
-      ),
-      RoleModel(
-        id: '2',
-        name: 'Manager',
-        allLocationAccess: false,
-        allIssueAccess: true,
-        permissions: [],
-        status: true,
-      ),
-    ];
+  Future<Map<String, dynamic>> getRoles(RoleFilterModel filter) async {
+    try {
+      final uri = Uri.parse(
+        '${ApiEndpoints.baseUrl}/role',
+      ).replace(queryParameters: filter.toQueryParams());
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw "Failed to load roles: ${response.statusCode}";
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
+  // Keeping this mock for now as we don't have an endpoint for Programs yet
   Future<List<ProgramModel>> getPrograms() async {
     await Future.delayed(const Duration(seconds: 1));
     return [
@@ -52,18 +52,50 @@ class RolesRepository {
   }
 
   Future<void> createRole(RoleModel role) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // API Call: await _dio.post('/roles', data: role.toJson());
+    try {
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/role');
+      final response = await http.post(
+        uri,
+        headers: ApiEndpoints.defaultHeaders,
+        body: jsonEncode(role.toJson()),
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw "Failed to create role: ${response.body}";
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> updateRole(RoleModel role) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // API Call: await _dio.put('/roles', data: role.toJson());
+    try {
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/role/${role.id}');
+      final response = await http.put(
+        uri,
+        headers: ApiEndpoints.defaultHeaders,
+        body: jsonEncode(role.toJson()),
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw "Failed to update role: ${response.body}";
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> deleteRole(String id) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // API Call: await _dio.delete('/roles/$id');
+    try {
+      final uri = Uri.parse('${ApiEndpoints.baseUrl}/role/$id');
+      final response = await http.delete(uri);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw "Failed to delete role: ${response.body}";
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 }
 

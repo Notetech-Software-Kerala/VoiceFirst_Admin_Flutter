@@ -1,27 +1,54 @@
 class RoleModel {
-  final String? id;
-  final String name;
-  final bool allLocationAccess;
-  final bool allIssueAccess;
+  final int? roleId; // API uses integer roleId
+  final String roleName;
+  final bool isMandatory;
+  final String? rolePurpose;
+  final int? platformId;
+  final bool active;
+  final bool deleted;
+  final DateTime? createdDate;
+  final String? createdUser;
+  final DateTime? modifiedDate;
+  final String? modifiedUser;
   final List<ProgramPermissionModel> permissions;
-  final bool status;
+
+  // UI Helpers (Legacy compatibility if needed, or mapped)
+  String get id => roleId?.toString() ?? '';
+  String get name => roleName;
+  bool get status => active;
 
   RoleModel({
-    this.id,
-    required this.name,
-    this.allLocationAccess = false,
-    this.allIssueAccess = false,
-    required this.permissions,
-    this.status = true,
+    this.roleId,
+    required this.roleName,
+    this.isMandatory = false,
+    this.rolePurpose,
+    this.platformId,
+    this.active = true,
+    this.deleted = false,
+    this.createdDate,
+    this.createdUser,
+    this.modifiedDate,
+    this.modifiedUser,
+    this.permissions = const [],
   });
 
   factory RoleModel.fromJson(Map<String, dynamic> json) {
     return RoleModel(
-      id: json['id'],
-      name: json['roleName'] ?? '',
-      allLocationAccess: json['allLocationAccess'] ?? false,
-      allIssueAccess: json['allIssuesAccess'] ?? false,
-      status: json['status'] ?? true,
+      roleId: json['roleId'],
+      roleName: json['roleName'] ?? '',
+      isMandatory: json['isMandatory'] ?? false,
+      rolePurpose: json['rolePurpose'],
+      platformId: json['platformId'],
+      active: json['active'] ?? true,
+      deleted: json['deleted'] ?? false,
+      createdDate: json['createdDate'] != null
+          ? DateTime.tryParse(json['createdDate'])
+          : null,
+      createdUser: json['createdUser'],
+      modifiedDate: json['modifiedDate'] != null
+          ? DateTime.tryParse(json['modifiedDate'])
+          : null,
+      modifiedUser: json['modifiedUser'],
       permissions:
           (json['rolePrograms'] as List<dynamic>?)
               ?.map((e) => ProgramPermissionModel.fromJson(e))
@@ -32,30 +59,36 @@ class RoleModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'roleName': name,
-      'allLocationAccess': allLocationAccess,
-      'allIssuesAccess': allIssueAccess,
-      'status': status,
+      if (roleId != null) 'roleId': roleId,
+      'roleName': roleName,
+      'isMandatory': isMandatory,
+      'rolePurpose': rolePurpose,
+      'platformId': platformId ?? 1,
+      'active': active,
+      'deleted': deleted,
       'rolePrograms': permissions.map((e) => e.toJson()).toList(),
     };
   }
 
   RoleModel copyWith({
-    String? id,
-    String? name,
-    bool? allLocationAccess,
-    bool? allIssueAccess,
+    int? roleId,
+    String? roleName,
+    bool? isMandatory,
+    String? rolePurpose,
+    int? platformId,
+    bool? active,
+    bool? deleted,
     List<ProgramPermissionModel>? permissions,
-    bool? status,
   }) {
     return RoleModel(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      allLocationAccess: allLocationAccess ?? this.allLocationAccess,
-      allIssueAccess: allIssueAccess ?? this.allIssueAccess,
+      roleId: roleId ?? this.roleId,
+      roleName: roleName ?? this.roleName,
+      isMandatory: isMandatory ?? this.isMandatory,
+      rolePurpose: rolePurpose ?? this.rolePurpose,
+      platformId: platformId ?? this.platformId,
+      active: active ?? this.active,
+      deleted: deleted ?? this.deleted,
       permissions: permissions ?? this.permissions,
-      status: status ?? this.status,
     );
   }
 }

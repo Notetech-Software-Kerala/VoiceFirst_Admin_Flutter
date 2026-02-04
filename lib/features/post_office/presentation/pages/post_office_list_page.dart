@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
+import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import '../providers/post_office_provider.dart';
 import 'add_post_office_page.dart';
 import 'post_office_details_page.dart';
+
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 
 // --- MAIN SCREEN ---
 class PostOfficeListScreen extends ConsumerStatefulWidget {
@@ -89,23 +94,21 @@ class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
 
     return StandardPageLayout(
       title: "Post Office Management",
-      searchController: _searchController,
-      onSearchChanged: _onSearchChanged,
-      searchHint: "Search by name...",
       onRefresh: () => ref.read(postOfficeProvider.notifier).fetchPostOffices(),
-      bottom: SizedBox(
-        height: 50,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          children: const [
-            _FilterChip(label: "Active", isSelected: true),
-            SizedBox(width: 8),
-            _FilterChip(label: "Zip Code", isSelected: false),
-            SizedBox(width: 8),
-            _FilterChip(label: "Sort: Desc", isSelected: false),
-          ],
-        ),
+      bottom: AdvancedSearchHeader(
+        searchController: _searchController,
+        onSearchChanged: _onSearchChanged,
+        onFilterTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (context) => const FilterBottomSheet(),
+          );
+        },
+        hintText: "Search Post Offices...",
+        onRefresh: () =>
+            ref.read(postOfficeProvider.notifier).fetchPostOffices(),
       ),
       slivers: [
         if (isLoading)
@@ -181,45 +184,11 @@ class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
             ),
           ),
       ],
-      bottomNavigationBar: Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left),
-              onPressed: state.pageNumber > 1
-                  ? () => ref
-                        .read(postOfficeProvider.notifier)
-                        .fetchPostOffices(page: state.pageNumber - 1)
-                  : null,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              "Page ${state.pageNumber} of $safeTotalPages",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 10),
-            IconButton(
-              icon: const Icon(Icons.chevron_right),
-              onPressed: state.pageNumber < safeTotalPages
-                  ? () => ref
-                        .read(postOfficeProvider.notifier)
-                        .fetchPostOffices(page: state.pageNumber + 1)
-                  : null,
-            ),
-          ],
-        ),
+      bottomNavigationBar: StandardPaginationControls(
+        currentPage: state.pageNumber,
+        totalPages: safeTotalPages,
+        onPageChanged: (page) =>
+            ref.read(postOfficeProvider.notifier).fetchPostOffices(page: page),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: "post_office_fab", // Unique tag to prevent conflicts
@@ -232,39 +201,6 @@ class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
         backgroundColor: theme.primaryColor,
         elevation: 4,
         child: const Icon(Icons.add, color: Colors.white, size: 30),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  const _FilterChip({required this.label, required this.isSelected});
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: isSelected
-            ? theme.primaryColor
-            : (isDark ? const Color(0xFF282E39) : Colors.white),
-        borderRadius: BorderRadius.circular(99),
-        border: isSelected ? null : Border.all(color: theme.dividerColor),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected
-                ? Colors.white
-                : theme.textTheme.bodyMedium?.color,
-            fontWeight: FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
       ),
     );
   }

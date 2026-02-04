@@ -29,7 +29,7 @@ class _CreateRolePageState extends ConsumerState<CreateRolePage> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.role?.name ?? "");
+    _nameController = TextEditingController(text: widget.role?.roleName ?? "");
     _descController = TextEditingController(
       text: "Full access to user tickets and basic configuration tools.",
     );
@@ -100,14 +100,12 @@ class _CreateRolePageState extends ConsumerState<CreateRolePage> {
     }
 
     final newRole = RoleModel(
-      id: widget.role?.id,
-      name: name,
+      roleId: widget.role?.roleId,
+      roleName: name,
       // Description is not in model yet, ignoring for now
-      allLocationAccess:
-          false, // Defaulting as UI doesn't have it in this design
-      allIssueAccess: false,
+      platformId: 1, // Default
+      active: widget.role?.active ?? true,
       permissions: permissions,
-      status: widget.role?.status ?? true,
     );
 
     Navigator.pop(context, newRole);
