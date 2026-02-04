@@ -21,7 +21,6 @@ class StandardListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -134,22 +133,3 @@ class StandardActionButton extends StatelessWidget {
 }
 
 // Helper for Icon Box background
-class StandardIconBox extends StatelessWidget {
-  final IconData icon;
-  final Color color; // The base color (e.g. primary)
-
-  const StandardIconBox({super.key, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, color: color, size: 20),
-    );
-  }
-}
