@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpints.dart';
+import 'package:voice_first_admin/features/Program_management/models/create_program_request.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
 import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
+import 'package:voice_first_admin/features/Program_management/models/update_program_request.dart';
 
 class ProgramManagementService {
   static const String _path = '/program';
+
+  //get all
 
   Future<PaginatedResponse<ProgramModel>> getAll(ProgramFilter filter) async {
     final uri = Uri.parse(
@@ -17,11 +21,15 @@ class ProgramManagementService {
     debugPrint('API REQUEST: GET $uri');
 
     final response = await http.get(uri, headers: ApiEndpoints.defaultHeaders);
+    debugPrint('API RESPONSE: GET $uri -> ${response.statusCode}');
+
     if (response.statusCode != 200 && response.statusCode != 201) {
+      debugPrint('API ERROR BODY (GET programs): ${response.body}');
       throw Exception('Failed to load programs: ${response.statusCode}');
     }
 
     final jsonBody = jsonDecode(response.body);
+    debugPrint('API MESSAGE (GET programs): ${jsonBody['message']}');
     final data = jsonBody['data'];
 
     if (data is List) {
@@ -37,7 +45,7 @@ class ProgramManagementService {
       );
     }
 
-    final items = (data['items'] as List)
+    final items = (data['items'] as List? ?? [])
         .map((e) => ProgramModel.fromJson(e))
         .toList();
 
@@ -50,40 +58,36 @@ class ProgramManagementService {
     );
   }
 
-  Future<ProgramModel> create(ProgramModel program) async {
+  //create
+
+  Future<ProgramModel> create(CreateProgramRequest request) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
 
     debugPrint('API REQUEST: POST $url');
-    debugPrint('Request Body: ${jsonEncode(program.toCreateJson())}');
-
+    debugPrint('Request Body: ${jsonEncode(request.toJson())}');
     final response = await http.post(
       url,
       headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode(program.toCreateJson()),
+      body: jsonEncode(request.toJson()),
     );
 
+    debugPrint('API RESPONSE: POST $url -> ${response.statusCode}');
+
     if (response.statusCode != 200 && response.statusCode != 201) {
+      debugPrint('API ERROR BODY (create program): ${response.body}');
       throw Exception('Failed to create program: ${response.statusCode}');
     }
 
     final jsonBody = jsonDecode(response.body);
+    debugPrint('API MESSAGE (create program): ${jsonBody['message']}');
     return ProgramModel.fromJson(jsonBody['data']);
   }
+  //update
 
-  Future<ProgramModel> update(
-    int id,
-    ProgramModel program, {
-    bool updateBasic = false,
-    bool updateActions = false,
-    bool? updateActive,
-  }) async {
+  Future<ProgramModel> update(int id, UpdateProgramRequest request) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
 
-    final body = program.toUpdateJson(
-      updateBasic: updateBasic,
-      updateActions: updateActions,
-      updateActive: updateActive,
-    );
+    final body = request.toJson();
 
     debugPrint('API REQUEST: PATCH $url');
     debugPrint('Request Body: ${jsonEncode(body)}');
@@ -94,17 +98,21 @@ class ProgramManagementService {
       body: jsonEncode(body),
     );
 
-    if (response.statusCode != 200) {
+    debugPrint('API RESPONSE: PATCH $url -> ${response.statusCode}');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('API ERROR BODY (update program): ${response.body}');
       throw Exception('Failed to update program: ${response.statusCode}');
     }
 
     final jsonBody = jsonDecode(response.body);
+    debugPrint('API MESSAGE (update program): ${jsonBody['message']}');
     return ProgramModel.fromJson(jsonBody['data']);
   }
 
   //delete
 
-  Future<void> delete(int id) async {
+  Future<ProgramModel> delete(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
 
     debugPrint('API REQUEST: DELETE $url');
@@ -114,11 +122,19 @@ class ProgramManagementService {
       headers: ApiEndpoints.defaultHeaders,
     );
 
-    if (response.statusCode != 200) {
+    debugPrint('API RESPONSE: DELETE $url -> ${response.statusCode}');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('API ERROR BODY (delete program): ${response.body}');
       throw Exception('Failed to delete program: ${response.statusCode}');
     }
+
+    final jsonBody = jsonDecode(response.body);
+    debugPrint('API MESSAGE (delete program): ${jsonBody['message']}');
+    return ProgramModel.fromJson(jsonBody['data']);
   }
 
+  //bulk delete
   Future<void> bulkDelete(List<int> ids) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/bulk-delete');
 
@@ -131,12 +147,19 @@ class ProgramManagementService {
       body: jsonEncode({'ids': ids}),
     );
 
-    if (response.statusCode != 200) {
+    debugPrint(
+      'API RESPONSE: POST $url (bulk delete) -> ${response.statusCode}',
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('API ERROR BODY (bulk delete programs): ${response.body}');
       throw Exception('Failed to bulk delete programs: ${response.statusCode}');
     }
   }
 
-  Future<void> recover(int id) async {
+  //recover
+
+  Future<ProgramModel> recover(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/program/recover/$id');
 
     debugPrint('API REQUEST: PATCH $url');
@@ -146,8 +169,16 @@ class ProgramManagementService {
       headers: ApiEndpoints.defaultHeaders,
     );
 
-    if (response.statusCode != 200) {
+    debugPrint('API RESPONSE: PATCH $url (recover) -> ${response.statusCode}');
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('API ERROR BODY (recover program): ${response.body}');
       throw Exception('Failed to recover program: ${response.statusCode}');
     }
+
+    final jsonBody = jsonDecode(response.body);
+    debugPrint('API MESSAGE (recover program): ${jsonBody['message']}');
+
+    return ProgramModel.fromJson(jsonBody['data']);
   }
 }

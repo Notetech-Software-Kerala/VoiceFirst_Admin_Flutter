@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/plan_model.dart';
+import '../models/plan_detail_model.dart';
+import '../models/program_action_link_lookup.dart';
 
 /// Generic paginated response for plan (matches BusinessActivityService)
 class PaginatedResponse<T> {
@@ -69,5 +71,46 @@ class PlanService {
       jsonBody['data'],
       (e) => PlanModel.fromJson(e),
     );
+  }
+
+  Future<PlanDetailModel> getPlanById(int id) async {
+    final uri = Uri.parse('$baseUrl/plan/$id');
+    final response = await http.get(uri, headers: defaultHeaders);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to load plan detail: \\${response.statusCode}');
+    }
+    final jsonBody = jsonDecode(response.body);
+    return PlanDetailModel.fromJson(jsonBody['data'] as Map<String, dynamic>);
+  }
+
+  Future<PlanDetailModel> createPlan(PlanModel plan) async {
+    final uri = Uri.parse('$baseUrl/plan');
+    final response = await http.post(
+      uri,
+      headers: defaultHeaders,
+      body: jsonEncode(plan.toCreateJson()),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to create plan: \\${response.statusCode}');
+    }
+    final jsonBody = jsonDecode(response.body);
+    return PlanDetailModel.fromJson(jsonBody['data'] as Map<String, dynamic>);
+  }
+
+  Future<List<ProgramActionLinkProgram>> getProgramActionLinkLookup() async {
+    final uri = Uri.parse('$baseUrl/program/for-plan');
+    final response = await http.get(uri, headers: defaultHeaders);
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(
+        'Failed to load program/action links: \\${response.statusCode}',
+      );
+    }
+    final jsonBody = jsonDecode(response.body);
+    final list = (jsonBody['data'] as List<dynamic>? ?? <dynamic>[]);
+    return list
+        .map(
+          (e) => ProgramActionLinkProgram.fromJson(e as Map<String, dynamic>),
+        )
+        .toList();
   }
 }
