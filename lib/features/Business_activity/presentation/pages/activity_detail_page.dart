@@ -185,8 +185,8 @@ class ActivityDetailPage extends ConsumerWidget {
                   end: Alignment.topCenter,
                   colors: [
                     theme.scaffoldBackgroundColor,
-                    theme.scaffoldBackgroundColor.withOpacity(.9),
-                    theme.scaffoldBackgroundColor.withOpacity(0),
+                    theme.scaffoldBackgroundColor.withAlpha(100),
+                    theme.scaffoldBackgroundColor.withAlpha(0),
                   ],
                 ),
               ),

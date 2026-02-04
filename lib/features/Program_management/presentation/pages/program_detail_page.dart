@@ -83,13 +83,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
     if (!route.startsWith('/')) route = '/$route';
 
-    // final updated = program.copyWith(
-    //   programName: name,
-    //   labelName: label,
-    //   programRoute: route,
-    //   applicationId: _applicationId,
-    //   programActionIds: _selectedActionIds.toList(),
-    // );
     final updated = program.copyWith(
       programName: name,
       labelName: label,
@@ -382,7 +375,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                   )
                                 else
                                   DropdownButtonFormField<int>(
-                                    value: currentId,
+                                    initialValue: currentId,
                                     items: [
                                       // const DropdownMenuItem<int>(
                                       //   value: 0,
@@ -450,10 +443,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  // Text(
-                                  //   '${actions.length} actions',
-                                  //   style: const TextStyle(fontSize: 12),
-                                  // ),
                                 ],
                               ),
                               children: [
@@ -494,7 +483,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                           return Chip(
                                             label: Text(action.actionName),
                                             backgroundColor: primaryColor
-                                                .withOpacity(.08),
+                                                .withAlpha(20),
                                             labelStyle: const TextStyle(
                                               color: primaryColor,
                                               fontWeight: FontWeight.w500,
@@ -621,26 +610,32 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
                   if (isDeleted)
                     OutlinedButton.icon(
-                      onPressed: () async {
-                        final error = await ref
-                            .read(programProvider.notifier)
-                            .recover(program.sysProgramId!);
+                      onPressed: () {
+                        showRecoveryBottomSheet(
+                          context: context,
+                          itemName: program.programName,
+                          onRecover: () async {
+                            final error = await ref
+                                .read(programProvider.notifier)
+                                .recover(program.sysProgramId!);
 
-                        if (!mounted) return;
+                            if (!mounted) return;
 
-                        if (error != null) {
-                          CustomSnackbar.show(
-                            context,
-                            message: error,
-                            type: SnackBarType.error,
-                          );
-                        } else {
-                          CustomSnackbar.show(
-                            context,
-                            message: 'Program recovered',
-                            type: SnackBarType.success,
-                          );
-                        }
+                            if (error != null) {
+                              CustomSnackbar.show(
+                                context,
+                                message: error,
+                                type: SnackBarType.error,
+                              );
+                            } else {
+                              CustomSnackbar.show(
+                                context,
+                                message: 'Program recovered',
+                                type: SnackBarType.success,
+                              );
+                            }
+                          },
+                        );
                       },
                       icon: const Icon(Icons.restore, color: Colors.green),
                       label: const Text(
@@ -678,8 +673,8 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                     end: Alignment.topCenter,
                     colors: [
                       theme.scaffoldBackgroundColor,
-                      theme.scaffoldBackgroundColor.withOpacity(.9),
-                      theme.scaffoldBackgroundColor.withOpacity(0),
+                      theme.scaffoldBackgroundColor.withAlpha(230),
+                      theme.scaffoldBackgroundColor.withAlpha(0),
                     ],
                   ),
                 ),

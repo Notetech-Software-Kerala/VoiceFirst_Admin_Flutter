@@ -104,34 +104,45 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
       bottomNavigationBar: (state.isLoading || state.plans.isEmpty)
           ? null
           : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              height: 60,
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                border: Border(top: BorderSide(color: theme.dividerColor)),
+                color: theme.scaffoldBackgroundColor,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, -2),
+                  ),
+                ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Page ${state.currentPage} of ${state.totalPages}',
-                    style: theme.textTheme.bodySmall,
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: state.currentPage > 1
+                        ? () => _goToPage(state.currentPage - 1)
+                        : null,
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios),
-                        onPressed: state.currentPage > 1
-                            ? () => _goToPage(state.currentPage - 1)
-                            : null,
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.arrow_forward_ios),
-                        onPressed: state.currentPage < state.totalPages
-                            ? () => _goToPage(state.currentPage + 1)
-                            : null,
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+                  Builder(
+                    builder: (_) {
+                      final totalPages = state.totalPages;
+                      final safeTotalPages =
+                          totalPages > 0 ? totalPages : 1;
+                      return Text(
+                        'Page ${state.currentPage} of $safeTotalPages',
+                        style:
+                            const TextStyle(fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: state.currentPage < state.totalPages
+                        ? () => _goToPage(state.currentPage + 1)
+                        : null,
                   ),
                 ],
               ),

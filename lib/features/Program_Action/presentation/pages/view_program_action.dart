@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
@@ -133,19 +132,54 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
       bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
           ? null
           : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              height: 60,
               decoration: BoxDecoration(
-                color: theme.cardColor,
-                border: Border(top: BorderSide(color: theme.dividerColor)),
+                color: theme.scaffoldBackgroundColor,
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, -2),
+                  ),
+                ],
               ),
-              child: PaginationControls(
-                currentPage: state.currentPage,
-                totalCount: state.totalCount,
-                pageSize: _pageSize,
-                isLoading: state.isLoading,
-                hasMoreData: state.hasMoreData,
-                onPageChanged: _goToPage,
-                primaryColor: colorScheme.primary,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: state.currentPage > 1
+                        ? () => _goToPage(state.currentPage - 1)
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Builder(
+                    builder: (_) {
+                      final totalPages =
+                          (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages =
+                          totalPages > 0 ? totalPages : 1;
+                      return Text(
+                        'Page ${state.currentPage} of $safeTotalPages',
+                        style:
+                            const TextStyle(fontWeight: FontWeight.bold),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                  IconButton(
+                    icon: const Icon(Icons.chevron_right),
+                    onPressed: (() {
+                      final totalPages =
+                          (state.totalCount / _pageSize).ceil();
+                      final safeTotalPages =
+                          totalPages > 0 ? totalPages : 1;
+                      return state.currentPage < safeTotalPages
+                          ? () => _goToPage(state.currentPage + 1)
+                          : null;
+                    })(),
+                  ),
+                ],
               ),
             ),
       slivers: [
