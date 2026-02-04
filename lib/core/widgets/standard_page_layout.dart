@@ -42,8 +42,15 @@ class StandardPageLayout extends StatelessWidget {
     // Search (48) + Vertical Padding (16) = 64
     // + Bottom Widget height (optional)
     // + Safety buffer
-    double bottomHeight = 80;
-    if (bottom != null) bottomHeight += 50;
+    // If 'bottom' is provided (e.g. Advanced Search), we assume it dictates height nicely, maybe slightly larger default for our new header (e.g. 120)
+    // Otherwise fallback to default search bar height (80)
+    double bottomHeight = bottom != null ? 140 : 80;
+    if (bottom != null) {
+      // If bottom is provided, check if it's our advanced header which needs more space
+      // Or we can rely on user passing a PreferredSizeWidget but here we keep it simple for now
+    } else if (searchController == null) {
+      bottomHeight = 0; // No search bar, no bottom
+    }
 
     return Scaffold(
       body: CustomScrollView(
@@ -96,77 +103,77 @@ class StandardPageLayout extends StatelessWidget {
             actions: actions,
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(bottomHeight),
-              child: Column(
-                children: [
-                  // Search Bar
-                  if (searchController != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: TextField(
-                                controller: searchController,
-                                onChanged: onSearchChanged,
-                                decoration: InputDecoration(
-                                  prefixIcon: const Icon(
-                                    Icons.search,
-                                    color: Color(0xFF9DA6B9),
+              child:
+                  bottom ??
+                  Column(
+                    children: [
+                      // Search Bar
+                      if (searchController != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 48,
+                                  child: TextField(
+                                    controller: searchController,
+                                    onChanged: onSearchChanged,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(
+                                        Icons.search,
+                                        color: Color(0xFF9DA6B9),
+                                      ),
+                                      hintText: searchHint,
+                                      fillColor: isDark
+                                          ? const Color(0xFF282E39)
+                                          : Colors.white,
+                                      suffixIcon:
+                                          searchController!.text.isNotEmpty
+                                          ? IconButton(
+                                              icon: const Icon(
+                                                Icons.clear,
+                                                size: 18,
+                                              ),
+                                              onPressed: () {
+                                                searchController!.clear();
+                                                if (onSearchChanged != null) {
+                                                  onSearchChanged!("");
+                                                }
+                                              },
+                                            )
+                                          : null,
+                                    ),
                                   ),
-                                  hintText: searchHint,
-                                  fillColor: isDark
-                                      ? const Color(0xFF282E39)
-                                      : Colors.white,
-                                  suffixIcon: searchController!.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(
-                                            Icons.clear,
-                                            size: 18,
-                                          ),
-                                          onPressed: () {
-                                            searchController!.clear();
-                                            if (onSearchChanged != null) {
-                                              onSearchChanged!("");
-                                            }
-                                          },
-                                        )
-                                      : null,
                                 ),
                               ),
-                            ),
+                              if (onRefresh != null) ...[
+                                const SizedBox(width: 12),
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? const Color(0xFF282E39)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.refresh),
+                                    onPressed: onRefresh,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                          if (onRefresh != null) ...[
-                            const SizedBox(width: 12),
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color(0xFF282E39)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.refresh),
-                                onPressed: onRefresh,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
+                        ),
 
-                  // Optional Bottom Widget (Filters, etc)
-                  if (bottom != null) bottom!,
-
-                  const SizedBox(height: 8),
-                ],
-              ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
             ),
           ),
 
