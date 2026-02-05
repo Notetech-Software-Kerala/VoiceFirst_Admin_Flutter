@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/role_model.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpints.dart';
+import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/roles/models/role_filter_model.dart';
 // import 'package:dio/dio.dart'; // Uncomment when real API is ready
 

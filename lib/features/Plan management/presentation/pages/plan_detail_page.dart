@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Plan%20management/models/plan_detail_model.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import '../../models/plan_model.dart';
-import '../providers/plan_detail_provider.dart';
+import '../providers/plan_provider.dart';
 
 class PlanDetailPage extends ConsumerStatefulWidget {
-  final PlanModel plan;
+  final Plan plan;
   const PlanDetailPage({super.key, required this.plan});
 
   @override
@@ -21,11 +24,9 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   void initState() {
     super.initState();
     final id = widget.plan.planId;
-    if (id != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(planDetailProvider(id).notifier).load();
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(planProvider.notifier).selectPlan(id);
+    });
   }
 
   @override
@@ -34,10 +35,32 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     final cs = theme.colorScheme;
 
     // Watch provider state for detail and loading
-    final id = widget.plan.planId;
-    final detailState = id != null ? ref.watch(planDetailProvider(id)) : null;
-    final detail = detailState?.detail;
-    final isLoading = detailState?.isLoading == true;
+    final planState = ref.watch(planProvider);
+    final detail = planState.selectedPlan?.planId == widget.plan.planId
+        ? planState.selectedPlan
+        : null;
+    final List<ProgramPlanDetail> programDetails =
+        detail?.programPlanDetails ?? const <ProgramPlanDetail>[];
+    final isLoading = planState.isDetailLoading;
+    final notifier = ref.read(planProvider.notifier);
+
+    // final isDeleted = detail?.deleted ?? (widget.plan.deleted == true);
+    final bool isDeleted = detail?.deleted ?? widget.plan.deleted;
+    final bool isActive = detail?.active ?? widget.plan.active;
+
+    String statusText;
+    Color statusColor;
+
+    if (isDeleted) {
+      statusText = "Deleted";
+      statusColor = Colors.red;
+    } else if (isActive) {
+      statusText = "Active";
+      statusColor = Colors.green;
+    } else {
+      statusText = "Inactive";
+      statusColor = Colors.orange;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -85,41 +108,19 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
                     const SizedBox(height: 16),
 
-                    // Row: Status
-                    Builder(
-                      builder: (context) {
-                        final bool isDeleted =
-                            detail?.deleted ?? (widget.plan.deleted == true);
-                        final bool isActive =
-                            detail?.active ?? (widget.plan.active == true);
-                        String statusText;
-                        Color statusColor;
-                        if (isDeleted) {
-                          statusText = 'Deleted';
-                          statusColor = Colors.red;
-                        } else if (isActive) {
-                          statusText = 'Active';
-                          statusColor = Colors.green;
-                        } else {
-                          statusText = 'Inactive';
-                          statusColor = Colors.orange;
-                        }
-
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            const Expanded(child: _Label("STATUS")),
-                            const SizedBox(width: 12),
-                            Text(
-                              statusText,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: statusColor,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(child: _Label("STATUS")),
+                        const SizedBox(width: 12),
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: statusColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -151,9 +152,9 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                           ),
                           const Spacer(),
                           Text(
-                            detail?.programPlanDetails == null
+                            programDetails.isEmpty
                                 ? ""
-                                : "${detail!.programPlanDetails.length} programs",
+                                : "${programDetails.length} programs",
                             style: const TextStyle(fontSize: 12),
                           ),
                         ],
@@ -161,8 +162,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
                       const SizedBox(height: 8),
 
-                      if (detail?.programPlanDetails == null ||
-                          detail!.programPlanDetails.isEmpty)
+                      if (programDetails.isEmpty)
                         const Center(
                           child: Padding(
                             padding: EdgeInsets.all(12),
@@ -170,7 +170,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                           ),
                         )
                       else
-                        ...detail!.programPlanDetails.map((p) {
+                        ...programDetails.map((p) {
                           final isOpen = _expandedPrograms.contains(
                             p.programId,
                           );
@@ -266,8 +266,8 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                                     color:
                                                         (a.active
                                                                 ? Colors.green
-                                                                : cs.error)
-                                                            .withOpacity(.12),
+                                                                : Colors.orange)
+                                                            .withAlpha(31),
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           999,
@@ -280,7 +280,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                                     style: TextStyle(
                                                       color: a.active
                                                           ? Colors.green
-                                                          : cs.error,
+                                                          : Colors.orange,
                                                       fontSize: 12,
                                                       fontWeight:
                                                           FontWeight.w600,
@@ -307,7 +307,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                                           : "Inactive",
                                                       valueColor: a.active
                                                           ? Colors.green
-                                                          : cs.error,
+                                                          : Colors.orange,
                                                     ),
                                                     if (a.createdUser != null ||
                                                         a.createdDate !=
@@ -371,14 +371,14 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                             ],
                                           ),
                                         );
-                                      }).toList(),
+                                      }),
                                   ],
                                 ),
                               ),
                               const SizedBox(height: 10),
                             ],
                           );
-                        }).toList(),
+                        }),
                     ],
                   ),
                 ),
@@ -472,50 +472,88 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                   end: Alignment.topCenter,
                   colors: [
                     theme.scaffoldBackgroundColor,
-                    theme.scaffoldBackgroundColor.withOpacity(.9),
-                    theme.scaffoldBackgroundColor.withOpacity(0),
+                    theme.scaffoldBackgroundColor.withAlpha(230),
+                    theme.scaffoldBackgroundColor.withAlpha(0),
                   ],
                 ),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: theme.cardColor,
-                        side: const BorderSide(color: Colors.redAccent),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Delete",
-                        style: TextStyle(color: Colors.redAccent),
-                      ),
-                    ),
+                    child: isDeleted
+                        ? StandardRecoveryButton(
+                            label: 'Recover Plan',
+                            onPressed: () {
+                              showRecoveryBottomSheet(
+                                context: context,
+                                itemName:
+                                    detail?.planName ?? widget.plan.planName,
+                                onRecover: () async {
+                                  final success = await notifier.recoverPlan(
+                                    widget.plan.planId,
+                                  );
+
+                                  if (!context.mounted) return;
+
+                                  CustomSnackbar.show(
+                                    context,
+                                    message: success
+                                        ? 'Plan recovered successfully'
+                                        : 'Failed to recover plan',
+                                    type: success
+                                        ? SnackBarType.success
+                                        : SnackBarType.error,
+                                  );
+                                },
+                              );
+                            },
+                          )
+                        : StandardDeleteButton(
+                            label: 'Delete',
+                            onPressed: () {
+                              showDeleteBottomSheet(
+                                context: context,
+                                itemName:
+                                    detail?.planName ?? widget.plan.planName,
+                                onDelete: () async {
+                                  final success = await notifier.deletePlan(
+                                    widget.plan.planId,
+                                  );
+
+                                  if (!context.mounted) return;
+
+                                  CustomSnackbar.show(
+                                    context,
+                                    message: success
+                                        ? 'Plan deleted successfully'
+                                        : 'Failed to delete plan',
+                                    type: success
+                                        ? SnackBarType.success
+                                        : SnackBarType.error,
+                                  );
+                                },
+                              );
+                            },
+                          ),
                   ),
 
-                  const SizedBox(width: 12),
+                  if (!isDeleted) ...[
+                    const SizedBox(width: 12),
 
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: theme.cardColor,
-                        side: BorderSide(color: cs.primary),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        "Edit Plan",
-                        style: TextStyle(color: cs.primary),
+                    Expanded(
+                      child: StandardEditButton(
+                        label: 'Edit Plan',
+                        onPressed: () {
+                          // Edit flow not implemented yet
+                          CustomSnackbar.show(
+                            context,
+                            message: 'Edit plan is not implemented yet',
+                            type: SnackBarType.info,
+                          );
+                        },
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -527,7 +565,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
   ////////////////////////////////////////////////////////
 
-  List<Widget> _buildPrograms(PlanDetailModel? detail) {
+  List<Widget> _buildPrograms(Plan? detail) {
     final list = detail?.programPlanDetails;
     if (list == null || list.isEmpty) {
       return [

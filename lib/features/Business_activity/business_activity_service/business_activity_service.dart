@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpints.dart';
+import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 

@@ -151,7 +151,7 @@ class _ActivityQueryBarState extends ConsumerState<ActivityQueryBar> {
                       ),
 
                       filled: true,
-                      fillColor: theme.colorScheme.surfaceVariant,
+                      fillColor: theme.colorScheme.surfaceContainerHighest,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
