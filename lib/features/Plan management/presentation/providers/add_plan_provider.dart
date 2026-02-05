@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/config/api_endpints.dart';
+import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Plan%20management/presentation/providers/plan_provider.dart';
 
 import '../../models/plan_model.dart';

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpints.dart';
+import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import '../models/application_model.dart';
 
 class ApplicationService {
