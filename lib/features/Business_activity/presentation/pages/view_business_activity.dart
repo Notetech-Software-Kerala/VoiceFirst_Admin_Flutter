@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import '../providers/business_activity_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/add_activity_dialog.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/activity_querybar.dart';
+import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
 
@@ -22,6 +25,7 @@ class _ViewBusinessActivityPageState
     extends ConsumerState<ViewBusinessActivityPage> {
   static const int _pageSize = 10;
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -33,6 +37,7 @@ class _ViewBusinessActivityPageState
 
   @override
   void dispose() {
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -45,31 +50,19 @@ class _ViewBusinessActivityPageState
     final state = ref.watch(businessActivityProvider);
     final notifier = ref.read(businessActivityProvider.notifier);
 
+    final totalPages = (state.totalCount / _pageSize).ceil();
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
+
+    // Keep search controller in sync with current query
+    final currentSearchText = state.query.searchText ?? '';
+    if (_searchController.text != currentSearchText) {
+      _searchController.text = currentSearchText;
+    }
+
     return StandardPageLayout(
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Business Activities',
-      leading: InkWell(
-        onTap: () {
-          if (state.isMultiSelect) {
-            notifier.exitSelectionMode();
-          } else {
-            Navigator.of(context).popUntil((r) => r.isFirst);
-          }
-        },
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withAlpha(13)
-                : Colors.grey[100],
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
-      ),
       actions: [
         if (!state.isMultiSelect)
           TextButton(
@@ -105,7 +98,12 @@ class _ViewBusinessActivityPageState
           ),
         ],
       ],
-      bottom: const ActivityQueryBar(),
+      searchController: _searchController,
+      searchHint: 'Search activities...',
+      onSearchChanged: (value) {
+        notifier.search(searchBy: ActivitySearchBy.activityName, text: value);
+      },
+      // bottom: const ActivityQueryBar(),
       onRefresh: () async => notifier.load(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'business_activity_list_fab',
@@ -115,55 +113,11 @@ class _ViewBusinessActivityPageState
       ),
       bottomNavigationBar: (state.isLoading || state.items.isEmpty)
           ? null
-          : Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: state.currentPage > 1
-                        ? () => ref
-                              .read(businessActivityProvider.notifier)
-                              .goToPage(state.currentPage - 1)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Builder(
-                    builder: (_) {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return Text(
-                        'Page ${state.currentPage} of $safeTotalPages',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: (() {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return state.currentPage < safeTotalPages
-                          ? () => ref
-                                .read(businessActivityProvider.notifier)
-                                .goToPage(state.currentPage + 1)
-                          : null;
-                    })(),
-                  ),
-                ],
-              ),
+          : StandardPaginationControls(
+              currentPage: state.currentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: (page) =>
+                  ref.read(businessActivityProvider.notifier).goToPage(page),
             ),
       slivers: [
         if (state.isLoading)

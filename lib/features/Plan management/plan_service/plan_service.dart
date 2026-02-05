@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
 import '../models/plan_model.dart';
-import '../models/plan_detail_model.dart';
 import '../models/program_action_link_lookup.dart';
 
-/// Generic paginated response for plan (matches BusinessActivityService)
+/// PAGINATED RESPONSE
+
 class PaginatedResponse<T> {
   final List<T> items;
   final int currentPage;
@@ -39,6 +41,10 @@ class PaginatedResponse<T> {
   }
 }
 
+////////////////////////////////////////////////////////////
+/// SERVICE
+////////////////////////////////////////////////////////////
+
 class PlanService {
   final String baseUrl;
   final Map<String, String> defaultHeaders;
@@ -48,7 +54,11 @@ class PlanService {
     this.defaultHeaders = const {'Content-Type': 'application/json'},
   });
 
-  Future<PaginatedResponse<PlanModel>> getPlans({
+  ////////////////////////////////////////////////////////////
+  /// GET ALL
+  ////////////////////////////////////////////////////////////
+
+  Future<PaginatedResponse<Plan>> getPlans({
     int page = 1,
     int pageSize = 10,
     String? search,
@@ -62,55 +72,125 @@ class PlanService {
     );
 
     final response = await http.get(uri, headers: defaultHeaders);
+
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to load plans: \\${response.statusCode}');
+      throw Exception('Failed to load plans: ${response.statusCode}');
     }
 
     final jsonBody = jsonDecode(response.body);
-    return PaginatedResponse<PlanModel>.fromJson(
+
+    return PaginatedResponse<Plan>.fromJson(
       jsonBody['data'],
-      (e) => PlanModel.fromJson(e),
+      (e) => Plan.fromJson(e),
     );
   }
 
-  Future<PlanDetailModel> getPlanById(int id) async {
+  ////////////////////////////////////////////////////////////
+  /// GET BY ID
+  ////////////////////////////////////////////////////////////
+
+  Future<Plan> getPlanById(int id) async {
     final uri = Uri.parse('$baseUrl/plan/$id');
+
     final response = await http.get(uri, headers: defaultHeaders);
+
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to load plan detail: \\${response.statusCode}');
+      throw Exception('Failed to load plan detail: ${response.statusCode}');
     }
+
     final jsonBody = jsonDecode(response.body);
-    return PlanDetailModel.fromJson(jsonBody['data'] as Map<String, dynamic>);
+
+    return Plan.fromJson(jsonBody['data']);
   }
 
-  Future<PlanDetailModel> createPlan(PlanModel plan) async {
+  ////////////////////////////////////////////////////////////
+  /// CREATE
+  ////////////////////////////////////////////////////////////
+
+  Future<Plan> createPlan({
+    required String planName,
+    required List<int> actionIds,
+  }) async {
     final uri = Uri.parse('$baseUrl/plan');
+
     final response = await http.post(
       uri,
       headers: defaultHeaders,
-      body: jsonEncode(plan.toCreateJson()),
+      body: jsonEncode({
+        "planName": planName,
+        "programActionLinkIds": actionIds,
+      }),
     );
+
     if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to create plan: \\${response.statusCode}');
+      throw Exception('Failed to create plan: ${response.statusCode}');
     }
+
     final jsonBody = jsonDecode(response.body);
-    return PlanDetailModel.fromJson(jsonBody['data'] as Map<String, dynamic>);
+
+    return Plan.fromJson(jsonBody['data']);
   }
+
+  ////////////////////////////////////////////////////////////
+  /// DELETE
+  ////////////////////////////////////////////////////////////
+
+  Future<Plan> deletePlan(int id) async {
+    final uri = Uri.parse('$baseUrl/plan/$id');
+
+    final response = await http.delete(uri, headers: defaultHeaders);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete plan: ${response.statusCode}');
+    }
+
+    final jsonBody = jsonDecode(response.body);
+
+    return Plan.fromJson(jsonBody['data']);
+  }
+
+  ////////////////////////////////////////////////////////////
+  /// RECOVER
+  ////////////////////////////////////////////////////////////
+
+  Future<Plan> recoverPlan(int id) async {
+    final uri = Uri.parse('$baseUrl/plan/recover/$id');
+
+    final response = await http.patch(uri, headers: defaultHeaders);
+
+    debugPrint("RECOVER STATUS: ${response.statusCode}");
+    debugPrint("RECOVER BODY: ${response.body}");
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(
+        'Failed to recover plan: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    final jsonBody = jsonDecode(response.body);
+
+    return Plan.fromJson(jsonBody['data']);
+  }
+
+  ////////////////////////////////////////////////////////////
+  /// PROGRAM ACTION LOOKUP
+  ////////////////////////////////////////////////////////////
 
   Future<List<ProgramActionLinkProgram>> getProgramActionLinkLookup() async {
     final uri = Uri.parse('$baseUrl/program/for-plan');
+
     final response = await http.get(uri, headers: defaultHeaders);
+
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
-        'Failed to load program/action links: \\${response.statusCode}',
+        'Failed to load program/action links: ${response.statusCode}',
       );
     }
+
     final jsonBody = jsonDecode(response.body);
-    final list = (jsonBody['data'] as List<dynamic>? ?? <dynamic>[]);
-    return list
-        .map(
-          (e) => ProgramActionLinkProgram.fromJson(e as Map<String, dynamic>),
-        )
-        .toList();
+
+    final list = (jsonBody['data'] as List? ?? []);
+
+    return list.map((e) => ProgramActionLinkProgram.fromJson(e)).toList();
   }
 }

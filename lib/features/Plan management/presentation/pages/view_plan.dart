@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
-import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'add_plan.dart';
-import '../providers/plan_list_provider.dart';
+import '../providers/plan_provider.dart';
 import 'plan_detail_page.dart';
 import '../../models/plan_model.dart';
 
@@ -24,7 +27,7 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
     super.initState();
     _searchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(planListProvider.notifier).loadAll(page: 1, pageSize: _pageSize);
+      ref.read(planProvider.notifier).loadPlans(page: 1, pageSize: _pageSize);
     });
   }
 
@@ -35,20 +38,21 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
   }
 
   void _goToPage(int page) {
+    final currentSearch = ref.read(planProvider).search;
+
     ref
-        .read(planListProvider.notifier)
-        .loadAll(
-          page: page,
-          pageSize: _pageSize,
-          search: ref.read(planListProvider).search,
-        );
+        .read(planProvider.notifier)
+        .loadPlans(page: page, pageSize: _pageSize, search: currentSearch);
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(planListProvider);
-    final notifier = ref.read(planListProvider.notifier);
+    final state = ref.watch(planProvider);
+    final notifier = ref.read(planProvider.notifier);
     final theme = Theme.of(context);
+
+    final totalPages = state.totalPages;
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
     // Keep search controller in sync (if provider persists search)
     if (_searchController.text != (state.search)) {
@@ -57,93 +61,41 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
 
     return StandardPageLayout(
       title: 'Plans',
-      actions: [
-        TextButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AddPlanPage()),
-            ).then((_) {
-              notifier.loadAll(
-                page: state.currentPage,
-                pageSize: _pageSize,
-                search: state.search,
-              );
-            });
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Add Plan'),
-        ),
-      ],
-      leading: InkWell(
-        onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withAlpha(13)
-                : Colors.grey[100],
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
-      ),
+      actions: const [],
       searchController: _searchController,
       onSearchChanged: (q) =>
-          notifier.loadAll(page: 1, pageSize: _pageSize, search: q),
+          notifier.loadPlans(page: 1, pageSize: _pageSize, search: q),
       searchHint: 'Search plans...',
       onRefresh: () async {
-        await notifier.loadAll(
+        await notifier.loadPlans(
           page: state.currentPage,
           pageSize: _pageSize,
           search: state.search,
         );
       },
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'plan_fab',
+
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddPlanPage()),
+          ).then((_) {
+            notifier.loadPlans(
+              page: state.currentPage,
+              pageSize: _pageSize,
+              search: state.search,
+            );
+          });
+        },
+        child: const Icon(Icons.add),
+      ),
       bottomNavigationBar: (state.isLoading || state.plans.isEmpty)
           ? null
-          : Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: state.currentPage > 1
-                        ? () => _goToPage(state.currentPage - 1)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Builder(
-                    builder: (_) {
-                      final totalPages = state.totalPages;
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return Text(
-                        'Page ${state.currentPage} of $safeTotalPages',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: state.currentPage < state.totalPages
-                        ? () => _goToPage(state.currentPage + 1)
-                        : null,
-                  ),
-                ],
-              ),
+          : StandardPaginationControls(
+              currentPage: state.currentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: _goToPage,
             ),
       slivers: [
         if (state.isLoading)
@@ -157,50 +109,88 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final PlanModel plan = state.plans[index];
+                final Plan plan = state.plans[index];
 
                 final leading = const StandardIconBox(
                   icon: Icons.assignment,
                   color: Colors.blue,
                 );
 
-                final statusChip = Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (plan.active == true)
-                        ? Colors.green.withAlpha(38)
-                        : Colors.red.withAlpha(38),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    (plan.active == true) ? 'ACTIVE' : 'INACTIVE',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: (plan.active == true) ? Colors.green : Colors.red,
-                    ),
-                  ),
-                );
+                final bool isDeleted = plan.deleted == true;
 
-                return InkWell(
+                return StandardListCard(
+                  leading: leading,
+                  title: plan.planName,
+                  subtitle: '',
+                  trailing: isDeleted
+                      ? const SizedBox.shrink()
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.blueAccent,
+                              ),
+                              tooltip: 'Edit Plan',
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PlanDetailPage(plan: plan),
+                                  ),
+                                ).then((_) {
+                                  notifier.loadPlans(
+                                    page: state.currentPage,
+                                    pageSize: _pageSize,
+                                    search: state.search,
+                                  );
+                                });
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              tooltip: 'Delete Plan',
+                              onPressed: () {
+                                showDeleteBottomSheet(
+                                  context: context,
+                                  itemName: plan.planName,
+                                  onDelete: () async {
+                                    final success = await notifier.deletePlan(
+                                      plan.planId,
+                                    );
+
+                                    if (!context.mounted) return;
+
+                                    CustomSnackbar.show(
+                                      context,
+                                      message: success
+                                          ? 'Plan deleted successfully'
+                                          : 'Failed to delete plan',
+                                      type: success
+                                          ? SnackBarType.success
+                                          : SnackBarType.error,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => PlanDetailPage(plan: plan),
                       ),
-                    );
+                    ).then((_) {
+                      notifier.loadPlans(
+                        page: state.currentPage,
+                        pageSize: _pageSize,
+                        search: state.search,
+                      );
+                    });
                   },
-                  borderRadius: BorderRadius.circular(12),
-                  child: StandardListCard(
-                    title: plan.planName,
-                    subtitle: 'Created by ${plan.createdUser ?? 'N/A'}',
-                    leading: leading,
-                    trailing: statusChip,
-                  ),
                 );
               }, childCount: state.plans.length),
             ),

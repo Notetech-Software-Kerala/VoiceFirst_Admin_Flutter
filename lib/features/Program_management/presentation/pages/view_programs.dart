@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
@@ -62,6 +64,9 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final totalPages = (state.totalCount / _pageSize).ceil();
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
+
     // Keep the search controller in sync with provider state
     if (_searchController.text != state.search) {
       _searchController.text = state.search;
@@ -71,27 +76,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Program Management',
-      leading: InkWell(
-        onTap: () {
-          if (state.isMultiSelect) {
-            notifier.exitSelectionMode();
-          } else {
-            Navigator.of(context).popUntil((r) => r.isFirst);
-          }
-        },
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withAlpha(13)
-                : Colors.grey[100],
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
-      ),
       actions: [
         if (!state.isMultiSelect)
           TextButton(
@@ -122,16 +106,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       searchController: _searchController,
       onSearchChanged: (q) => notifier.search(q),
       searchHint: 'Search programs by name, label or route...',
-      bottom: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        child: Row(
-          children: [
-            Expanded(child: _ApplicationFilter()),
-            const SizedBox(width: 12),
-            Expanded(child: _CompanyFilter()),
-          ],
-        ),
-      ),
+      
       onRefresh: () async {
         final currentSearch = state.search;
         await notifier.loadAll(
@@ -157,51 +132,10 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
             ),
       bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
           ? null
-          : Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: state.currentPage > 1
-                        ? () => _goToPage(state.currentPage - 1)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Builder(
-                    builder: (_) {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return Text(
-                        'Page ${state.currentPage} of $safeTotalPages',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: (() {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return state.currentPage < safeTotalPages
-                          ? () => _goToPage(state.currentPage + 1)
-                          : null;
-                    })(),
-                  ),
-                ],
-              ),
+          : StandardPaginationControls(
+              currentPage: state.currentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: _goToPage,
             ),
       slivers: [
         if (state.isLoading)

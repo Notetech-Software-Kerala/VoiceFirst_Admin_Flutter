@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_filter.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_provider.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/add_program_action_dialog.dart';
@@ -61,6 +63,9 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
     final notifier = ref.read(programActionProvider.notifier);
 
     final searchController = TextEditingController(text: state.search);
+
+    final totalPages = (state.totalCount / _pageSize).ceil();
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
     return StandardPageLayout(
       title: state.isMultiSelect
@@ -131,51 +136,10 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
             ),
       bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
           ? null
-          : Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: state.currentPage > 1
-                        ? () => _goToPage(state.currentPage - 1)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Builder(
-                    builder: (_) {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return Text(
-                        'Page ${state.currentPage} of $safeTotalPages',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: (() {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return state.currentPage < safeTotalPages
-                          ? () => _goToPage(state.currentPage + 1)
-                          : null;
-                    })(),
-                  ),
-                ],
-              ),
+          : StandardPaginationControls(
+              currentPage: state.currentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: _goToPage,
             ),
       slivers: [
         if (state.isLoading)
@@ -211,35 +175,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                         color: Colors.blue,
                       );
 
-                // final statusChip = Container(
-                //   padding:
-                //       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                //   decoration: BoxDecoration(
-                //     color: isDeleted
-                //         ? Colors.red.withAlpha(38)
-                //         : action.active
-                //             ? Colors.green.withAlpha(38)
-                //             : Colors.orange.withAlpha(38),
-                //     borderRadius: BorderRadius.circular(20),
-                //   ),
-                //   child: Text(
-                //     isDeleted
-                //         ? 'DELETED'
-                //         : action.active
-                //             ? 'ACTIVE'
-                //             : 'INACTIVE',
-                //     style: TextStyle(
-                //       fontSize: 11,
-                //       fontWeight: FontWeight.bold,
-                //       color: isDeleted
-                //           ? Colors.red
-                //           : action.active
-                //               ? Colors.green
-                //               : Colors.orange,
-                //     ),
-                //   ),
-                // );
-
                 final actions = <Widget>[];
                 if (!isDeleted) {
                   actions.add(
@@ -264,19 +199,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                     ),
                   );
                 }
-
-                // actions.add(
-                //   StandardActionButton(
-                //     icon: Icons.remove_red_eye_outlined,
-                //     color: const Color(0xFF0D7FF2),
-                //     onTap: () => Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (_) => ProgramActionDetailView(action: action),
-                //       ),
-                //     ),
-                //   ),
-                // );
 
                 if (!isDeleted) {
                   actions.add(

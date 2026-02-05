@@ -78,109 +78,211 @@ class ProgramNotifier extends Notifier<ProgramState> {
   }
 
   //add
+  // Future<void> add(ProgramModel program) async {
+  //   debugPrint('[ProgramNotifier] add() -> validating program');
+  //   _validate(program);
+
+  //   final request = CreateProgramRequest(
+  //     programName: program.programName,
+  //     label: program.labelName,
+  //     route: program.programRoute,
+  //     platformId: program.applicationId,
+  //     companyId: program.companyId ?? 0,
+  //     actionIds: program.activeActionIds,
+  //   );
+
+  //   debugPrint('[ProgramNotifier] add() -> sending create request');
+  //   final created = await _service.create(request);
+
+  //   final list = [created, ...state.all];
+
+  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
+  //   debugPrint(
+  //     '[ProgramNotifier] add() -> created id: '
+  //     '${created.sysProgramId}, total: ${list.length}',
+  //   );
+  // }
+
   Future<void> add(ProgramModel program) async {
-    debugPrint('[ProgramNotifier] add() -> validating program');
     _validate(program);
 
-    final request = CreateProgramRequest(
-      programName: program.programName,
-      label: program.labelName,
-      route: program.programRoute,
-      platformId: program.applicationId,
-      companyId: program.companyId ?? 0,
-      actionIds: program.activeActionIds,
+    /// TEMP PROGRAM (fake id)
+    final tempProgram = program.copyWith(
+      sysProgramId: DateTime.now().millisecondsSinceEpoch * -1,
     );
 
-    debugPrint('[ProgramNotifier] add() -> sending create request');
-    final created = await _service.create(request);
+    /// ⭐ show instantly
+    final optimistic = [tempProgram, ...state.all];
 
-    final list = [created, ...state.all];
+    state = state.copyWith(all: optimistic, filtered: _applyFilter(optimistic));
 
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
-    debugPrint(
-      '[ProgramNotifier] add() -> created id: '
-      '${created.sysProgramId}, total: ${list.length}',
-    );
+    try {
+      final request = CreateProgramRequest(
+        programName: program.programName,
+        label: program.labelName,
+        route: program.programRoute,
+        platformId: program.applicationId,
+        companyId: program.companyId ?? 0,
+        actionIds: program.activeActionIds,
+      );
+
+      final created = await _service.create(request);
+
+      /// replace temp
+      final newList = state.all.map((p) {
+        return p.sysProgramId == tempProgram.sysProgramId ? created : p;
+      }).toList();
+
+      state = state.copyWith(all: newList, filtered: _applyFilter(newList));
+    } catch (e) {
+      /// rollback remove temp
+      final rollback = state.all
+          .where((p) => p.sysProgramId != tempProgram.sysProgramId)
+          .toList();
+
+      state = state.copyWith(all: rollback, filtered: _applyFilter(rollback));
+
+      rethrow;
+    }
   }
 
-  
+  // Future<void> updateProgram({required ProgramModel updated}) async {
+  //   if (updated.sysProgramId == null) {
+  //     throw Exception('Program id is required');
+  //   }
+
+  //   debugPrint(
+  //     '[ProgramNotifier] updateProgram() -> id: ${updated.sysProgramId}',
+  //   );
+
+  //   final originalProgram = state.all.firstWhere(
+  //     (p) => p.sysProgramId == updated.sysProgramId,
+  //   );
+
+  //   // Use the full original action id list from the stored program,
+  //   // so the backend sees the true previous state.
+  //   // final originalIds = List<int>.from(originalProgram.programActionIds);
+  //   final originalActions = originalProgram.actions;
+
+  //   /// ✅ Selected IDs coming from UI
+  //   final selectedIds = updated.activeActionIds;
+
+  //   debugPrint(
+  //     '[ProgramNotifier] updateProgram() original active actions: $originalActions',
+  //   );
+  //   debugPrint(
+  //     '[ProgramNotifier] updateProgram() selected actions: $selectedIds',
+  //   );
+
+  //   final request = UpdateProgramRequest(
+  //     programName: updated.programName != originalProgram.programName
+  //         ? updated.programName
+  //         : null,
+
+  //     label: updated.labelName != originalProgram.labelName
+  //         ? updated.labelName
+  //         : null,
+
+  //     route: updated.programRoute != originalProgram.programRoute
+  //         ? updated.programRoute
+  //         : null,
+
+  //     platformId: updated.applicationId != originalProgram.applicationId
+  //         ? updated.applicationId
+  //         : null,
+
+  //     companyId: updated.companyId != originalProgram.companyId
+  //         ? updated.companyId
+  //         : null,
+
+  //     originalActions: originalActions,
+  //     selectedActionIds: selectedIds.toSet(),
+  //   );
+
+  //   /// 🔥 VERY IMPORTANT
+  //   /// Don't call API if nothing changed
+  //   final requestJson = request.toJson();
+  //   if (requestJson.isEmpty) {
+  //     debugPrint(
+  //       '[ProgramNotifier] updateProgram() -> No changes detected. Skipping API call.',
+  //     );
+  //     return;
+  //   }
+  //   debugPrint(
+  //     '[ProgramNotifier] updateProgram() -> PATCH payload: $requestJson',
+  //   );
+
+  //   final saved = await _service.update(updated.sysProgramId!, request);
+  //   debugPrint(
+  //     '[ProgramNotifier] updateProgram() -> saved id: ${saved.sysProgramId}',
+  //   );
+
+  //   final list = state.all
+  //       .map((p) => p.sysProgramId == saved.sysProgramId ? saved : p)
+  //       .toList();
+
+  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
+  // }
   Future<void> updateProgram({required ProgramModel updated}) async {
     if (updated.sysProgramId == null) {
       throw Exception('Program id is required');
     }
 
-    debugPrint(
-      '[ProgramNotifier] updateProgram() -> id: ${updated.sysProgramId}',
-    );
-
-    final originalProgram = state.all.firstWhere(
+    final index = state.all.indexWhere(
       (p) => p.sysProgramId == updated.sysProgramId,
     );
 
-    // Use the full original action id list from the stored program,
-    // so the backend sees the true previous state.
-    // final originalIds = List<int>.from(originalProgram.programActionIds);
-    final originalActions = originalProgram.actions;
+    if (index == -1) return;
 
-    /// ✅ Selected IDs coming from UI
-    // final selectedIds = updated.programActionIds;
-    final selectedIds = updated.activeActionIds;
+    /// ⭐ BACKUP (for rollback)
+    final oldProgram = state.all[index];
 
-    debugPrint(
-      '[ProgramNotifier] updateProgram() original active actions: $originalActions',
-    );
-    debugPrint(
-      '[ProgramNotifier] updateProgram() selected actions: $selectedIds',
+    /// ⭐ OPTIMISTIC UPDATE (instant UI)
+    final optimisticList = [...state.all];
+    optimisticList[index] = updated;
+
+    state = state.copyWith(
+      all: optimisticList,
+      filtered: _applyFilter(optimisticList),
     );
 
-    final request = UpdateProgramRequest(
-      programName: updated.programName != originalProgram.programName
-          ? updated.programName
-          : null,
-
-      label: updated.labelName != originalProgram.labelName
-          ? updated.labelName
-          : null,
-
-      route: updated.programRoute != originalProgram.programRoute
-          ? updated.programRoute
-          : null,
-
-      platformId: updated.applicationId != originalProgram.applicationId
-          ? updated.applicationId
-          : null,
-
-      companyId: updated.companyId != originalProgram.companyId
-          ? updated.companyId
-          : null,
-
-      originalActions: originalActions,
-      selectedActionIds: selectedIds.toSet(),
-    );
-
-    /// 🔥 VERY IMPORTANT
-    /// Don't call API if nothing changed
-    final requestJson = request.toJson();
-    if (requestJson.isEmpty) {
-      debugPrint(
-        '[ProgramNotifier] updateProgram() -> No changes detected. Skipping API call.',
+    try {
+      final request = UpdateProgramRequest(
+        programName: updated.programName != oldProgram.programName
+            ? updated.programName
+            : null,
+        label: updated.labelName != oldProgram.labelName
+            ? updated.labelName
+            : null,
+        route: updated.programRoute != oldProgram.programRoute
+            ? updated.programRoute
+            : null,
+        platformId: updated.applicationId != oldProgram.applicationId
+            ? updated.applicationId
+            : null,
+        companyId: updated.companyId != oldProgram.companyId
+            ? updated.companyId
+            : null,
+        originalActions: oldProgram.actions,
+        selectedActionIds: updated.activeActionIds.toSet(),
       );
-      return;
+
+      final saved = await _service.update(updated.sysProgramId!, request);
+
+      /// Replace optimistic with REAL backend object
+      final newList = [...state.all];
+      newList[index] = saved;
+
+      state = state.copyWith(all: newList, filtered: _applyFilter(newList));
+    } catch (e) {
+      /// 🔥 ROLLBACK
+      final rollback = [...state.all];
+      rollback[index] = oldProgram;
+
+      state = state.copyWith(all: rollback, filtered: _applyFilter(rollback));
+
+      rethrow;
     }
-    debugPrint(
-      '[ProgramNotifier] updateProgram() -> PATCH payload: $requestJson',
-    );
-
-    final saved = await _service.update(updated.sysProgramId!, request);
-    debugPrint(
-      '[ProgramNotifier] updateProgram() -> saved id: ${saved.sysProgramId}',
-    );
-
-    final list = state.all
-        .map((p) => p.sysProgramId == saved.sysProgramId ? saved : p)
-        .toList();
-
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
   //status toggle
@@ -191,16 +293,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
         '[ProgramNotifier] toggleStatus() -> id: $id, active: $active',
       );
       final existing = state.all.firstWhere((p) => p.sysProgramId == id);
-      // final activeIds = existing.actions
-      //     .where((a) => a.active)
-      //     .map((e) => e.actionId)
-      //     .toList();
 
-      // final request = UpdateProgramRequest(
-      //   active: active,
-      //   originalActionIds: activeIds,
-      //   selectedActionIds: activeIds,
-      // );
       final request = UpdateProgramRequest(
         active: active,
         originalActions: existing.actions,
@@ -251,9 +344,6 @@ class ProgramNotifier extends Notifier<ProgramState> {
       }).toList(),
       filtered: _applyFilter(state.all),
     );
-
-    // final list = state.all.where((p) => p.sysProgramId != id).toList();
-    // state = state.copyWith(all: list, filtered: _applyFilter(list));
   }
 
   Future<String?> recover(int id) async {
@@ -343,13 +433,6 @@ class ProgramNotifier extends Notifier<ProgramState> {
     if (program.programRoute.trim().isEmpty) {
       throw Exception('Program route is required');
     }
-    // if (program.applicationId == 0) {
-    //   throw Exception('Application is required');
-    // }
-
-    // if (program.programActionIds.isEmpty) {
-    //   throw Exception('At least one action must be assigned');
-    // }
     if (program.activeActionIds.isEmpty) {
       throw Exception('At least one action must be assigned');
     }

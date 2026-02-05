@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
 import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
@@ -357,11 +358,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  // if (!_isEditing && currentAppName != null)
-                                  //   Text(
-                                  //     currentAppName,
-                                  //     style: const TextStyle(fontSize: 12),
-                                  //   ),
+                                  
                                 ],
                               ),
                               children: [
@@ -377,10 +374,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                   DropdownButtonFormField<int>(
                                     initialValue: currentId,
                                     items: [
-                                      // const DropdownMenuItem<int>(
-                                      //   value: 0,
-                                      //   child: Text('No Application'),
-                                      // ),
+                                     
                                       ...apps.map(
                                         (a) => DropdownMenuItem<int>(
                                           value: a.platformId,
@@ -609,7 +603,8 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                   const SizedBox(height: 24),
 
                   if (isDeleted)
-                    OutlinedButton.icon(
+                    StandardRecoveryButton(
+                      label: 'Recover Program',
                       onPressed: () {
                         showRecoveryBottomSheet(
                           context: context,
@@ -637,22 +632,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                           },
                         );
                       },
-                      icon: const Icon(Icons.restore, color: Colors.green),
-                      label: const Text(
-                        'Recover Program',
-                        style: TextStyle(color: Colors.green),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: theme.cardColor,
-                        side: const BorderSide(color: Colors.green),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
                     ),
                 ],
               ),
@@ -718,25 +697,15 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                       ),
                     ] else ...[
                       Expanded(
-                        child: OutlinedButton(
+                        child: StandardEditButton(
+                          label: 'Edit Program',
                           onPressed: () => setState(() => _isEditing = true),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: theme.cardColor,
-                            side: BorderSide(color: cs.primary),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'Edit Program',
-                            style: TextStyle(color: cs.primary),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton(
+                        child: StandardDeleteButton(
+                          label: 'Delete',
                           onPressed: () => showDeleteBottomSheet(
                             context: context,
                             itemName: program.programName,
@@ -763,18 +732,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                 );
                               }
                             },
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: theme.cardColor,
-                            side: const BorderSide(color: Colors.redAccent),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: const Text(
-                            'Delete',
-                            style: TextStyle(color: Colors.redAccent),
                           ),
                         ),
                       ),
