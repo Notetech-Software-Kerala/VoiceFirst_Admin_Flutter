@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/post_office_model.dart';
+import '../../data/models/post_office_filter_model.dart';
 import '../../data/repositories/post_office_repository.dart';
 
 class PostOfficeState {
@@ -7,18 +8,14 @@ class PostOfficeState {
   final List<PostOffice> postOffices;
   final int totalCount;
   final String? errorMessage;
-  final int pageNumber;
-  final int limit;
-  final String searchText;
+  final PostOfficeFilterModel filter;
 
   PostOfficeState({
     this.isLoading = false,
     this.postOffices = const [],
     this.totalCount = 0,
     this.errorMessage,
-    this.pageNumber = 1,
-    this.limit = 10,
-    this.searchText = '',
+    this.filter = const PostOfficeFilterModel(),
   });
 
   PostOfficeState copyWith({
@@ -26,20 +23,20 @@ class PostOfficeState {
     List<PostOffice>? postOffices,
     int? totalCount,
     String? errorMessage,
-    int? pageNumber,
-    int? limit,
-    String? searchText,
+    PostOfficeFilterModel? filter,
   }) {
     return PostOfficeState(
       isLoading: isLoading ?? this.isLoading,
       postOffices: postOffices ?? this.postOffices,
       totalCount: totalCount ?? this.totalCount,
       errorMessage: errorMessage,
-      pageNumber: pageNumber ?? this.pageNumber,
-      limit: limit ?? this.limit,
-      searchText: searchText ?? this.searchText,
+      filter: filter ?? this.filter,
     );
   }
+
+  // Getters for convenience
+  int get pageNumber => filter.pageNumber;
+  int get limit => filter.limit;
 }
 
 final postOfficeRepositoryProvider = Provider((ref) => PostOfficeRepository());
@@ -62,17 +59,13 @@ class PostOfficeNotifier extends Notifier<PostOfficeState> {
 
   Future<void> fetchPostOffices({int? page}) async {
     if (page != null) {
-      state = state.copyWith(pageNumber: page);
+      state = state.copyWith(filter: state.filter.copyWith(pageNumber: page));
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await _repository.getPostOffices(
-        pageNumber: state.pageNumber,
-        limit: state.limit,
-        searchText: state.searchText,
-      );
+      final response = await _repository.getPostOffices(state.filter);
 
       final dataWrapper = response['data'];
       final List<dynamic> items = dataWrapper['items'] ?? [];
@@ -94,8 +87,15 @@ class PostOfficeNotifier extends Notifier<PostOfficeState> {
   }
 
   void setSearch(String query) {
-    if (state.searchText == query) return;
-    state = state.copyWith(searchText: query, pageNumber: 1);
+    if (state.filter.searchText == query) return;
+    state = state.copyWith(
+      filter: state.filter.copyWith(searchText: query, pageNumber: 1),
+    );
+    fetchPostOffices();
+  }
+
+  void setFilter(PostOfficeFilterModel filter) {
+    state = state.copyWith(filter: filter.copyWith(pageNumber: 1));
     fetchPostOffices();
   }
 
