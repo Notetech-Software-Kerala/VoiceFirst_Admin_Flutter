@@ -4,12 +4,12 @@ import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/program_detail_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
-import 'package:voice_first_admin/core/widgets/pagination_controls.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
 
 class ProgramManagementView extends ConsumerStatefulWidget {
@@ -64,6 +64,9 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final totalPages = (state.totalCount / _pageSize).ceil();
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
+
     // Keep the search controller in sync with provider state
     if (_searchController.text != state.search) {
       _searchController.text = state.search;
@@ -73,27 +76,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Program Management',
-      leading: InkWell(
-        onTap: () {
-          if (state.isMultiSelect) {
-            notifier.exitSelectionMode();
-          } else {
-            Navigator.of(context).popUntil((r) => r.isFirst);
-          }
-        },
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withAlpha(13)
-                : Colors.grey[100],
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
-      ),
       actions: [
         if (!state.isMultiSelect)
           TextButton(
@@ -124,16 +106,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       searchController: _searchController,
       onSearchChanged: (q) => notifier.search(q),
       searchHint: 'Search programs by name, label or route...',
-      bottom: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        child: Row(
-          children: [
-            Expanded(child: _ApplicationFilter()),
-            const SizedBox(width: 12),
-            Expanded(child: _CompanyFilter()),
-          ],
-        ),
-      ),
+      
       onRefresh: () async {
         final currentSearch = state.search;
         await notifier.loadAll(
@@ -159,43 +132,10 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
             ),
       bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
           ? null
-          : Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                border: Border(top: BorderSide(color: theme.dividerColor)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Builder(
-                      builder: (_) {
-                        final start = (state.currentPage - 1) * _pageSize + 1;
-                        final end = start + state.filtered.length - 1;
-                        return Text(
-                          '$start-$end of ${state.totalCount}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: theme.hintColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        );
-                      },
-                    ),
-                  ),
-                  PaginationControls(
-                    currentPage: state.currentPage,
-                    totalCount: state.totalCount,
-                    pageSize: _pageSize,
-                    isLoading: state.isLoading,
-                    hasMoreData: state.hasMoreData,
-                    onPageChanged: _goToPage,
-                    primaryColor: colorScheme.primary,
-                  ),
-                ],
-              ),
+          : StandardPaginationControls(
+              currentPage: state.currentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: _goToPage,
             ),
       slivers: [
         if (state.isLoading)

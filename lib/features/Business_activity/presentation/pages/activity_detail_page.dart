@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
 import '../providers/business_activity_provider.dart';
 import '../dialogs/edit_activity_dialog.dart';
@@ -185,8 +186,8 @@ class ActivityDetailPage extends ConsumerWidget {
                   end: Alignment.topCenter,
                   colors: [
                     theme.scaffoldBackgroundColor,
-                    theme.scaffoldBackgroundColor.withOpacity(.9),
-                    theme.scaffoldBackgroundColor.withOpacity(0),
+                    theme.scaffoldBackgroundColor.withAlpha(100),
+                    theme.scaffoldBackgroundColor.withAlpha(0),
                   ],
                 ),
               ),
@@ -194,7 +195,8 @@ class ActivityDetailPage extends ConsumerWidget {
                 children: [
                   if (isDeleted)
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: StandardRecoveryButton(
+                        label: 'Recover',
                         onPressed: () => showRecoveryBottomSheet(
                           context: context,
                           itemName: updatedActivity.activityName,
@@ -210,46 +212,23 @@ class ActivityDetailPage extends ConsumerWidget {
                             );
                           },
                         ),
-                        icon: const Icon(Icons.restore, color: Colors.green),
-                        label: const Text(
-                          'Recover',
-                          style: TextStyle(color: Colors.green),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: theme.cardColor,
-                          side: const BorderSide(color: Colors.green),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
                       ),
                     )
                   else ...[
                     Expanded(
-                      child: OutlinedButton(
+                      child: StandardEditButton(
+                        label: 'Edit',
                         onPressed: () => EditActivityDialog.show(
                           context,
                           ref,
                           updatedActivity,
                         ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: theme.cardColor,
-                          side: BorderSide(color: cs.primary),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Edit',
-                          style: TextStyle(color: cs.primary),
-                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: OutlinedButton(
+                      child: StandardDeleteButton(
+                        label: 'Delete',
                         onPressed: () => showDeleteBottomSheet(
                           context: context,
                           itemName: updatedActivity.activityName,
@@ -264,18 +243,6 @@ class ActivityDetailPage extends ConsumerWidget {
                               type: SnackBarType.success,
                             );
                           },
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: theme.cardColor,
-                          side: const BorderSide(color: Colors.redAccent),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Delete',
-                          style: TextStyle(color: Colors.redAccent),
                         ),
                       ),
                     ),

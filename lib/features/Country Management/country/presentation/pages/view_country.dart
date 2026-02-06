@@ -7,6 +7,7 @@ import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/features/Country%20Management/country/models/country_filter.dart';
 import 'country_detail_view.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 // Only listing + navigation to Division 1 required
 
 // Local search state (UI-only)
@@ -52,23 +53,11 @@ class _CountryViewState extends ConsumerState<CountryView> {
     final searchQuery = ref.watch(countrySearchQueryProvider);
     final theme = Theme.of(context);
 
+    final totalPages = (state.totalCount / _pageSize).ceil();
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
+
     return StandardPageLayout(
       title: 'Countries',
-      leading: InkWell(
-        onTap: () => Navigator.of(context).popUntil((r) => r.isFirst),
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withAlpha(13)
-                : Colors.grey[100],
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
-      ),
       bottom: Container(
         padding: const EdgeInsets.all(12),
         child: TextField(
@@ -223,51 +212,10 @@ class _CountryViewState extends ConsumerState<CountryView> {
       ],
       bottomNavigationBar: state.filtered.isEmpty
           ? null
-          : Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: state.currentPage > 1
-                        ? () => _goToPage(state.currentPage - 1)
-                        : null,
-                  ),
-                  const SizedBox(width: 10),
-                  Builder(
-                    builder: (_) {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return Text(
-                        'Page ${state.currentPage} of $safeTotalPages',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: (() {
-                      final totalPages = (state.totalCount / _pageSize).ceil();
-                      final safeTotalPages = totalPages > 0 ? totalPages : 1;
-                      return state.currentPage < safeTotalPages
-                          ? () => _goToPage(state.currentPage + 1)
-                          : null;
-                    })(),
-                  ),
-                ],
-              ),
+          : StandardPaginationControls(
+              currentPage: state.currentPage,
+              totalPages: safeTotalPages,
+              onPageChanged: _goToPage,
             ),
     );
   }

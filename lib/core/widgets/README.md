@@ -98,3 +98,38 @@ showRecoveryBottomSheet(
   onRecover: () => _performRecovery(),
 );
 ```
+
+## 4. Detail Action Buttons
+**Location:** `lib/core/widgets/standard_detail_buttons.dart`
+
+Standardized buttons for detail pages (edit, delete, recover) that match the design used in Post Office and Program details.
+
+### Usage
+
+**Delete**
+```dart
+Expanded(
+  child: StandardDeleteButton(
+    label: 'Delete',
+    onPressed: _deleteItem,
+  ),
+)
+```
+
+**Edit**
+```dart
+Expanded(
+  child: StandardEditButton(
+    label: 'Edit Details',
+    onPressed: _editItem,
+  ),
+)
+```
+
+**Recover**
+```dart
+StandardRecoveryButton(
+  label: 'Recover Item',
+  onPressed: _recoverItem,
+)
+```

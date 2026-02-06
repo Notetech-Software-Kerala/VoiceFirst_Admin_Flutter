@@ -1,37 +1,9 @@
-// --------------------
-// Plan Action Summary
-// --------------------
-class PlanActionSummary {
-  final int actionLinkId;
-  final String actionName;
-  final bool? active;
-
-  const PlanActionSummary({
-    required this.actionLinkId,
-    required this.actionName,
-    this.active,
-  });
-
-  factory PlanActionSummary.fromJson(Map<String, dynamic> json) {
-    return PlanActionSummary(
-      actionLinkId: json['actionLinkId'] as int,
-      actionName: json['actionName'] as String? ?? '',
-      active: json['active'] as bool?,
-    );
-  }
-}
-
-
-// -------------
-// Plan Model
-// -------------
-class PlanModel {
-  final int? planId;
+class Plan {
+  final int planId;
   final String planName;
-  final bool? active;
-  final bool? deleted;
+  final bool active;
+  final bool deleted;
 
-  // Audit fields
   final String? createdUser;
   final DateTime? createdDate;
   final String? modifiedUser;
@@ -39,77 +11,51 @@ class PlanModel {
   final String? deletedUser;
   final DateTime? deletedDate;
 
-  // Permission mapping
-  final List<int> programActionLinkIds;
-  final List<PlanActionSummary> actions;
+  /// NULL when coming from LIST API
+  final List<ProgramPlanDetail>? programPlanDetails;
 
-  const PlanModel({
-    this.planId,
+  const Plan({
+    required this.planId,
     required this.planName,
-    this.active,
-    this.deleted,
+    required this.active,
+    required this.deleted,
     this.createdUser,
     this.createdDate,
     this.modifiedUser,
     this.modifiedDate,
     this.deletedUser,
     this.deletedDate,
-    required this.programActionLinkIds,
-    this.actions = const [],
+    this.programPlanDetails,
   });
 
-  // ---------- READ ----------
-  factory PlanModel.fromJson(Map<String, dynamic> json) {
-    final actionList = (json['actions'] as List<dynamic>? ?? [])
-        .map((e) => PlanActionSummary.fromJson(e as Map<String, dynamic>))
-        .toList();
+  factory Plan.fromJson(Map<String, dynamic> json) {
+    DateTime? parse(dynamic v) =>
+        v == null ? null : DateTime.tryParse(v.toString());
 
-    return PlanModel(
-      planId: json['planId'] as int?,
-      planName: json['planName'] as String? ?? '',
-      active: json['active'] as bool?,
-      deleted: json['deleted'] as bool?,
-      createdUser: _emptyToNull(json['createdUser']),
-      createdDate: _parseDate(json['createdDate']),
-      modifiedUser: _emptyToNull(json['modifiedUser']),
-      modifiedDate: _parseDate(json['modifiedDate']),
-      deletedUser: _emptyToNull(json['deletedUser']),
-      deletedDate: _parseDate(json['deletedDate']),
-      programActionLinkIds: actionList.map((a) => a.actionLinkId).toList(),
-      actions: actionList,
+    String? clean(dynamic v) {
+      if (v == null) return null;
+      final s = v.toString().trim();
+      return s.isEmpty ? null : s;
+    }
+
+    return Plan(
+      planId: json['planId'],
+      planName: json['planName'] ?? '',
+      active: json['active'] ?? false,
+      deleted: json['deleted'] ?? false,
+      createdUser: clean(json['createdUser']),
+      createdDate: parse(json['createdDate']),
+      modifiedUser: clean(json['modifiedUser']),
+      modifiedDate: parse(json['modifiedDate']),
+      deletedUser: clean(json['deletedUser']),
+      deletedDate: parse(json['deletedDate']),
+      programPlanDetails: (json['programPlanDetails'] as List?)
+          ?.map((e) => ProgramPlanDetail.fromJson(e))
+          .toList(),
     );
   }
 
-  // ---------- CREATE ----------
-  Map<String, dynamic> toCreateJson() {
-    return {'planName': planName, 'programActionLinkIds': programActionLinkIds};
-  }
-
-  // ---------- UPDATE ----------
-  Map<String, dynamic> toUpdateJson({
-    bool updateName = false,
-    bool updateActions = false,
-    bool? updateActive,
-  }) {
-    final Map<String, dynamic> body = {};
-
-    if (updateName) {
-      body['planName'] = planName;
-    }
-
-    if (updateActions) {
-      body['programActionLinkIds'] = programActionLinkIds;
-    }
-
-    if (updateActive != null) {
-      body['active'] = updateActive;
-    }
-
-    return body;
-  }
-
-  // ---------- COPY ----------
-  PlanModel copyWith({
+  Plan copyWith({
     int? planId,
     String? planName,
     bool? active,
@@ -120,10 +66,9 @@ class PlanModel {
     DateTime? modifiedDate,
     String? deletedUser,
     DateTime? deletedDate,
-    List<int>? programActionLinkIds,
-    List<PlanActionSummary>? actions,
+    List<ProgramPlanDetail>? programPlanDetails,
   }) {
-    return PlanModel(
+    return Plan(
       planId: planId ?? this.planId,
       planName: planName ?? this.planName,
       active: active ?? this.active,
@@ -134,22 +79,87 @@ class PlanModel {
       modifiedDate: modifiedDate ?? this.modifiedDate,
       deletedUser: deletedUser ?? this.deletedUser,
       deletedDate: deletedDate ?? this.deletedDate,
-      programActionLinkIds: programActionLinkIds ?? this.programActionLinkIds,
-      actions: actions ?? this.actions,
+      programPlanDetails: programPlanDetails ?? this.programPlanDetails,
+    );
+  }
+
+  /// CREATE BODY
+
+  Map<String, dynamic> toCreateJson(List<int> actionIds) {
+    return {"planName": planName, "programActionLinkIds": actionIds};
+  }
+}
+
+//child models
+
+class ProgramActionDetail {
+  final int actionLinkId;
+  final String actionName;
+  final bool active;
+  final bool? deleted;
+  final String? createdUser;
+  final DateTime? createdDate;
+  final String? modifiedUser;
+  final DateTime? modifiedDate;
+  final String? deletedUser;
+  final DateTime? deletedDate;
+
+  ProgramActionDetail({
+    required this.actionLinkId,
+    required this.actionName,
+    required this.active,
+    this.deleted,
+    this.createdUser,
+    this.createdDate,
+    this.modifiedUser,
+    this.modifiedDate,
+    this.deletedUser,
+    this.deletedDate,
+  });
+
+  factory ProgramActionDetail.fromJson(Map<String, dynamic> json) {
+    DateTime? parse(dynamic v) =>
+        v == null ? null : DateTime.tryParse(v.toString());
+    String? clean(dynamic v) {
+      if (v == null) return null;
+      final s = v.toString().trim();
+      return s.isEmpty ? null : s;
+    }
+
+    return ProgramActionDetail(
+      actionLinkId: json['actionLinkId'] as int,
+      actionName: json['actionName'] as String? ?? '',
+      active: json['active'] as bool? ?? false,
+      deleted: json['deleted'] as bool?,
+      createdUser: clean(json['createdUser']),
+      createdDate: parse(json['createdDate']),
+      modifiedUser: clean(json['modifiedUser']),
+      modifiedDate: parse(json['modifiedDate']),
+      deletedUser: clean(json['deletedUser']),
+      deletedDate: parse(json['deletedDate']),
     );
   }
 }
 
-// --------------------
-// Shared helpers
-// --------------------
-String? _emptyToNull(dynamic value) {
-  if (value == null) return null;
-  final v = value.toString().trim();
-  return v.isEmpty ? null : value.toString();
-}
+class ProgramPlanDetail {
+  final int programId;
+  final String programName;
+  final List<ProgramActionDetail> actions;
 
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  return DateTime.tryParse(value.toString());
+  ProgramPlanDetail({
+    required this.programId,
+    required this.programName,
+    required this.actions,
+  });
+
+  factory ProgramPlanDetail.fromJson(Map<String, dynamic> json) {
+    final actionsJson = (json['actions'] as List<dynamic>? ?? []);
+    return ProgramPlanDetail(
+      programId: json['programId'] as int,
+      programName: json['programName'] as String? ?? '',
+      actions: actionsJson
+          .map((e) => ProgramActionDetail.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }
