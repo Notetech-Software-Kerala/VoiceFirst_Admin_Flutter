@@ -2,29 +2,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../core/config/api_endpints.dart';
+import '../models/post_office_filter_model.dart';
 
 class PostOfficeRepository {
   Map<String, String> get _headers => {'Content-Type': 'application/json'};
 
-  Future<Map<String, dynamic>> getPostOffices({
-    required int pageNumber,
-    required int limit,
-    String? searchText,
-  }) async {
+  Future<Map<String, dynamic>> getPostOffices(
+    PostOfficeFilterModel filter,
+  ) async {
     try {
-      final queryParams = {
-        'PageNumber': pageNumber.toString(),
-        'Limit': limit.toString(),
-        'SortOrder': 'Desc',
-        'Deleted': 'false',
-        if (searchText != null && searchText.isNotEmpty)
-          'SearchText': searchText,
-      };
-
       // Robust URI construction
       final uri = Uri.parse(
         '${ApiEndpoints.baseUrl}/post-office',
-      ).replace(queryParameters: queryParams);
+      ).replace(queryParameters: filter.toQueryParams());
 
       debugPrint("Fetching Post Offices: $uri");
 

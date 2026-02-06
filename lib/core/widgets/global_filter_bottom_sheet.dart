@@ -1,23 +1,29 @@
 import 'package:flutter/material.dart';
-import '../../models/role_filter_model.dart';
-import 'package:intl/intl.dart';
+import '../models/base_filter_model.dart';
 
-class RolesFilterBottomSheet extends StatefulWidget {
-  final RoleFilterModel currentFilter;
-  final Function(RoleFilterModel) onApply;
+class GlobalFilterBottomSheet extends StatefulWidget {
+  final BaseFilterModel currentFilter;
+  final Function(BaseFilterModel) onApply;
+  final Map<String, String> searchOptions; // Value -> Label
+  final Map<String, String> sortOptions; // Value -> Label
+  final Widget? extraContent;
 
-  const RolesFilterBottomSheet({
+  const GlobalFilterBottomSheet({
     super.key,
     required this.currentFilter,
     required this.onApply,
+    required this.searchOptions,
+    required this.sortOptions,
+    this.extraContent,
   });
 
   @override
-  State<RolesFilterBottomSheet> createState() => _RolesFilterBottomSheetState();
+  State<GlobalFilterBottomSheet> createState() =>
+      _GlobalFilterBottomSheetState();
 }
 
-class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
-  late RoleFilterModel _filter;
+class _GlobalFilterBottomSheetState extends State<GlobalFilterBottomSheet> {
+  late BaseFilterModel _filter;
 
   @override
   void initState() {
@@ -27,7 +33,9 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
 
   void _reset() {
     setState(() {
-      _filter = const RoleFilterModel();
+      _filter = const BaseFilterModel();
+      // Note: extraContent might need its own reset mechanism if it has internal state.
+      // Ideally, parent handles reset if state is lifted, but here we only control base state.
     });
   }
 
@@ -65,14 +73,18 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Filter Roles",
+                      "Filter Results",
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     TextButton(
-                      onPressed: _reset,
+                      onPressed: () {
+                        _reset();
+                        // We might need to notify parent to reset extra content fields?
+                        // For now simpler to just reset base and let user re-apply.
+                      },
                       child: Text(
                         "Reset All",
                         style: TextStyle(
@@ -92,48 +104,73 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                // Sort By
-                _SectionTitle("Sorting"),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DropdownField(
-                        label: "Sort By",
-                        value: _filter.sortBy,
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'roleName',
-                            child: Text('Name'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'createdDate',
-                            child: Text('Created Date'),
-                          ),
-                        ],
-                        onChanged: (v) => setState(
-                          () => _filter = _filter.copyWith(sortBy: v),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _DropdownField(
-                        label: "Order",
-                        value: _filter.sortOrder,
-                        items: const [
-                          DropdownMenuItem(value: 'asc', child: Text('Asc')),
-                          DropdownMenuItem(value: 'desc', child: Text('Desc')),
-                        ],
-                        onChanged: (v) => setState(
-                          () => _filter = _filter.copyWith(sortOrder: v),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // Search By
+                if (widget.searchOptions.isNotEmpty) ...[
+                  _SectionTitle("Search Criteria"),
+                  const SizedBox(height: 12),
+                  _DropdownField(
+                    label: "Search Field",
+                    value: _filter.searchBy,
+                    items: widget.searchOptions.entries.map((e) {
+                      return DropdownMenuItem(
+                        value: e.key,
+                        child: Text(e.value),
+                      );
+                    }).toList(),
+                    onChanged: (v) =>
+                        setState(() => _filter = _filter.copyWith(searchBy: v)),
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
-                const SizedBox(height: 24),
+                // Sort By
+                if (widget.sortOptions.isNotEmpty) ...[
+                  _SectionTitle("Sorting"),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DropdownField(
+                          label: "Sort By",
+                          value: _filter.sortBy,
+                          items: widget.sortOptions.entries.map((e) {
+                            return DropdownMenuItem(
+                              value: e.key,
+                              child: Text(e.value),
+                            );
+                          }).toList(),
+                          onChanged: (v) => setState(
+                            () => _filter = _filter.copyWith(sortBy: v),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _DropdownField(
+                          label: "Order",
+                          value: _filter.sortOrder,
+                          items: const [
+                            DropdownMenuItem(value: 'Asc', child: Text('Asc')),
+                            DropdownMenuItem(
+                              value: 'Desc',
+                              child: Text('Desc'),
+                            ),
+                          ],
+                          onChanged: (v) => setState(
+                            () => _filter = _filter.copyWith(sortOrder: v),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Extra Content (Feature Specific)
+                if (widget.extraContent != null) ...[
+                  widget.extraContent!,
+                  const SizedBox(height: 24),
+                ],
 
                 // Status
                 _SectionTitle("Status"),
@@ -141,12 +178,11 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
                 Row(
                   children: [
                     Expanded(
-                      child: _StatusChip(
+                      child: _FilterChip(
                         label: "Active",
                         isSelected: _filter.active == true,
                         onTap: () {
                           setState(() {
-                            // Toggle: if already true -> null (all), else true
                             _filter = _filter.copyWith(
                               active: _filter.active == true ? null : true,
                             );
@@ -156,7 +192,7 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _StatusChip(
+                      child: _FilterChip(
                         label: "Inactive",
                         isSelected: _filter.active == false,
                         onTap: () {
@@ -170,7 +206,7 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: _StatusChip(
+                      child: _FilterChip(
                         label: "Deleted",
                         isSelected: _filter.deleted == true,
                         onTap: () {
@@ -251,6 +287,8 @@ class _RolesFilterBottomSheetState extends State<RolesFilterBottomSheet> {
   }
 }
 
+// --- HELPER WIDGETS ---
+
 class _SectionTitle extends StatelessWidget {
   final String title;
   const _SectionTitle(this.title);
@@ -263,6 +301,49 @@ class _SectionTitle extends StatelessWidget {
         fontWeight: FontWeight.bold,
         letterSpacing: 1.2,
         color: Theme.of(context).hintColor,
+      ),
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.primaryColor.withOpacity(0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? theme.primaryColor : theme.dividerColor,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected
+                ? theme.primaryColor
+                : theme.textTheme.bodyMedium?.color,
+          ),
+        ),
       ),
     );
   }
@@ -392,7 +473,7 @@ class _DateBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final text = date != null
-        ? DateFormat('MMM dd, yyyy').format(date!)
+        ? "${date!.day}/${date!.month}/${date!.year}"
         : "Select Date";
     final isSelected = date != null;
 
@@ -432,50 +513,6 @@ class _DateBox extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _StatusChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? theme.primaryColor.withOpacity(0.1)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? theme.primaryColor : theme.dividerColor,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected
-                ? theme.primaryColor
-                : theme.textTheme.bodyMedium?.color,
-          ),
         ),
       ),
     );

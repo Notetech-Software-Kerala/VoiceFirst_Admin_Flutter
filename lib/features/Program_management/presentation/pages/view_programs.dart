@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
@@ -296,8 +297,9 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                       : () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) =>ProgramDetailPage(programId: program.sysProgramId!)
-
+                            builder: (_) => ProgramDetailPage(
+                              programId: program.sysProgramId!,
+                            ),
                           ),
                         ),
                   onLongPress: id == null

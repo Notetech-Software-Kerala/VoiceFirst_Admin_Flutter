@@ -1,8 +1,12 @@
 import '../../../../core/models/base_filter_model.dart';
 
-class RoleFilterModel {
+class PostOfficeFilterModel {
   final String? searchBy;
   final String? searchText;
+  final int? countryId;
+  final int? divisionOneId; // State
+  final int? divisionTwoId;
+  final int? divisionThreeId;
   final DateTime? createdFromDate;
   final DateTime? createdToDate;
   final DateTime? updatedFromDate;
@@ -10,15 +14,19 @@ class RoleFilterModel {
   final DateTime? deletedFromDate;
   final DateTime? deletedToDate;
   final String? sortBy;
-  final String sortOrder; // 'asc' or 'desc'
+  final String sortOrder;
   final bool? active;
   final bool? deleted;
   final int pageNumber;
   final int limit;
 
-  const RoleFilterModel({
+  const PostOfficeFilterModel({
     this.searchBy,
     this.searchText,
+    this.countryId,
+    this.divisionOneId,
+    this.divisionTwoId,
+    this.divisionThreeId,
     this.createdFromDate,
     this.createdToDate,
     this.updatedFromDate,
@@ -33,9 +41,13 @@ class RoleFilterModel {
     this.limit = 10,
   });
 
-  RoleFilterModel copyWith({
+  PostOfficeFilterModel copyWith({
     String? searchBy,
     String? searchText,
+    int? countryId,
+    int? divisionOneId,
+    int? divisionTwoId,
+    int? divisionThreeId,
     DateTime? createdFromDate,
     DateTime? createdToDate,
     DateTime? updatedFromDate,
@@ -49,9 +61,13 @@ class RoleFilterModel {
     int? pageNumber,
     int? limit,
   }) {
-    return RoleFilterModel(
+    return PostOfficeFilterModel(
       searchBy: searchBy ?? this.searchBy,
       searchText: searchText ?? this.searchText,
+      countryId: countryId ?? this.countryId,
+      divisionOneId: divisionOneId ?? this.divisionOneId,
+      divisionTwoId: divisionTwoId ?? this.divisionTwoId,
+      divisionThreeId: divisionThreeId ?? this.divisionThreeId,
       createdFromDate: createdFromDate ?? this.createdFromDate,
       createdToDate: createdToDate ?? this.createdToDate,
       updatedFromDate: updatedFromDate ?? this.updatedFromDate,
@@ -68,7 +84,7 @@ class RoleFilterModel {
   }
 
   // Method to create from BaseFilterModel (merging with existing)
-  RoleFilterModel copyWithBase(BaseFilterModel base) {
+  PostOfficeFilterModel copyWithBase(BaseFilterModel base) {
     return copyWith(
       searchBy: base.searchBy,
       searchText: base.searchText,
@@ -105,34 +121,43 @@ class RoleFilterModel {
 
   Map<String, String> toQueryParams() {
     final params = <String, String>{
-      'pageNumber': pageNumber.toString(),
-      'limit': limit.toString(),
-      'sortOrder': sortOrder,
+      'PageNumber': pageNumber.toString(),
+      'Limit': limit.toString(),
+      'SortOrder': sortOrder,
     };
 
     if (searchBy != null && searchBy!.isNotEmpty)
-      params['searchBy'] = searchBy!;
+      params['SearchBy'] = searchBy!;
     if (searchText != null && searchText!.isNotEmpty)
-      params['searchText'] = searchText!;
-    if (sortBy != null && sortBy!.isNotEmpty) params['sortBy'] = sortBy!;
+      params['SearchText'] = searchText!;
 
-    if (active != null) params['active'] = active.toString();
-    if (deleted != null) params['deleted'] = deleted.toString();
+    if (countryId != null) params['CountryId'] = countryId.toString();
+    if (divisionOneId != null)
+      params['DivisionOneId'] = divisionOneId.toString();
+    if (divisionTwoId != null)
+      params['DivisionTwoId'] = divisionTwoId.toString();
+    if (divisionThreeId != null)
+      params['DivisionThreeId'] = divisionThreeId.toString();
+
+    if (sortBy != null && sortBy!.isNotEmpty) params['SortBy'] = sortBy!;
+
+    if (active != null) params['Active'] = active.toString();
+    if (deleted != null) params['Deleted'] = deleted.toString();
 
     if (createdFromDate != null)
-      params['createdFromDate'] = createdFromDate!.toIso8601String();
+      params['CreatedFromDate'] = createdFromDate!.toIso8601String();
     if (createdToDate != null)
-      params['createdToDate'] = createdToDate!.toIso8601String();
+      params['CreatedToDate'] = createdToDate!.toIso8601String();
 
     if (updatedFromDate != null)
-      params['updatedFromDate'] = updatedFromDate!.toIso8601String();
+      params['UpdatedFromDate'] = updatedFromDate!.toIso8601String();
     if (updatedToDate != null)
-      params['updatedToDate'] = updatedToDate!.toIso8601String();
+      params['UpdatedToDate'] = updatedToDate!.toIso8601String();
 
     if (deletedFromDate != null)
-      params['deletedFromDate'] = deletedFromDate!.toIso8601String();
+      params['DeletedFromDate'] = deletedFromDate!.toIso8601String();
     if (deletedToDate != null)
-      params['deletedToDate'] = deletedToDate!.toIso8601String();
+      params['DeletedToDate'] = deletedToDate!.toIso8601String();
 
     return params;
   }
