@@ -22,16 +22,11 @@ class PostOfficeLookupFilter extends Equatable {
 
   /// Optional helper (VERY useful in UI resets)
   const PostOfficeLookupFilter.empty()
-      : countryId = null,
-        divOneId = null,
-        divTwoId = null,
-        divThreeId = null;
+    : countryId = null,
+      divOneId = null,
+      divTwoId = null,
+      divThreeId = null;
 
   @override
-  List<Object?> get props => [
-        countryId,
-        divOneId,
-        divTwoId,
-        divThreeId,
-      ];
+  List<Object?> get props => [countryId, divOneId, divTwoId, divThreeId];
 }
