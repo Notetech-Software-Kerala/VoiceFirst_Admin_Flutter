@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
@@ -45,6 +47,15 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
         .loadPlans(page: page, pageSize: _pageSize, search: currentSearch);
   }
 
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const FilterBottomSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(planProvider);
@@ -62,10 +73,18 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
     return StandardPageLayout(
       title: 'Plans',
       actions: const [],
-      searchController: _searchController,
-      onSearchChanged: (q) =>
-          notifier.loadPlans(page: 1, pageSize: _pageSize, search: q),
-      searchHint: 'Search plans...',
+      bottom: AdvancedSearchHeader(
+        searchController: _searchController,
+        hintText: 'Search plans...',
+        onSearchChanged: (q) =>
+            notifier.loadPlans(page: 1, pageSize: _pageSize, search: q),
+        onFilterTap: _openFilterSheet,
+        onRefresh: () => notifier.loadPlans(
+          page: state.currentPage,
+          pageSize: _pageSize,
+          search: state.search,
+        ),
+      ),
       onRefresh: () async {
         await notifier.loadPlans(
           page: state.currentPage,
@@ -75,7 +94,8 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
       },
       floatingActionButton: FloatingActionButton(
         heroTag: 'plan_fab',
-
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         onPressed: () {
           Navigator.push(
             context,
@@ -121,19 +141,15 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
                 return StandardListCard(
                   leading: leading,
                   title: plan.planName,
-                  subtitle: '',
                   trailing: isDeleted
                       ? const SizedBox.shrink()
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.blueAccent,
-                              ),
-                              tooltip: 'Edit Plan',
-                              onPressed: () {
+                            StandardActionButton(
+                              icon: Icons.edit,
+                              color: Colors.blueAccent,
+                              onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -148,10 +164,10 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
                                 });
                               },
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              tooltip: 'Delete Plan',
-                              onPressed: () {
+                            StandardActionButton(
+                              icon: Icons.delete,
+                              color: Colors.red,
+                              onTap: () {
                                 showDeleteBottomSheet(
                                   context: context,
                                   itemName: plan.planName,

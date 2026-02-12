@@ -386,71 +386,35 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
               const SizedBox(height: 12),
 
-              /// HISTORY (always visible)
+              /// HISTORY (expandable)
               Container(
                 decoration: BoxDecoration(
                   color: theme.cardColor,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: theme.dividerColor),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: Theme(
+                  data: theme.copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    tilePadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    leading: const Icon(Icons.history),
+                    title: const Text(
+                      'History',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      'Created, updated & deleted information',
+                      style: theme.textTheme.bodySmall,
+                    ),
                     children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.history),
-                          SizedBox(width: 8),
-                          Text(
-                            "History",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Spacer(),
-                          Text(
-                            "Audit information",
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 2.6,
-                        children: [
-                          _GridItem(
-                            label: "Created By",
-                            value:
-                                (detail?.createdUser ??
-                                    widget.plan.createdUser) ??
-                                "N/A",
-                          ),
-                          _GridItem(
-                            label: "Created Date",
-                            value: _fmtDate(
-                              detail?.createdDate ?? widget.plan.createdDate,
-                            ),
-                          ),
-                          _GridItem(
-                            label: "Modified By",
-                            value:
-                                (detail?.modifiedUser ??
-                                    widget.plan.modifiedUser) ??
-                                "N/A",
-                          ),
-                          _GridItem(
-                            label: "Modified Date",
-                            value: _fmtDate(
-                              detail?.modifiedDate ?? widget.plan.modifiedDate,
-                            ),
-                          ),
-                        ],
+                      _PlanHistorySection(
+                        plan: detail ?? widget.plan,
+                        isDeleted: isDeleted,
+                        formatDate: _fmtDate,
                       ),
                     ],
                   ),
@@ -765,6 +729,200 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+////////////////////////////////////////////////////////////
+
+class _PlanHistorySection extends StatelessWidget {
+  final Plan plan;
+  final bool isDeleted;
+  final String Function(DateTime?) formatDate;
+
+  const _PlanHistorySection({
+    required this.plan,
+    required this.isDeleted,
+    required this.formatDate,
+  });
+
+  String _formatUser(String? value, {String fallback = 'N/A'}) {
+    if (value == null || value.trim().isEmpty) return fallback;
+    return value;
+  }
+
+  String _formatDateSafe(DateTime? value, {String fallback = 'N/A'}) {
+    if (value == null) return fallback;
+    return formatDate(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasModifiedInfo =
+        plan.modifiedUser != null || plan.modifiedDate != null;
+    return Column(
+      children: [
+        _HistoryExpansionTile(
+          icon: Icons.flag_circle_outlined,
+          title: 'Created Info',
+          subtitle:
+              'Created by ${_formatUser(plan.createdUser, fallback: 'Unknown')}',
+          initiallyExpanded: true,
+          entries: [
+            _HistoryEntry(
+              label: 'Created By',
+              value: _formatUser(plan.createdUser, fallback: 'Unknown'),
+            ),
+            _HistoryEntry(
+              label: 'Created Date',
+              value: _formatDateSafe(plan.createdDate),
+            ),
+          ],
+        ),
+        if (hasModifiedInfo)
+          _HistoryExpansionTile(
+            icon: Icons.history,
+            title: 'Modified Info',
+            subtitle:
+                'Modified by ${_formatUser(plan.modifiedUser, fallback: 'Unknown')}',
+            initiallyExpanded: !isDeleted,
+            entries: [
+              _HistoryEntry(
+                label: 'Modified By',
+                value: _formatUser(plan.modifiedUser, fallback: 'Unknown'),
+              ),
+              _HistoryEntry(
+                label: 'Modified Date',
+                value: _formatDateSafe(plan.modifiedDate),
+              ),
+            ],
+          ),
+        if (isDeleted)
+          _HistoryExpansionTile(
+            icon: Icons.delete_forever_outlined,
+            title: 'Deleted Info',
+            subtitle:
+                'Deleted by ${_formatUser(plan.deletedUser, fallback: 'Unknown')}',
+            initiallyExpanded: true,
+            entries: [
+              _HistoryEntry(
+                label: 'Deleted By',
+                value: _formatUser(plan.deletedUser, fallback: 'Unknown'),
+              ),
+              _HistoryEntry(
+                label: 'Deleted Date',
+                value: _formatDateSafe(plan.deletedDate),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _HistoryExpansionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<_HistoryEntry> entries;
+  final bool initiallyExpanded;
+
+  const _HistoryExpansionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.entries,
+    this.initiallyExpanded = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: Icon(icon, color: theme.colorScheme.primary),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
+          children: [
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entries.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.4,
+              ),
+              itemBuilder: (context, index) =>
+                  _HistoryChip(entry: entries[index]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryEntry {
+  final String label;
+  final String value;
+  const _HistoryEntry({required this.label, required this.value});
+}
+
+class _HistoryChip extends StatelessWidget {
+  final _HistoryEntry entry;
+  const _HistoryChip({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.cardColor.withOpacity(0.6)
+            : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            entry.label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
+              color: theme.hintColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            entry.value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 }

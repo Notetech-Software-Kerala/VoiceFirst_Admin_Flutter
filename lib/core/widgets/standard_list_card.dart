@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class StandardListCard extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final Widget? trailing; // e.g. status indicator
   final Widget leading; // e.g. Icon
   final List<Widget>? actions; // e.g. Edit/Delete buttons
@@ -11,7 +11,7 @@ class StandardListCard extends StatelessWidget {
   const StandardListCard({
     super.key,
     required this.title,
-    required this.subtitle,
+    this.subtitle,
     required this.leading,
     this.trailing,
     this.actions,
@@ -21,6 +21,7 @@ class StandardListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final hasSubtitle = subtitle != null && subtitle!.trim().isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -46,7 +47,7 @@ class StandardListCard extends StatelessWidget {
             child: Column(
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // Variable Leading (Icon Box)
                     leading,
@@ -75,17 +76,19 @@ class StandardListCard extends StatelessWidget {
                               ],
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            subtitle,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: theme.hintColor,
-                              height: 1.3,
+                          if (hasSubtitle) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: theme.hintColor,
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          ],
                         ],
                       ),
                     ),

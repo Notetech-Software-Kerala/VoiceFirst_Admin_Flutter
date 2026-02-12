@@ -61,7 +61,7 @@ class _BusinessActivityDialogState extends State<BusinessActivityDialog> {
     final isEdit = widget.activity != null;
 
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Activity' : 'Add New Activity'),
+      title: Center(child: Text(isEdit ? 'Edit Activity' : 'Add New Activity')),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
