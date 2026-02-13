@@ -8,6 +8,7 @@ import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
 import '../providers/place_state.dart';
+import 'edit_place_page.dart';
 
 class PlaceDetailPage extends ConsumerStatefulWidget {
   final int placeId;
@@ -49,23 +50,16 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
     }
 
     final bool isDeleted = place.deleted;
-    final bool isActive = place.active && !isDeleted;
-    final String statusText = isDeleted
-        ? 'Deleted'
-        : (isActive ? 'Active' : 'Inactive');
-    final Color statusColor = isDeleted
-        ? Colors.red
-        : (isActive ? Colors.green : Colors.orange);
 
-    final totalPostOffices = place.postOffices.length;
-    final totalZipCodes = place.postOffices.fold<int>(
-      0,
-      (sum, office) => sum + office.zipCodes.length,
-    );
-    final activeZipCodes = place.postOffices.fold<int>(
-      0,
-      (sum, office) => sum + office.zipCodes.where((zip) => zip.active).length,
-    );
+    // final totalPostOffices = place.postOffices.length;
+    // final totalZipCodes = place.postOffices.fold<int>(
+    //   0,
+    //   (sum, office) => sum + office.zipCodes.length,
+    // );
+    // final activeZipCodes = place.postOffices.fold<int>(
+    //   0,
+    //   (sum, office) => sum + office.zipCodes.where((zip) => zip.active).length,
+    // );
 
     return Scaffold(
       appBar: AppBar(
@@ -107,85 +101,10 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        const Expanded(child: _Label('STATUS')),
-                        const SizedBox(width: 12),
-                        Chip(
-                          label: Text(statusText),
-                          backgroundColor: statusColor.withOpacity(.12),
-                          labelStyle: TextStyle(
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Overview',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatItem(
-                            icon: Icons.account_tree,
-                            label: 'Post Offices',
-                            value: '$totalPostOffices',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _StatItem(
-                            icon: Icons.local_post_office_outlined,
-                            label: 'Zip Codes',
-                            value: '$activeZipCodes / $totalZipCodes',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _InfoRow(
-                      label: 'Created By',
-                      value: place.createdUser ?? 'Unknown',
-                    ),
-                    _InfoRow(
-                      label: 'Created Date',
-                      value: _fmtDate(place.createdDate),
-                    ),
-                    if (place.modifiedUser != null ||
-                        place.modifiedDate != null) ...[
-                      const SizedBox(height: 8),
-                      _InfoRow(
-                        label: 'Modified By',
-                        value: place.modifiedUser ?? 'Unknown',
-                      ),
-                      _InfoRow(
-                        label: 'Modified Date',
-                        value: _fmtDate(place.modifiedDate),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -347,12 +266,20 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                     Expanded(
                       child: StandardEditButton(
                         label: 'Edit Place',
-                        onPressed: () {
-                          CustomSnackbar.show(
+                        onPressed: () async {
+                          final result = await Navigator.push<bool>(
                             context,
-                            message: 'Edit place is not implemented yet',
-                            type: SnackBarType.info,
+                            MaterialPageRoute(
+                              builder: (context) => EditPlacePage(place: place),
+                            ),
                           );
+                          if (result == true && mounted) {
+                            CustomSnackbar.show(
+                              context,
+                              message: 'Place updated successfully',
+                              type: SnackBarType.success,
+                            );
+                          }
                         },
                       ),
                     ),

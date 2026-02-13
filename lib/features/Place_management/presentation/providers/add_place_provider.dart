@@ -1,124 +1,292 @@
+// import 'package:flutter_riverpod/flutter_riverpod.dart';
+// import 'package:flutter_riverpod/legacy.dart';
+// import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
+// import 'package:voice_first_admin/features/Place_management/data/models/post_office_lookup_filter.dart';
+// import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
+
+// class AddPlaceFormState {
+//   final int? countryId;
+//   final int? divOneId;
+//   final int? divTwoId;
+//   final int? divThreeId;
+
+//   /// selected zipcodes from ANY post office
+//   final Set<int> zipCodeIds;
+
+//   const AddPlaceFormState({
+//     this.countryId,
+//     this.divOneId,
+//     this.divTwoId,
+//     this.divThreeId,
+//     this.zipCodeIds = const {},
+//   });
+
+//   AddPlaceFormState copyWith({
+//     int? countryId,
+//     int? divOneId,
+//     int? divTwoId,
+//     int? divThreeId,
+//     Set<int>? zipCodeIds,
+//     bool clearBelow = false,
+//   }) {
+//     if (clearBelow) {
+//       return AddPlaceFormState(countryId: countryId ?? this.countryId);
+//     }
+
+//     return AddPlaceFormState(
+//       countryId: countryId ?? this.countryId,
+//       divOneId: divOneId ?? this.divOneId,
+//       divTwoId: divTwoId ?? this.divTwoId,
+//       divThreeId: divThreeId ?? this.divThreeId,
+//       zipCodeIds: zipCodeIds ?? this.zipCodeIds,
+//     );
+//   }
+// }
+
+// class AddPlaceFormNotifier extends Notifier<AddPlaceFormState> {
+//   @override
+//   AddPlaceFormState build() {
+//     return const AddPlaceFormState();
+//   }
+
+//   void setCountry(int id) {
+//     state = AddPlaceFormState(countryId: id); // clears everything below
+//   }
+
+//   void setDivOne(int id) {
+//     state = state.copyWith(
+//       divOneId: id,
+//       divTwoId: null,
+//       divThreeId: null,
+//       zipCodeIds: {},
+//     );
+//   }
+
+//   void selectAllZipCodes(List<int> ids) {
+//     final updated = Set<int>.from(state.zipCodeIds);
+//     updated.addAll(ids);
+
+//     state = state.copyWith(zipCodeIds: updated);
+//   }
+
+//   void unselectAllZipCodes(List<int> ids) {
+//     final updated = Set<int>.from(state.zipCodeIds);
+//     updated.removeAll(ids);
+
+//     state = state.copyWith(zipCodeIds: updated);
+//   }
+
+//   void setDivTwo(int id) {
+//     state = state.copyWith(divTwoId: id, divThreeId: null, zipCodeIds: {});
+//   }
+
+//   void setDivThree(int id) {
+//     state = state.copyWith(divThreeId: id, zipCodeIds: {});
+//   }
+
+//   void toggleZip(int id) {
+//     final updated = Set<int>.from(state.zipCodeIds);
+
+//     if (updated.contains(id)) {
+//       updated.remove(id);
+//     } else {
+//       updated.add(id);
+//     }
+
+//     state = state.copyWith(zipCodeIds: updated);
+//   }
+
+//   void clear() {
+//     state = const AddPlaceFormState();
+//   }
+// }
+
+// final addPlaceFormProvider =
+//     NotifierProvider<AddPlaceFormNotifier, AddPlaceFormState>(
+//       AddPlaceFormNotifier.new,
+//     );
+
+// // final postOfficeZipMapProvider =
+// //     FutureProvider.family<
+// //       Map<PostOfficeLookup, List<ZipCodeLookup>>,
+// //       PostOfficeLookupFilter
+// //     >((ref, filter) async {
+// //       if (!filter.isReady) return {};
+
+// //       ref.keepAlive();
+
+// //       final lookupService = ref.read(placeLookupServiceProvider);
+
+// //       final offices = await lookupService.getPostOffices(
+// //         countryId: filter.countryId,
+// //         divOneId: filter.divOneId,
+// //         divTwoId: filter.divTwoId,
+// //         divThreeId: filter.divThreeId,
+// //       );
+
+// //       // Map<int, List<ZipCodeLookup>> result = {};
+
+// //       // for (final office in offices) {
+// //       //   final zips = await lookupService.getZipCodes(office.id);
+// //       //   result[office.id] = zips;
+// //       // }
+// //       final futures = offices.map((office) async {
+// //         final zips = await lookupService.getZipCodes(office.id);
+// //         return MapEntry(office, zips);
+// //       });
+
+// //       return Map.fromEntries(await Future.wait(futures));
+
+// //       // return result;
+// //     });
+
+// final zipCodesByPostOfficeProvider =
+//     FutureProvider.family<List<ZipCodeLookup>, int>((ref, postOfficeId) async {
+//       final lookupService = ref.read(placeLookupServiceProvider);
+
+//       return lookupService.getZipCodes(postOfficeId);
+//     });
+
+// final postOfficeFilterProvider = Provider<PostOfficeLookupFilter>((ref) {
+//   final form = ref.watch(addPlaceFormProvider);
+
+//   return PostOfficeLookupFilter(
+//     countryId: form.countryId,
+//     divOneId: form.divOneId,
+//     divTwoId: form.divTwoId,
+//     divThreeId: form.divThreeId,
+//   );
+// });
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/Place_management/data/models/post_office_lookup_filter.dart';
+import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
 
-import '../../data/models/place_model.dart';
-import '../../data/models/place_requests.dart';
-import 'place_provider.dart';
+/// ================= STATE =================
 
-class SelectedZipCodeLink {
-  final int zipCodeLinkId;
-  final String label;
+class AddPlaceFormState {
+  final int? countryId;
+  final int? divOneId;
+  final int? divTwoId;
+  final int? divThreeId;
 
-  const SelectedZipCodeLink({required this.zipCodeLinkId, required this.label});
-}
+  /// selected zipcodes from ANY post office
+  final Set<int> zipCodeIds;
 
-class AddPlaceState {
-  final String placeName;
-  final List<SelectedZipCodeLink> selectedZipCodes;
-  final bool isSubmitting;
-  final String? error;
-  final PlaceModel? created;
-
-  const AddPlaceState({
-    this.placeName = '',
-    this.selectedZipCodes = const [],
-    this.isSubmitting = false,
-    this.error,
-    this.created,
+  const AddPlaceFormState({
+    this.countryId,
+    this.divOneId,
+    this.divTwoId,
+    this.divThreeId,
+    this.zipCodeIds = const {},
   });
 
-  AddPlaceState copyWith({
-    String? placeName,
-    List<SelectedZipCodeLink>? selectedZipCodes,
-    bool? isSubmitting,
-    String? error,
-    PlaceModel? created,
+  AddPlaceFormState copyWith({
+    int? countryId,
+    int? divOneId,
+    int? divTwoId,
+    int? divThreeId,
+    Set<int>? zipCodeIds,
   }) {
-    return AddPlaceState(
-      placeName: placeName ?? this.placeName,
-      selectedZipCodes: selectedZipCodes ?? this.selectedZipCodes,
-      isSubmitting: isSubmitting ?? this.isSubmitting,
-      error: error,
-      created: created ?? this.created,
+    return AddPlaceFormState(
+      countryId: countryId ?? this.countryId,
+      divOneId: divOneId ?? this.divOneId,
+      divTwoId: divTwoId ?? this.divTwoId,
+      divThreeId: divThreeId ?? this.divThreeId,
+      zipCodeIds: zipCodeIds ?? this.zipCodeIds,
     );
   }
 }
 
-class AddPlaceNotifier extends Notifier<AddPlaceState> {
+/// ================= NOTIFIER =================
+
+class AddPlaceFormNotifier extends Notifier<AddPlaceFormState> {
   @override
-  AddPlaceState build() {
-    return const AddPlaceState();
+  AddPlaceFormState build() {
+    return const AddPlaceFormState();
   }
 
-  void setName(String value) {
-    state = state.copyWith(placeName: value, error: null);
+  /// COUNTRY resets everything below
+  void setCountry(int id) {
+    state = AddPlaceFormState(countryId: id);
   }
 
-  bool isZipSelected(int id) {
-    return state.selectedZipCodes.any((zip) => zip.zipCodeLinkId == id);
-  }
-
-  void addZip(SelectedZipCodeLink zip) {
-    if (isZipSelected(zip.zipCodeLinkId)) {
-      return;
-    }
-
+  void setDivOne(int id) {
     state = state.copyWith(
-      selectedZipCodes: [...state.selectedZipCodes, zip],
-      error: null,
+      divOneId: id,
+      divTwoId: null,
+      divThreeId: null,
+      zipCodeIds: {},
     );
   }
 
-  void clearZips() {
-    state = state.copyWith(selectedZipCodes: []);
+  void setDivTwo(int id) {
+    state = state.copyWith(divTwoId: id, divThreeId: null, zipCodeIds: {});
   }
 
-  void removeZip(int id) {
-    state = state.copyWith(
-      selectedZipCodes: state.selectedZipCodes
-          .where((zip) => zip.zipCodeLinkId != id)
-          .toList(),
-      error: null,
-    );
+  void setDivThree(int id) {
+    state = state.copyWith(divThreeId: id, zipCodeIds: {});
   }
 
-  Future<PlaceModel?> submit() async {
-    if (state.isSubmitting) return null;
+  /// Toggle single zip
+  void toggleZip(int id) {
+    final updated = Set<int>.from(state.zipCodeIds);
 
-    final trimmedName = state.placeName.trim();
-    if (trimmedName.isEmpty) {
-      state = state.copyWith(error: 'Place name is required');
-      return null;
+    if (updated.contains(id)) {
+      updated.remove(id);
+    } else {
+      updated.add(id);
     }
 
-    if (state.selectedZipCodes.isEmpty) {
-      state = state.copyWith(error: 'Select at least one zip code');
-      return null;
-    }
+    state = state.copyWith(zipCodeIds: updated);
+  }
 
-    state = state.copyWith(isSubmitting: true, error: null);
+  /// Select ALL from a post office
+  void selectAllZipCodes(List<int> ids) {
+    final updated = Set<int>.from(state.zipCodeIds);
+    updated.addAll(ids);
 
-    try {
-      final request = CreatePlaceRequest(
-        placeName: trimmedName,
-        zipCodeLinkIds: state.selectedZipCodes
-            .map((zip) => zip.zipCodeLinkId)
-            .toList(),
-      );
+    state = state.copyWith(zipCodeIds: updated);
+  }
 
-      final created = await ref
-          .read(placeProvider.notifier)
-          .createPlace(request);
-      state = const AddPlaceState();
+  void unselectAllZipCodes(List<int> ids) {
+    final updated = Set<int>.from(state.zipCodeIds);
+    updated.removeAll(ids);
 
-      state = state.copyWith(isSubmitting: false, created: created);
-      return created;
-    } catch (e) {
-      state = state.copyWith(isSubmitting: false, error: e.toString());
-      return null;
-    }
+    state = state.copyWith(zipCodeIds: updated);
+  }
+
+  void clear() {
+    state = const AddPlaceFormState();
   }
 }
 
-final addPlaceProvider = NotifierProvider<AddPlaceNotifier, AddPlaceState>(
-  AddPlaceNotifier.new,
-);
+/// ================= PROVIDERS =================
+
+final addPlaceFormProvider =
+    NotifierProvider<AddPlaceFormNotifier, AddPlaceFormState>(
+      AddPlaceFormNotifier.new,
+    );
+
+/// ⭐ Filter Provider
+final postOfficeFilterProvider = Provider<PostOfficeLookupFilter>((ref) {
+  final form = ref.watch(addPlaceFormProvider);
+
+  return PostOfficeLookupFilter(
+    countryId: form.countryId,
+    divOneId: form.divOneId,
+    divTwoId: form.divTwoId,
+    divThreeId: form.divThreeId,
+  );
+});
+
+/// ⭐ Lazy zipcode loader WITH caching
+final zipCodesByPostOfficeProvider = FutureProvider.autoDispose
+    .family<List<ZipCodeLookup>, int>((ref, id) async {
+      /// keep cached after first load
+      ref.keepAlive();
+
+      final lookupService = ref.read(placeLookupServiceProvider);
+
+      return lookupService.getZipCodes(id);
+    });

@@ -20,13 +20,13 @@ class PlaceLookupService {
   // ===============================
   Future<List<CountryLookup>> getCountries() async {
     final uri = Uri.parse("${ApiEndpoints.baseUrl}/country/lookup");
-
+    debugPrint("[getCountries] URL: $uri");
     final response = await http.get(uri, headers: headers);
+    debugPrint("[getCountries] Status: ${response.statusCode}");
+    debugPrint("[getCountries] Body: ${response.body}");
     final body = _decode(response);
-
     final List list = body['data'] ?? [];
-    debugPrint("Fetched ${list.length} countries");
-
+    debugPrint("[getCountries] Fetched ${list.length} countries");
     return list.map((e) => CountryLookup.fromJson(e)).toList();
   }
 
@@ -37,13 +37,13 @@ class PlaceLookupService {
     final uri = Uri.parse(
       "${ApiEndpoints.baseUrl}/division/one/lookup/$countryId",
     );
-
+    debugPrint("[getDivisionOne] URL: $uri");
     final response = await http.get(uri, headers: headers);
+    debugPrint("[getDivisionOne] Status: ${response.statusCode}");
+    debugPrint("[getDivisionOne] Body: ${response.body}");
     final body = _decode(response);
-
     final List list = body['data'] ?? [];
-    debugPrint("Fetched ${list.length} divisions");
-
+    debugPrint("[getDivisionOne] Fetched ${list.length} divisions");
     return list.map((e) => DivisionOneLookup.fromJson(e)).toList();
   }
 
@@ -54,17 +54,13 @@ class PlaceLookupService {
     final uri = Uri.parse(
       "${ApiEndpoints.baseUrl}/division/two/lookup/$divOneId",
     );
-    debugPrint("DIV2 URL -> $uri");
-
+    debugPrint("[getDivisionTwo] URL: $uri");
     final response = await http.get(uri, headers: headers);
-    debugPrint("DIV2 STATUS -> ${response.statusCode}");
-    debugPrint("DIV2 BODY -> ${response.body}");
-
+    debugPrint("[getDivisionTwo] Status: ${response.statusCode}");
+    debugPrint("[getDivisionTwo] Body: ${response.body}");
     final body = _decode(response);
-
     final List list = body['data'] ?? [];
-    debugPrint("Fetched ${list.length} divisions");
-
+    debugPrint("[getDivisionTwo] Fetched ${list.length} divisions");
     return list.map((e) => DivisionTwoLookup.fromJson(e)).toList();
   }
 
@@ -75,12 +71,13 @@ class PlaceLookupService {
     final uri = Uri.parse(
       "${ApiEndpoints.baseUrl}/division/three/lookup/$divTwoId",
     );
-
+    debugPrint("[getDivisionThree] URL: $uri");
     final response = await http.get(uri, headers: headers);
+    debugPrint("[getDivisionThree] Status: ${response.statusCode}");
+    debugPrint("[getDivisionThree] Body: ${response.body}");
     final body = _decode(response);
-
     final List list = body['data'] ?? [];
-    debugPrint("Fetched ${list.length} divisions");
+    debugPrint("[getDivisionThree] Fetched ${list.length} divisions");
     return list.map((e) => DivisionThreeLookup.fromJson(e)).toList();
   }
 
@@ -101,12 +98,13 @@ class PlaceLookupService {
         if (divThreeId != null) 'DivThreeId': divThreeId.toString(),
       },
     );
-
+    debugPrint("[getPostOffices] URL: $uri");
     final response = await http.get(uri, headers: headers);
+    debugPrint("[getPostOffices] Status: ${response.statusCode}");
+    debugPrint("[getPostOffices] Body: ${response.body}");
     final body = _decode(response);
-
     final List list = body['data'] ?? [];
-    debugPrint("Fetched ${list.length} post offices");
+    debugPrint("[getPostOffices] Fetched ${list.length} post offices");
     return list.map((e) => PostOfficeLookup.fromJson(e)).toList();
   }
 
@@ -114,15 +112,20 @@ class PlaceLookupService {
   // ZIP CODES
   // ===============================
   Future<List<ZipCodeLookup>> getZipCodes(int postOfficeId) async {
+    // final uri = Uri.parse(
+    //   '${ApiEndpoints.baseUrl}/zipcodes/lookup/$postOfficeId',
+    // );
     final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}/zipcodes/lookup/$postOfficeId',
-    );
+      '${ApiEndpoints.baseUrl}/zipcodes/lookup',
+    ).replace(queryParameters: {'PostOfficeId': postOfficeId.toString()});
 
+    debugPrint("[getZipCodes] URL: $uri");
     final response = await http.get(uri, headers: headers);
+    debugPrint("[getZipCodes] Status: ${response.statusCode}");
+    debugPrint("[getZipCodes] Body: ${response.body}");
     final body = _decode(response);
-
     final List list = body['data'] ?? [];
-    debugPrint("Fetched ${list.length} zip codes");
+    debugPrint("[getZipCodes] Fetched ${list.length} zip codes");
     return list.map((e) => ZipCodeLookup.fromJson(e)).toList();
   }
 }

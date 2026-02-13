@@ -61,7 +61,10 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
     final notifier = ref.read(placeProvider.notifier);
     final theme = Theme.of(context);
 
-    final totalPages = state.totalPages;
+    // final totalPages = state.totalPages;
+    // final safeTotalPages = totalPages > 0 ? totalPages : 1;
+
+    final totalPages = (state.totalCount / _pageSize).ceil();
     final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
     if (_searchController.text != state.search) {
