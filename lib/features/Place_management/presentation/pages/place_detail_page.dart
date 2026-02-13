@@ -294,19 +294,16 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
   }
 
   PlaceModel? _resolvePlace(PlaceState state) {
-    if (state.selectedPlace?.placeId == widget.placeId) {
+    if (state.selectedPlace != null &&
+        state.selectedPlace!.placeId == widget.placeId) {
       return state.selectedPlace;
     }
 
-    PlaceModel? cached;
-    for (final item in state.places) {
-      if (item.placeId == widget.placeId) {
-        cached = item;
-        break;
-      }
+    try {
+      return state.places.firstWhere((p) => p.placeId == widget.placeId);
+    } catch (_) {
+      return null;
     }
-
-    return cached ?? widget.initialPlace;
   }
 
   String _fmtDate(DateTime? dt) {
@@ -556,8 +553,9 @@ class _PlaceHistorySection extends StatelessWidget {
       ),
     ];
 
-    final hasModified =
-        place.modifiedUser != null || place.modifiedDate != null;
+    final hasModifiedUser =
+        place.modifiedUser != null && place.modifiedUser!.trim().isNotEmpty;
+    final hasModified = hasModifiedUser || place.modifiedDate != null;
     final hasDeleted = place.deletedUser != null || place.deletedDate != null;
 
     if (hasModified) {

@@ -18,7 +18,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
   Future<void> loadPlaces({
     int page = 1,
     int pageSize = 10,
-    String? search, 
+    String? search,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
@@ -86,6 +86,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
     try {
       final updated = await _service.updatePlace(id, request);
       _sync(updated);
+      state = state.copyWith(selectedPlace: updated);
       return true;
     } catch (e) {
       state = state.copyWith(error: e.toString());
@@ -93,13 +94,46 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
   }
 
+  // Future<bool> deletePlace(int id) async {
+  //   try {
+  //     final updated = await _service.deletePlace(id);
+  //     _sync(updated);
+  //     return true;
+  //   } catch (e) {
+  //     state = state.copyWith(error: e.toString());
+  //     return false;
+  //   }
+  // }
+
   Future<bool> deletePlace(int id) async {
+    // ⭐ OPTIMISTIC UI UPDATE (instant delete feel)
+    final index = state.places.indexWhere((p) => p.placeId == id);
+
+    if (index != -1) {
+      final tempList = [...state.places];
+
+      tempList[index] = tempList[index].copyWith(
+        deleted: true, // VERY IMPORTANT
+      );
+
+      state = state.copyWith(
+        places: tempList,
+        selectedPlace: tempList[index],
+        error: null,
+      );
+    }
+
     try {
       final updated = await _service.deletePlace(id);
+
+      // Sync with real backend response
       _sync(updated);
+
       return true;
     } catch (e) {
+      // ❗ Optional: revert UI if API fails
       state = state.copyWith(error: e.toString());
+
       return false;
     }
   }
@@ -115,14 +149,21 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
   }
 
+  // void _sync(PlaceModel updated) {
+  //   state = state.copyWith(
+  //     selectedPlace: state.selectedPlace?.placeId == updated.placeId
+  //         ? updated
+  //         : state.selectedPlace,
+  //     places: state.places
+  //         .map((p) => p.placeId == updated.placeId ? updated : p)
+  //         .toList(),
+  //   );
+  // }
   void _sync(PlaceModel updated) {
-    state = state.copyWith(
-      selectedPlace: state.selectedPlace?.placeId == updated.placeId
-          ? updated
-          : state.selectedPlace,
-      places: state.places
-          .map((p) => p.placeId == updated.placeId ? updated : p)
-          .toList(),
-    );
+    final newPlaces = state.places
+        .map((p) => p.placeId == updated.placeId ? updated : p)
+        .toList();
+
+    state = state.copyWith(places: newPlaces, selectedPlace: updated);
   }
 }
