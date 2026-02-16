@@ -1,152 +1,102 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../data/models/app_menu_model.dart';
+import '../providers/menu_provider.dart';
 
-// --- 1. MODEL ---
-class MenuItemConfig {
-  final String id;
-  final String title;
-  final String iconCode;
-  final IconData? iconData; // Helper for local icons
-  bool isVisible;
-  List<MenuItemConfig> children;
+// --- 1. SCREEN ---
 
-  MenuItemConfig({
-    required this.id,
-    required this.title,
-    this.iconCode = '',
-    this.iconData,
-    this.isVisible = true,
-    this.children = const [],
-  });
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'title': title,
-    'iconCode': iconCode,
-    'isVisible': isVisible,
-    'children': children.map((e) => e.toJson()).toList(),
-  };
-}
-
-class AdminMenuEditorScreen extends StatefulWidget {
+class AdminMenuEditorScreen extends ConsumerStatefulWidget {
   const AdminMenuEditorScreen({super.key});
 
   @override
-  State<AdminMenuEditorScreen> createState() => _AdminMenuEditorScreenState();
+  ConsumerState<AdminMenuEditorScreen> createState() =>
+      _AdminMenuEditorScreenState();
 }
 
-class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
-  // --- 2. STATE ---
-  // We keep a single list for simplicity of drag-and-drop hierarchy
-  // but we can render them with section headers if needed.
-  List<MenuItemConfig> _menuItems = [
-    MenuItemConfig(
-      id: '1',
-      title: 'Dashboard',
-      iconData: Icons.dashboard_outlined,
-      children: [
-        MenuItemConfig(
-          id: '1-1',
-          title: 'Analytics',
-          iconData: Icons.trending_up,
-        ),
-        MenuItemConfig(
-          id: '1-2',
-          title: 'Overview',
-          iconData: Icons.visibility,
-        ),
-      ],
-    ),
-    MenuItemConfig(
-      id: '2',
-      title: 'Users & Roles',
-      iconData: Icons.group_outlined,
-      children: [],
-    ),
-    MenuItemConfig(
-      id: '3',
-      title: 'System Security',
-      iconData: Icons.verified_user_outlined,
-    ),
-    MenuItemConfig(
-      id: '4',
-      title: 'Master Data',
-      iconData: Icons.storage,
-      children: [
-        MenuItemConfig(
-          id: '4-1',
-          title: 'Post Offices',
-          iconData: Icons.local_post_office,
-        ),
-        MenuItemConfig(
-          id: '4-2',
-          title: 'Voice Templates',
-          iconData: Icons.mic_none,
-        ),
-      ],
-    ),
-  ];
-
+class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
   bool _isSaving = false;
 
-  // --- 3. LOGIC ---
-
-  void _onReorderParent(int oldIndex, int newIndex) {
-    setState(() {
-      if (oldIndex < newIndex) newIndex -= 1;
-      final item = _menuItems.removeAt(oldIndex);
-      _menuItems.insert(newIndex, item);
-    });
+  void _onReorderParent(List<AppMenuModel> items, int oldIndex, int newIndex) {
+    // Optimistic UI update logic handled in provider or local state
+    // For simplicity, calling provider method which updates state
+    ref.read(menuProvider.notifier).reorderParent(oldIndex, newIndex);
   }
 
-  void _onReorderChild(int parentIndex, int oldIndex, int newIndex) {
-    setState(() {
-      var children = _menuItems[parentIndex].children;
-      if (oldIndex < newIndex) newIndex -= 1;
-      final item = children.removeAt(oldIndex);
-      children.insert(newIndex, item);
-    });
+  void _onReorderChild(
+    List<AppMenuModel> items,
+    int parentIndex,
+    int oldIndex,
+    int newIndex,
+  ) {
+    ref
+        .read(menuProvider.notifier)
+        .reorderChild(parentIndex, oldIndex, newIndex);
   }
 
-  void _moveChild(MenuItemConfig item, String fromParentId, String toParentId) {
+  void _moveChild(
+    List<AppMenuModel> items,
+    AppMenuModel item,
+    int fromParentId,
+    int toParentId,
+  ) {
     if (fromParentId == toParentId) return;
 
-    setState(() {
-      final sourceParent = _menuItems.firstWhere((e) => e.id == fromParentId);
-      sourceParent.children.removeWhere((child) => child.id == item.id);
+    ref.read(menuProvider.notifier).moveChild(item, fromParentId, toParentId);
 
-      final destParent = _menuItems.firstWhere((e) => e.id == toParentId);
-      destParent.children.add(item);
-    });
+    // Find destination title for snackbar
+    // Find destination title for snackbar
+    String destTitle;
+    if (toParentId == 0) {
+      destTitle = "Top Level";
+    } else {
+      try {
+        destTitle = items
+            .firstWhere(
+              (e) => e.appMenuId == toParentId,
+              orElse: () => items.first,
+            ) // Fallback to avoid crash if not found
+            .menuName;
+      } catch (e) {
+        destTitle = "Unknown Folder";
+      }
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Moved '${item.title}' to '${_findTitle(toParentId)}'"),
-      ),
+      SnackBar(content: Text("Moved '${item.menuName}' to '$destTitle'")),
     );
   }
 
-  String _findTitle(String id) =>
-      _menuItems.firstWhere((e) => e.id == id).title;
-
   Future<void> _saveMenuConfiguration() async {
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(seconds: 1));
-    // print(jsonEncode(_menuItems.map((e) => e.toJson()).toList()));
-    setState(() => _isSaving = false);
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Menu order updated successfully!")),
-      );
+    try {
+      await ref.read(menuProvider.notifier).saveChanges();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Menu order updated successfully!")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to save: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
-  // --- 4. BUILD ---
-
   @override
   Widget build(BuildContext context) {
+    final menuState = ref.watch(menuProvider);
+
     // Define Colors from Design
     const primary = Color(0xFF135BEC);
     const bgDark = Color(0xFF101622);
@@ -185,7 +135,7 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
               child: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.only(left: 16, top: 16, bottom: 16),
-                  child: _buildGlassPanel(context),
+                  child: _buildGlassPanel(context, menuState),
                 ),
               ),
             ),
@@ -195,7 +145,10 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
     );
   }
 
-  Widget _buildGlassPanel(BuildContext context) {
+  Widget _buildGlassPanel(
+    BuildContext context,
+    AsyncValue<List<AppMenuModel>> menuState,
+  ) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
@@ -216,18 +169,33 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(context),
+              // Pass items to header if available, else empty list
+              _buildHeader(context, menuState.asData?.value ?? []),
               const Divider(height: 1, color: Colors.white10),
               Expanded(
-                child: ReorderableListView(
-                  padding: const EdgeInsets.all(16),
-                  onReorder: _onReorderParent,
-                  proxyDecorator: (child, index, animation) =>
-                      _proxyDecorator(child, index, animation, context),
-                  children: [
-                    for (int index = 0; index < _menuItems.length; index++)
-                      _buildParentTile(index, _menuItems[index], context),
-                  ],
+                child: menuState.when(
+                  data: (items) => ReorderableListView(
+                    padding: const EdgeInsets.all(16),
+                    onReorder: (oldIndex, newIndex) =>
+                        _onReorderParent(items, oldIndex, newIndex),
+                    proxyDecorator: (child, index, animation) =>
+                        _proxyDecorator(child, index, animation, context),
+                    children: [
+                      for (int index = 0; index < items.length; index++)
+                        _buildParentTile(index, items[index], items, context),
+                    ],
+                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        "Error: $err",
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
                 ),
               ),
               _buildFooter(context),
@@ -238,13 +206,93 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
     );
   }
 
+  Widget _buildHeader(BuildContext context, List<AppMenuModel> items) {
+    return DragTarget<_MenuMoveRequest>(
+      onWillAccept: (data) {
+        if (data == null) return false;
+        // Accept as root only if it's not already root (parentId != 0)
+        if (data.fromParentId == 0) return false;
+        return true;
+      },
+      onAccept: (data) {
+        _moveChild(
+          items,
+          data.item,
+          data.fromParentId,
+          0, // 0 = Root
+        );
+      },
+      builder: (context, candidateData, rejectedData) {
+        final isHovered = candidateData.isNotEmpty;
+        return Container(
+          decoration: BoxDecoration(
+            color: isHovered
+                ? Theme.of(context).primaryColor.withOpacity(0.2)
+                : Colors.transparent,
+            borderRadius: isHovered
+                ? const BorderRadius.vertical(top: Radius.circular(24))
+                : null,
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Edit Navigation",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isHovered
+                        ? "Drop to make top-level"
+                        : "Drag items to reorder",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isHovered
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey[400],
+                      fontWeight: isHovered
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.edit,
+                  size: 16,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildParentTile(
     int index,
-    MenuItemConfig item,
+    AppMenuModel item,
+    List<AppMenuModel> allItems,
     BuildContext context,
   ) {
     return Container(
-      key: ValueKey(item.id),
+      key: ValueKey(item.appMenuId),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
@@ -260,13 +308,41 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          leading: Icon(Icons.drag_indicator, color: Colors.grey[600]),
-          // DRAG TARGET FOR CROSS-PARENT DROPPING
+          leading: ReorderableDragStartListener(
+            index: index,
+            child: Icon(Icons.drag_indicator, color: Colors.grey[600]),
+          ),
           title: DragTarget<_MenuMoveRequest>(
-            onWillAccept: (data) =>
-                data != null && data.fromParentId != item.id,
-            onAccept: (data) =>
-                _moveChild(data.item, data.fromParentId, item.id),
+            onWillAccept: (data) {
+              if (data == null) return false;
+              // Prevent dropping on self
+              if (data.item.appMenuId == item.appMenuId) return false;
+              // Prevent dropping if target is the current parent (already there)
+              if (data.fromParentId == item.appMenuId) return false;
+
+              return true;
+            },
+            onAccept: (data) {
+              // Validate: Cannot drop into a parent that has a route (is a page, not a folder)
+              if (item.route.trim().isNotEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      "Cannot add items to '${item.menuName}' because it has a route.",
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              _moveChild(
+                allItems,
+                data.item,
+                data.fromParentId,
+                item.appMenuId,
+              );
+            },
             builder: (context, candidateData, rejectedData) {
               final isHovered = candidateData.isNotEmpty;
               return Container(
@@ -280,15 +356,89 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
                       ? Border.all(color: Theme.of(context).primaryColor)
                       : null,
                 ),
-                child: Text(
-                  item.title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: isHovered
-                        ? Theme.of(context).primaryColor
-                        : Colors.grey[300],
-                  ),
+                child: Row(
+                  children: [
+                    // Cross-Parent Move Handle
+                    Draggable<_MenuMoveRequest>(
+                      data: _MenuMoveRequest(
+                        item: item,
+                        fromParentId: 0,
+                      ), // 0 = Root
+                      feedback: Material(
+                        color: Colors.transparent,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E2532),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.5),
+                                blurRadius: 10,
+                              ),
+                            ],
+                            border: Border.all(
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.drive_file_move,
+                                color: Colors.blue,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                item.menuName,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      childWhenDragging: Opacity(
+                        opacity: 0.3,
+                        child: Icon(
+                          Icons.drive_file_move_outline,
+                          size: 20,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      child: Tooltip(
+                        message: "Drag to move to another folder",
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 12.0),
+                          child: Icon(
+                            Icons.drive_file_move_outline,
+                            size: 20,
+                            color: Colors.blue.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      _getIconData(item.icon),
+                      size: 20,
+                      color: isHovered
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey[400],
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.menuName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: isHovered
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey[300],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -306,10 +456,14 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   onReorder: (oldIndex, newIndex) =>
-                      _onReorderChild(index, oldIndex, newIndex),
+                      _onReorderChild(allItems, index, oldIndex, newIndex),
                   children: [
                     for (int i = 0; i < item.children.length; i++)
-                      _buildChildTile(item.children[i], item.id, context),
+                      _buildChildTile(
+                        item.children[i],
+                        item.appMenuId,
+                        context,
+                      ),
                   ],
                 ),
               )
@@ -332,12 +486,12 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
   }
 
   Widget _buildChildTile(
-    MenuItemConfig item,
-    String parentId,
+    AppMenuModel item,
+    int parentId,
     BuildContext context,
   ) {
     return Container(
-      key: ValueKey(item.id),
+      key: ValueKey(item.appMenuId),
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.02),
@@ -346,7 +500,6 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
-        // DRAGGABLE HANDLE
         leading: Draggable<_MenuMoveRequest>(
           data: _MenuMoveRequest(item: item, fromParentId: parentId),
           feedback: Material(
@@ -372,7 +525,10 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
                     size: 16,
                   ),
                   const SizedBox(width: 8),
-                  Text(item.title, style: const TextStyle(color: Colors.white)),
+                  Text(
+                    item.menuName,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -394,16 +550,48 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
             ),
           ),
         ),
-        title: Text(
-          item.title,
-          style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+        title: Row(
+          children: [
+            Icon(_getIconData(item.icon), size: 16, color: Colors.grey[500]),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                item.menuName,
+                style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         trailing: Icon(Icons.drag_handle, size: 18, color: Colors.grey[700]),
       ),
     );
   }
 
-  // --- HELPERS ---
+  IconData _getIconData(String iconName) {
+    switch (iconName.toLowerCase()) {
+      case 'settings':
+        return Icons.settings;
+      case 'users':
+        return Icons.group;
+      case 'user-plus':
+        return Icons.person_add;
+      case 'list':
+        return Icons.list;
+      case 'dashboard':
+        return Icons.dashboard;
+      case 'shield':
+        return Icons.shield;
+      case 'lock':
+        return Icons.lock;
+      case 'bar-chart':
+        return Icons.bar_chart;
+      case 'test':
+        return Icons.bug_report;
+      default:
+        return Icons.circle_outlined; // Default
+    }
+  }
 
   Widget _proxyDecorator(
     Widget child,
@@ -435,48 +623,6 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
         );
       },
       child: child,
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Edit Navigation",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "Drag items to reorder",
-                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-              ),
-            ],
-          ),
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.edit,
-              size: 16,
-              color: Theme.of(context).primaryColor,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -569,7 +715,7 @@ class _AdminMenuEditorScreenState extends State<AdminMenuEditorScreen> {
 }
 
 class _MenuMoveRequest {
-  final MenuItemConfig item;
-  final String fromParentId;
+  final AppMenuModel item;
+  final int fromParentId;
   _MenuMoveRequest({required this.item, required this.fromParentId});
 }
