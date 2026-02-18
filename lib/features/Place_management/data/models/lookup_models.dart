@@ -1,13 +1,25 @@
 class CountryLookup {
   final int id;
   final String name;
+  final String? divisionOneLabel;
+  final String? divisionTwoLabel;
+  final String? divisionThreeLabel;
 
-  CountryLookup({required this.id, required this.name});
+  CountryLookup({
+    required this.id,
+    required this.name,
+    this.divisionOneLabel,
+    this.divisionTwoLabel,
+    this.divisionThreeLabel,
+  });
 
   factory CountryLookup.fromJson(Map<String, dynamic> json) {
     return CountryLookup(
       id: (json['countryId'] as num).toInt(),
       name: json['countryName'] ?? '',
+      divisionOneLabel: json['divisionOne'] as String?,
+      divisionTwoLabel: json['divisionTwo'] as String?,
+      divisionThreeLabel: json['divisionThree'] as String?,
     );
   }
 }
@@ -55,16 +67,38 @@ class DivisionThreeLookup {
   }
 }
 
-class PostOfficeLookup {
-  final int id;
-  final String name;
+// class PostOfficeLookup {
+//   final int id;
+//   final String name;
 
-  PostOfficeLookup({required this.id, required this.name});
+//   PostOfficeLookup({required this.id, required this.name});
+
+//   factory PostOfficeLookup.fromJson(Map<String, dynamic> json) {
+//     return PostOfficeLookup(
+//       id: (json['postOfficeId'] as num).toInt(),
+//       name: json['postOfficeName'] ?? '',
+//     );
+//   }
+// }
+
+class PostOfficeLookup {
+  final int postOfficeId;
+  final String postOfficeName;
+  final List<ZipCodeLookup> zipCodes;
+
+  PostOfficeLookup({
+    required this.postOfficeId,
+    required this.postOfficeName,
+    required this.zipCodes,
+  });
 
   factory PostOfficeLookup.fromJson(Map<String, dynamic> json) {
     return PostOfficeLookup(
-      id: (json['postOfficeId'] as num).toInt(),
-      name: json['postOfficeName'] ?? '',
+      postOfficeId: (json['postOfficeId'] as num).toInt(),
+      postOfficeName: json['postOfficeName'] ?? '',
+      zipCodes: (json['zipCodes'] as List? ?? [])
+          .map((e) => ZipCodeLookup.fromJson(e))
+          .toList(),
     );
   }
 }

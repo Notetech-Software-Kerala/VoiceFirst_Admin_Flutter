@@ -89,43 +89,37 @@ class PlaceLookupService {
     int? divOneId,
     int? divTwoId,
     int? divThreeId,
+    int? placeId,
   }) async {
+    // ✅ SAFETY GUARD (VERY IMPORTANT)
+    if (countryId == null ||
+        divOneId == null ||
+        divTwoId == null ||
+        divThreeId == null) {
+      return [];
+    }
+
     final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office/lookup').replace(
       queryParameters: {
-        if (countryId != null) 'CountryId': countryId.toString(),
-        if (divOneId != null) 'DivOneId': divOneId.toString(),
-        if (divTwoId != null) 'DivTwoId': divTwoId.toString(),
-        if (divThreeId != null) 'DivThreeId': divThreeId.toString(),
+        'CountryId': countryId.toString(),
+        'DivOneId': divOneId.toString(),
+        'DivTwoId': divTwoId.toString(),
+        'DivThreeId': divThreeId.toString(),
+        if (placeId != null) 'PlaceId': placeId.toString(),
       },
     );
+
     debugPrint("[getPostOffices] URL: $uri");
+
     final response = await http.get(uri, headers: headers);
+
     debugPrint("[getPostOffices] Status: ${response.statusCode}");
     debugPrint("[getPostOffices] Body: ${response.body}");
+
     final body = _decode(response);
+
     final List list = body['data'] ?? [];
-    debugPrint("[getPostOffices] Fetched ${list.length} post offices");
+
     return list.map((e) => PostOfficeLookup.fromJson(e)).toList();
-  }
-
-  // ===============================
-  // ZIP CODES
-  // ===============================
-  Future<List<ZipCodeLookup>> getZipCodes(int postOfficeId) async {
-    // final uri = Uri.parse(
-    //   '${ApiEndpoints.baseUrl}/zipcodes/lookup/$postOfficeId',
-    // );
-    final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}/zipcodes/lookup',
-    ).replace(queryParameters: {'PostOfficeId': postOfficeId.toString()});
-
-    debugPrint("[getZipCodes] URL: $uri");
-    final response = await http.get(uri, headers: headers);
-    debugPrint("[getZipCodes] Status: ${response.statusCode}");
-    debugPrint("[getZipCodes] Body: ${response.body}");
-    final body = _decode(response);
-    final List list = body['data'] ?? [];
-    debugPrint("[getZipCodes] Fetched ${list.length} zip codes");
-    return list.map((e) => ZipCodeLookup.fromJson(e)).toList();
   }
 }

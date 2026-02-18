@@ -89,14 +89,30 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                       children: [
                         const Expanded(child: _Label('PLACE NAME')),
                         const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            place.placeName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        Text(
+                          place.placeName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Expanded(child: _Label('STATUS')),
+                        const SizedBox(width: 12),
+                        Text(
+                          isDeleted
+                              ? 'Deleted'
+                              : (place.active ? 'Active' : 'Inactive'),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isDeleted
+                                ? Colors.red
+                                : (place.active ? Colors.green : Colors.orange),
                           ),
                         ),
                       ],

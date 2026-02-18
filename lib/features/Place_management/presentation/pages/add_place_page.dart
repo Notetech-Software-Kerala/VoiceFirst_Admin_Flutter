@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/add_place_provider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
-
+import '../../data/models/lookup_models.dart';
 import '../../data/models/place_requests.dart';
 import '../providers/place_provider.dart';
 
@@ -24,6 +24,49 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     final filter = ref.watch(postOfficeFilterProvider);
 
     final countries = ref.watch(countryLookupProvider);
+
+    // Resolve dynamic division labels based on selected country
+    List<CountryLookup>? countryList;
+    countries.when(
+      data: (list) {
+        countryList = list;
+      },
+      loading: () {},
+      error: (_, _) {},
+    );
+
+    CountryLookup? selectedCountry;
+    if (countryList != null && form.countryId != null) {
+      for (final c in countryList!) {
+        if (c.id == form.countryId) {
+          selectedCountry = c;
+          break;
+        }
+      }
+    }
+
+    String lableOrFallback
+    (String? value, String fallback) {
+      if (value == null) return fallback;
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? fallback : trimmed;
+    }
+
+    final div1Label = lableOrFallback
+    (
+      selectedCountry?.divisionOneLabel,
+      'Division 1',
+    );
+    final div2Label = lableOrFallback
+    (
+      selectedCountry?.divisionTwoLabel,
+      'Division 2',
+    );
+    final div3Label = lableOrFallback
+    (
+      selectedCountry?.divisionThreeLabel,
+      'Division 3',
+    );
 
     final divOne = form.countryId == null
         ? null
@@ -73,13 +116,13 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 onChanged: (v) => notifier.setCountry(v!),
               ),
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text("Failed to load countries"),
+              error: (_, _) => const Text("Failed to load countries"),
             ),
 
             if (divOne != null)
               divOne.when(
                 data: (list) => _dropdown(
-                  label: "Division 1",
+                  label: div1Label,
                   value: form.divOneId,
                   items: list
                       .map(
@@ -90,13 +133,13 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   onChanged: (v) => notifier.setDivOne(v!),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text("Failed"),
+                error: (_, _) => const Text("Failed"),
               ),
 
             if (divTwo != null)
               divTwo.when(
                 data: (list) => _dropdown(
-                  label: "Division 2",
+                  label: div2Label,
                   value: form.divTwoId,
                   items: list
                       .map(
@@ -107,13 +150,13 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   onChanged: (v) => notifier.setDivTwo(v!),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text("Failed"),
+                error: (_, _) => const Text("Failed"),
               ),
 
             if (divThree != null)
               divThree.when(
                 data: (list) => _dropdown(
-                  label: "Division 3",
+                  label: div3Label,
                   value: form.divThreeId,
                   items: list
                       .map(
@@ -124,14 +167,14 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   onChanged: (v) => notifier.setDivThree(v!),
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text("Failed"),
+                error: (_, _) => const Text("Failed"),
               ),
 
             const SizedBox(height: 24),
 
             /// POST OFFICES + ZIPCODES
             postOfficesAsync.when(
-              data: (offices) {
+              data: (List<PostOfficeLookup> offices) {
                 if (!filter.isReady || offices.isEmpty) {
                   return const SizedBox();
                 }
@@ -149,7 +192,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                        side: BorderSide(color: Colors.grey.withAlpha(30)),
                       ),
                       child: Column(
                         children: offices
@@ -161,7 +204,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text("Failed to load post offices"),
+              error: (_, _) => const Text("Failed to load post offices"),
             ),
 
             const SizedBox(height: 30),
@@ -210,7 +253,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         _FormLabel(label),
         const SizedBox(height: 8),
         DropdownButtonFormField<int>(
-          value: value,
+          initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -234,7 +277,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
 /// ================= POST OFFICE TILE =================
 
 class _PostOfficeTile extends ConsumerWidget {
-  final dynamic office;
+  final PostOfficeLookup office;
 
   const _PostOfficeTile({required this.office});
 
@@ -243,56 +286,41 @@ class _PostOfficeTile extends ConsumerWidget {
     final form = ref.watch(addPlaceFormProvider);
     final notifier = ref.read(addPlaceFormProvider.notifier);
 
-    final zipAsync = ref.watch(zipCodesByPostOfficeProvider(office.id));
+    final zips = office.zipCodes;
+    final ids = zips.map((e) => e.zipCodeLinkId).toList();
+
+    final allSelected =
+        ids.isNotEmpty && ids.every((id) => form.zipCodeIds.contains(id));
 
     return ExpansionTile(
-      title: Text(office.name),
-
+      title: Text(office.postOfficeName),
       children: [
-        zipAsync.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.all(12),
-            child: LinearProgressIndicator(),
-          ),
+        Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  if (allSelected) {
+                    notifier.unselectAllZipCodes(ids);
+                  } else {
+                    notifier.selectAllZipCodes(ids);
+                  }
+                },
+                child: Text(allSelected ? "Unselect All" : "Select All"),
+              ),
+            ),
 
-          error: (_, __) => const Padding(
-            padding: EdgeInsets.all(12),
-            child: Text("Failed to load zipcodes"),
-          ),
+            ...zips.map((zip) {
+              final selected = form.zipCodeIds.contains(zip.zipCodeLinkId);
 
-          data: (zips) {
-            final ids = zips.map((e) => e.zipCodeLinkId).toList();
-
-            final allSelected = ids.every((id) => form.zipCodeIds.contains(id));
-
-            return Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      if (allSelected) {
-                        notifier.unselectAllZipCodes(ids);
-                      } else {
-                        notifier.selectAllZipCodes(ids);
-                      }
-                    },
-                    child: Text(allSelected ? "Unselect All" : "Select All"),
-                  ),
-                ),
-
-                ...zips.map((zip) {
-                  final selected = form.zipCodeIds.contains(zip.zipCodeLinkId);
-
-                  return CheckboxListTile(
-                    value: selected,
-                    title: Text(zip.zipCode),
-                    onChanged: (_) => notifier.toggleZip(zip.zipCodeLinkId),
-                  );
-                }),
-              ],
-            );
-          },
+              return CheckboxListTile(
+                value: selected,
+                title: Text(zip.zipCode),
+                onChanged: (_) => notifier.toggleZip(zip.zipCodeLinkId),
+              );
+            }),
+          ],
         ),
       ],
     );
@@ -302,32 +330,35 @@ class _PostOfficeTile extends ConsumerWidget {
 /// ================= GLOBAL SELECT =================
 
 class _GlobalSelectTile extends ConsumerWidget {
-  final List offices;
+  final List<PostOfficeLookup> offices;
 
   const _GlobalSelectTile({required this.offices});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final form = ref.watch(addPlaceFormProvider);
     final notifier = ref.read(addPlaceFormProvider.notifier);
+
+    final allIds = <int>[];
+    for (final office in offices) {
+      allIds.addAll(office.zipCodes.map((e) => e.zipCodeLinkId));
+    }
+
+    final allSelected =
+        allIds.isNotEmpty && allIds.every((id) => form.zipCodeIds.contains(id));
 
     return CheckboxListTile(
       title: const Text(
         "Select ALL Zip Codes",
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
-      value: false,
+      value: allSelected,
       onChanged: (_) async {
-        Set<int> allIds = {};
-
-        for (final office in offices) {
-          final zips = await ref.read(
-            zipCodesByPostOfficeProvider(office.id).future,
-          );
-
-          allIds.addAll(zips.map((e) => e.zipCodeLinkId));
+        if (allSelected) {
+          notifier.unselectAllZipCodes(allIds);
+        } else {
+          notifier.selectAllZipCodes(allIds);
         }
-
-        notifier.selectAllZipCodes(allIds.toList());
       },
     );
   }

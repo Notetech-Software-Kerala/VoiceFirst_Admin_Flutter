@@ -11,42 +11,41 @@ final placeLookupServiceProvider = Provider<PlaceLookupService>((ref) {
 // ===============================
 // COUNTRY
 // ===============================
-final countryLookupProvider = FutureProvider<List<CountryLookup>>((ref) {
+final countryLookupProvider = FutureProvider.autoDispose<List<CountryLookup>>((
+  ref,
+) {
   return ref.read(placeLookupServiceProvider).getCountries();
 });
 
 // ===============================
 // DIVISION 1
 // ===============================
-final divisionOneLookupProvider =
-    FutureProvider.family<List<DivisionOneLookup>, int>((ref, countryId) {
+final divisionOneLookupProvider = FutureProvider.autoDispose
+    .family<List<DivisionOneLookup>, int>((ref, countryId) {
       return ref.read(placeLookupServiceProvider).getDivisionOne(countryId);
     });
 
 // ===============================
 // DIVISION 2
 // ===============================
-final divisionTwoLookupProvider =
-    FutureProvider.family<List<DivisionTwoLookup>, int>((ref, divOneId) {
+final divisionTwoLookupProvider = FutureProvider.autoDispose
+    .family<List<DivisionTwoLookup>, int>((ref, divOneId) {
       return ref.read(placeLookupServiceProvider).getDivisionTwo(divOneId);
     });
 
 // ===============================
 // DIVISION 3
 // ===============================
-final divisionThreeLookupProvider =
-    FutureProvider.family<List<DivisionThreeLookup>, int>((ref, divTwoId) {
+final divisionThreeLookupProvider = FutureProvider.autoDispose
+    .family<List<DivisionThreeLookup>, int>((ref, divTwoId) {
       return ref.read(placeLookupServiceProvider).getDivisionThree(divTwoId);
     });
 
 // ===============================
 // POST OFFICE
 // ===============================
-final postOfficeLookupProvider =
-    FutureProvider.family<List<PostOfficeLookup>, PostOfficeLookupFilter>((
-      ref,
-      filter,
-    ) {
+final postOfficeLookupProvider = FutureProvider.autoDispose
+    .family<List<PostOfficeLookup>, PostOfficeLookupFilter>((ref, filter) {
       if (!filter.isReady) return Future.value([]);
 
       return ref
@@ -56,17 +55,6 @@ final postOfficeLookupProvider =
             divOneId: filter.divOneId,
             divTwoId: filter.divTwoId,
             divThreeId: filter.divThreeId,
+            placeId: filter.placeId,
           );
     });
-
-// ===============================
-// ZIP CODE
-// ===============================
-final zipCodeLookupProvider = FutureProvider.family<List<ZipCodeLookup>, int?>((
-  ref,
-  postOfficeId,
-) {
-  if (postOfficeId == null) return Future.value([]);
-
-  return ref.read(placeLookupServiceProvider).getZipCodes(postOfficeId);
-});
