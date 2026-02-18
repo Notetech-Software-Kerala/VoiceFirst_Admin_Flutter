@@ -2,7 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
-import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
+import '../widgets/post_office_location_filter.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
@@ -99,11 +100,36 @@ class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
         searchController: _searchController,
         onSearchChanged: _onSearchChanged,
         onFilterTap: () {
+          final provider = ref.read(postOfficeProvider);
+          final notifier = ref.read(postOfficeProvider.notifier);
+
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (context) => const FilterBottomSheet(),
+            builder: (context) => GlobalFilterBottomSheet(
+              currentFilter: provider.filter.toBase(),
+              onApply: (baseFilter) {
+                // Merge base filter changes back into PostOfficeFilterModel
+                notifier.setFilter(provider.filter.copyWithBase(baseFilter));
+              },
+              searchOptions: const {
+                'PostOfficeName': 'Post Office Name',
+                'CountryName': 'Country Name',
+                'DivOneName': 'State / Region',
+                'DivTwoName': 'District / City',
+                'DivThreeName': 'Division Three',
+                'ZipCode': 'Zip Code',
+                'CreatedUser': 'Created By',
+                'UpdatedUser': 'Updated By',
+                'DeletedUser': 'Deleted By',
+              },
+              sortOptions: const {
+                'postOfficeName': 'Name',
+                'createdDate': 'Created Date',
+              },
+              extraContent: const PostOfficeLocationFilter(),
+            ),
           );
         },
         hintText: "Search Post Offices...",

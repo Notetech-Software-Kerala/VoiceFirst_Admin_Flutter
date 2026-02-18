@@ -261,6 +261,13 @@ class SidebarWidget extends StatelessWidget {
                       subtitle: "Core system records",
                       icon: Icons.dataset,
                     ),
+                    _SidebarSubItem(
+                      title: "Menu Config",
+                      subtitle: "Configure User App Menu",
+                      icon: Icons.menu_open,
+                      isSelected: currentIndex == 10,
+                      onTap: () => onNavigate(10),
+                    ),
                   ],
                 ),
 

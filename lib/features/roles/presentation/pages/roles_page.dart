@@ -5,7 +5,7 @@ import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
-import '../widgets/roles_filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
 import '../providers/roles_provider.dart';
 import 'create_role_page.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
@@ -43,10 +43,24 @@ class _RolesPageState extends ConsumerState<RolesPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => RolesFilterBottomSheet(
-        currentFilter: ref.read(rolesProvider).filter,
-        onApply: (filter) {
-          ref.read(rolesProvider.notifier).setFilter(filter);
+      builder: (context) => GlobalFilterBottomSheet(
+        currentFilter: ref.read(rolesProvider).filter.toBase(),
+        onApply: (baseFilter) {
+          ref
+              .read(rolesProvider.notifier)
+              .setFilter(
+                ref.read(rolesProvider).filter.copyWithBase(baseFilter),
+              );
+        },
+        searchOptions: const {
+          'RoleName': 'Role Name',
+          'CreatedUser': 'Created By',
+          'UpdatedUser': 'Updated By',
+          'DeletedUser': 'Deleted By',
+        },
+        sortOptions: const {
+          'roleName': 'Role Name',
+          'createdDate': 'Created Date',
         },
       ),
     );
