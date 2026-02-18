@@ -223,7 +223,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
 
   //   state = state.copyWith(all: list, filtered: _applyFilter(list));
   // }
-  Future<void> updateProgram({required ProgramModel updated}) async {
+  Future<bool> updateProgram({required ProgramModel updated}) async {
     if (updated.sysProgramId == null) {
       throw Exception('Program id is required');
     }
@@ -232,10 +232,36 @@ class ProgramNotifier extends Notifier<ProgramState> {
       (p) => p.sysProgramId == updated.sysProgramId,
     );
 
-    if (index == -1) return;
+    if (index == -1) return false;
 
     /// ⭐ BACKUP (for rollback)
     final oldProgram = state.all[index];
+
+    final request = UpdateProgramRequest(
+      programName: updated.programName != oldProgram.programName
+          ? updated.programName
+          : null,
+      label: updated.labelName != oldProgram.labelName
+          ? updated.labelName
+          : null,
+      route: updated.programRoute != oldProgram.programRoute
+          ? updated.programRoute
+          : null,
+      platformId: updated.applicationId != oldProgram.applicationId
+          ? updated.applicationId
+          : null,
+      companyId: updated.companyId != oldProgram.companyId
+          ? updated.companyId
+          : null,
+      active: updated.active != oldProgram.active ? updated.active : null,
+      originalActions: oldProgram.actions,
+      selectedActionIds: updated.activeActionIds.toSet(),
+    );
+
+    final payload = request.toJson();
+    if (payload.isEmpty) {
+      return false;
+    }
 
     /// ⭐ OPTIMISTIC UPDATE (instant UI)
     final optimisticList = [...state.all];
@@ -247,26 +273,6 @@ class ProgramNotifier extends Notifier<ProgramState> {
     );
 
     try {
-      final request = UpdateProgramRequest(
-        programName: updated.programName != oldProgram.programName
-            ? updated.programName
-            : null,
-        label: updated.labelName != oldProgram.labelName
-            ? updated.labelName
-            : null,
-        route: updated.programRoute != oldProgram.programRoute
-            ? updated.programRoute
-            : null,
-        platformId: updated.applicationId != oldProgram.applicationId
-            ? updated.applicationId
-            : null,
-        companyId: updated.companyId != oldProgram.companyId
-            ? updated.companyId
-            : null,
-        originalActions: oldProgram.actions,
-        selectedActionIds: updated.activeActionIds.toSet(),
-      );
-
       final saved = await _service.update(updated.sysProgramId!, request);
 
       /// Replace optimistic with REAL backend object
@@ -274,6 +280,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
       newList[index] = saved;
 
       state = state.copyWith(all: newList, filtered: _applyFilter(newList));
+      return true;
     } catch (e) {
       /// 🔥 ROLLBACK
       final rollback = [...state.all];
@@ -308,14 +315,16 @@ class ProgramNotifier extends Notifier<ProgramState> {
       );
       await _service.update(id, request);
 
+      final updatedList = state.all.map((p) {
+        if (p.sysProgramId == id) {
+          return p.copyWith(active: active);
+        }
+        return p;
+      }).toList();
+
       state = state.copyWith(
-        all: state.all.map((p) {
-          if (p.sysProgramId == id) {
-            return p.copyWith(active: active);
-          }
-          return p;
-        }).toList(),
-        filtered: _applyFilter(state.all),
+        all: updatedList,
+        filtered: _applyFilter(updatedList),
       );
 
       debugPrint(
@@ -335,14 +344,16 @@ class ProgramNotifier extends Notifier<ProgramState> {
       '[ProgramNotifier] delete() -> backend returned deleted id: ${deleted.sysProgramId}, deleted=${deleted.deleted}',
     );
 
+    final updatedList = state.all.map((p) {
+      if (p.sysProgramId == id) {
+        return deleted;
+      }
+      return p;
+    }).toList();
+
     state = state.copyWith(
-      all: state.all.map((p) {
-        if (p.sysProgramId == id) {
-          return deleted;
-        }
-        return p;
-      }).toList(),
-      filtered: _applyFilter(state.all),
+      all: updatedList,
+      filtered: _applyFilter(updatedList),
     );
   }
 

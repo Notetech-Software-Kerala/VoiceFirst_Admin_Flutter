@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -8,7 +10,6 @@ import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart
 import '../providers/business_activity_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/add_activity_dialog.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/widgets/activity_querybar.dart';
 import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
@@ -26,6 +27,15 @@ class _ViewBusinessActivityPageState
   static const int _pageSize = 10;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const FilterBottomSheet(),
+    );
+  }
 
   @override
   void initState() {
@@ -63,6 +73,16 @@ class _ViewBusinessActivityPageState
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Business Activities',
+      bottom: AdvancedSearchHeader(
+        searchController: _searchController,
+        hintText: 'Search activities...',
+        onSearchChanged: (value) => notifier.search(
+          searchBy: ActivitySearchBy.activityName,
+          text: value,
+        ),
+        onFilterTap: _openFilterSheet,
+        onRefresh: () => notifier.load(),
+      ),
       actions: [
         if (!state.isMultiSelect)
           TextButton(
@@ -98,12 +118,6 @@ class _ViewBusinessActivityPageState
           ),
         ],
       ],
-      searchController: _searchController,
-      searchHint: 'Search activities...',
-      onSearchChanged: (value) {
-        notifier.search(searchBy: ActivitySearchBy.activityName, text: value);
-      },
-      // bottom: const ActivityQueryBar(),
       onRefresh: () async => notifier.load(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'business_activity_list_fab',
@@ -152,16 +166,26 @@ class _ViewBusinessActivityPageState
                       scale: 0.8,
                       child: Switch(
                         value: a.active,
+                        activeThumbColor: Colors.green,
                         onChanged: (val) async {
                           final error = await notifier.update(
                             id: a.activityId,
                             active: val,
                           );
-                          if (context.mounted && error != null) {
+                          if (!context.mounted) return;
+                          if (error != null) {
                             CustomSnackbar.show(
                               context,
                               message: error,
                               type: SnackBarType.error,
+                            );
+                          } else {
+                            CustomSnackbar.show(
+                              context,
+                              message: val
+                                  ? '${a.activityName} activated Successfully'
+                                  : '${a.activityName} deactivated Successfully',
+                              type: SnackBarType.success,
                             );
                           }
                         },
@@ -222,12 +246,13 @@ class _ViewBusinessActivityPageState
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: a.activityName,
-                    subtitle: a.isDeleted
-                        ? 'Deleted'
-                        : (a.active ? 'Active' : 'Inactive'),
+                    // subtitle: a.isDeleted
+                    //     ? 'Deleted'
+                    //     : (a.active ? 'Active' : 'Inactive'),
                     leading: leading,
                     // trailing: statusChip,
                     actions: actions,
+                    subtitle: '',
                   ),
                 );
               }, childCount: state.items.length),

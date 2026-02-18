@@ -10,9 +10,14 @@ import 'package:voice_first_admin/features/Applications/Providers/application_pr
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_lookup_provider.dart';
 
 class ProgramDetailPage extends ConsumerStatefulWidget {
-  const ProgramDetailPage({super.key, required this.programId});
+  const ProgramDetailPage({
+    super.key,
+    required this.programId,
+    this.startInEditMode = false,
+  });
 
   final int programId;
+  final bool startInEditMode;
 
   @override
   ConsumerState<ProgramDetailPage> createState() => _ProgramDetailPageState();
@@ -29,6 +34,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
   late Set<int> _selectedActionIds;
 
   bool _isEditing = false;
+  bool _isActive = true;
 
   ProgramModel _getProgram() {
     return ref
@@ -51,11 +57,12 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
     _routeCtrl = TextEditingController(text: program.programRoute);
 
     _applicationId = program.applicationId;
-    // Initially select only actions that are active for this program
     _selectedActionIds = program.actions
         .where((a) => a.active)
         .map((a) => a.actionId)
         .toSet();
+    _isActive = program.active ?? true;
+    _isEditing = widget.startInEditMode;
   }
 
   @override
@@ -89,6 +96,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
       labelName: label,
       programRoute: route,
       applicationId: _applicationId,
+      active: _isActive,
 
       /// 🔥 rebuild actions correctly
       actions:
@@ -117,9 +125,20 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
     );
 
     try {
-      await ref.read(programProvider.notifier).updateProgram(updated: updated);
+      final didUpdate = await ref
+          .read(programProvider.notifier)
+          .updateProgram(updated: updated);
 
       if (!mounted) return;
+
+      if (!didUpdate) {
+        CustomSnackbar.show(
+          context,
+          message: 'No changes to save',
+          type: SnackBarType.info,
+        );
+        return;
+      }
 
       setState(() {
         _isEditing = false;
@@ -152,6 +171,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
           .where((a) => a.active)
           .map((a) => a.actionId)
           .toSet();
+      _isActive = program.active ?? true;
 
       _isEditing = false;
     });
@@ -187,6 +207,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
             .where((a) => a.active)
             .map((a) => a.actionId)
             .toSet();
+        _isActive = program.active ?? true;
       }
     });
 
@@ -241,32 +262,42 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                           children: [
                             const Expanded(child: _Label('STATUS')),
                             const SizedBox(width: 12),
-                            Builder(
-                              builder: (context) {
-                                final bool deleted = isDeleted;
-                                final bool active = program.active ?? true;
-                                String statusText;
-                                Color statusColor;
-                                if (deleted) {
-                                  statusText = 'Deleted';
-                                  statusColor = Colors.red;
-                                } else if (active) {
-                                  statusText = 'Active';
-                                  statusColor = Colors.green;
-                                } else {
-                                  statusText = 'Inactive';
-                                  statusColor = Colors.orange;
-                                }
+                            if (!_isEditing)
+                              Builder(
+                                builder: (context) {
+                                  final bool deleted = isDeleted;
+                                  final bool active = program.active ?? true;
+                                  String statusText;
+                                  Color statusColor;
+                                  if (deleted) {
+                                    statusText = 'Deleted';
+                                    statusColor = Colors.red;
+                                  } else if (active) {
+                                    statusText = 'Active';
+                                    statusColor = Colors.green;
+                                  } else {
+                                    statusText = 'Inactive';
+                                    statusColor = Colors.orange;
+                                  }
 
-                                return Text(
-                                  statusText,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    color: statusColor,
-                                  ),
-                                );
-                              },
-                            ),
+                                  return Text(
+                                    statusText,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: statusColor,
+                                    ),
+                                  );
+                                },
+                              )
+                            else
+                              Switch(
+                                value: _isActive,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isActive = value;
+                                  });
+                                },
+                              ),
                           ],
                         ),
                       ],
@@ -279,6 +310,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                   _DetailSection(
                     title: 'Basic Information',
                     primaryColor: primaryColor,
+                    showDividers: !_isEditing,
                     children: _isEditing
                         ? [
                             _editField(_nameCtrl, 'Program Name'),
@@ -358,7 +390,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  
                                 ],
                               ),
                               children: [
@@ -374,7 +405,6 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                   DropdownButtonFormField<int>(
                                     initialValue: currentId,
                                     items: [
-                                     
                                       ...apps.map(
                                         (a) => DropdownMenuItem<int>(
                                           value: a.platformId,
@@ -539,99 +569,73 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
                   const SizedBox(height: 24),
 
-                  /// HISTORY (Created / Modified info)
+                  /// HISTORY (Created / Modified / Deleted info)
                   Container(
                     decoration: BoxDecoration(
                       color: theme.cardColor,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: theme.dividerColor),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: const [
-                              Icon(Icons.history),
-                              SizedBox(width: 8),
-                              Text(
-                                'History',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Spacer(),
-                              Text(
-                                'Audit information',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          GridView.count(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            childAspectRatio: 2.6,
-                            children: [
-                              _GridItem(
-                                label: 'Created By',
-                                value: program.createdUser ?? 'N/A',
-                              ),
-                              _GridItem(
-                                label: 'Created Date',
-                                value: _fmtDate(program.createdDate),
-                              ),
-                              _GridItem(
-                                label: 'Modified By',
-                                value: program.modifiedUser ?? 'N/A',
-                              ),
-                              _GridItem(
-                                label: 'Modified Date',
-                                value: _fmtDate(program.modifiedDate),
-                              ),
-                            ],
-                          ),
-                        ],
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
                       ),
+                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      leading: const Icon(Icons.history),
+                      title: const Text(
+                        'History',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Text(
+                        'Created, updated & deleted information',
+                        style: theme.textTheme.bodySmall,
+                      ),
+                      children: [
+                        _AuditSection(
+                          program: program,
+                          isDeleted: isDeleted,
+                          formatDate: _fmtDate,
+                        ),
+                      ],
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
                   if (isDeleted)
-                    StandardRecoveryButton(
-                      label: 'Recover Program',
-                      onPressed: () {
-                        showRecoveryBottomSheet(
-                          context: context,
-                          itemName: program.programName,
-                          onRecover: () async {
-                            final error = await ref
-                                .read(programProvider.notifier)
-                                .recover(program.sysProgramId!);
+                    SizedBox(
+                      width: double.infinity,
+                      child: StandardRecoveryButton(
+                        label: 'Recover Program',
+                        onPressed: () {
+                          showRecoveryBottomSheet(
+                            context: context,
+                            itemName: program.programName,
+                            onRecover: () async {
+                              final error = await ref
+                                  .read(programProvider.notifier)
+                                  .recover(program.sysProgramId!);
 
-                            if (!mounted) return;
+                              if (!mounted) return;
 
-                            if (error != null) {
-                              CustomSnackbar.show(
-                                context,
-                                message: error,
-                                type: SnackBarType.error,
-                              );
-                            } else {
-                              CustomSnackbar.show(
-                                context,
-                                message: 'Program recovered',
-                                type: SnackBarType.success,
-                              );
-                            }
-                          },
-                        );
-                      },
+                              if (error != null) {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: error,
+                                  type: SnackBarType.error,
+                                );
+                              } else {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: 'Program recovered',
+                                  type: SnackBarType.success,
+                                );
+                              }
+                            },
+                          );
+                        },
+                      ),
                     ),
                 ],
               ),
@@ -817,35 +821,6 @@ class _DetailItem extends StatelessWidget {
   }
 }
 
-class _GridItem extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _GridItem({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label.toUpperCase(), style: const TextStyle(fontSize: 10)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
-
 class _Label extends StatelessWidget {
   final String text;
   const _Label(this.text);
@@ -869,11 +844,13 @@ class _DetailSection extends StatelessWidget {
   final String title;
   final Color primaryColor;
   final List<Widget> children;
+  final bool showDividers;
 
   const _DetailSection({
     required this.title,
     required this.primaryColor,
     required this.children,
+    this.showDividers = true,
   });
 
   @override
@@ -902,13 +879,206 @@ class _DetailSection extends StatelessWidget {
               children: [
                 for (int i = 0; i < children.length; i++) ...[
                   children[i],
-                  if (i < children.length - 1) const Divider(),
+                  if (showDividers && i < children.length - 1) const Divider(),
                 ],
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AuditSection extends StatelessWidget {
+  final ProgramModel program;
+  final bool isDeleted;
+  final String Function(DateTime?) formatDate;
+
+  const _AuditSection({
+    required this.program,
+    required this.isDeleted,
+    required this.formatDate,
+  });
+
+  String _formatUser(String? value, {String fallback = 'N/A'}) {
+    if (value == null || value.trim().isEmpty) {
+      return fallback;
+    }
+    return value;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _HistoryExpansionTile(
+          icon: Icons.flag_circle_outlined,
+          title: 'Created Info',
+          subtitle:
+              'Created by ${_formatUser(program.createdUser, fallback: 'Unknown')}',
+          initiallyExpanded: true,
+          entries: [
+            _HistoryEntry(
+              label: 'Created By',
+              value: _formatUser(program.createdUser, fallback: 'Unknown'),
+            ),
+            _HistoryEntry(
+              label: 'Created Date',
+              value: formatDate(program.createdDate),
+            ),
+          ],
+        ),
+        _HistoryExpansionTile(
+          icon: Icons.history,
+          title: 'Modified Info',
+          subtitle:
+              'Modified by ${_formatUser(program.modifiedUser, fallback: 'Not modified')}',
+          initiallyExpanded:
+              !isDeleted &&
+              (program.modifiedUser != null || program.modifiedDate != null),
+          entries: [
+            _HistoryEntry(
+              label: 'Modified By',
+              value: _formatUser(
+                program.modifiedUser,
+                fallback: 'Not modified',
+              ),
+            ),
+            _HistoryEntry(
+              label: 'Modified Date',
+              value: program.modifiedDate == null
+                  ? 'Not modified'
+                  : formatDate(program.modifiedDate),
+            ),
+          ],
+        ),
+        if (isDeleted)
+          _HistoryExpansionTile(
+            icon: Icons.delete_forever_outlined,
+            title: 'Deleted Info',
+            subtitle:
+                'Deleted by ${_formatUser(program.deletedUser, fallback: 'Unknown')}',
+            initiallyExpanded: true,
+            entries: [
+              _HistoryEntry(
+                label: 'Deleted By',
+                value: _formatUser(program.deletedUser, fallback: 'Unknown'),
+              ),
+              _HistoryEntry(
+                label: 'Deleted Date',
+                value: formatDate(program.deletedDate),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _HistoryExpansionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<_HistoryEntry> entries;
+  final bool initiallyExpanded;
+
+  const _HistoryExpansionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.entries,
+    this.initiallyExpanded = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: Icon(icon, color: theme.colorScheme.primary),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
+          children: [
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entries.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.4,
+              ),
+              itemBuilder: (context, index) =>
+                  _HistoryChip(entry: entries[index]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryEntry {
+  final String label;
+  final String value;
+  const _HistoryEntry({required this.label, required this.value});
+}
+
+class _HistoryChip extends StatelessWidget {
+  final _HistoryEntry entry;
+  const _HistoryChip({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.cardColor.withAlpha(153) // 0.6 * 255 = 153
+            : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.dividerColor.withAlpha(153)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            entry.label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
+              color: theme.hintColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            entry.value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 }

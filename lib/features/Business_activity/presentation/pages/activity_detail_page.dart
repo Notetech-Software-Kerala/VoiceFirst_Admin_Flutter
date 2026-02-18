@@ -97,78 +97,10 @@ class ActivityDetailPage extends ConsumerWidget {
               const SizedBox(height: 20),
 
               // HISTORY (Created/Modified [+ Deleted if deleted])
-              Container(
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.history),
-                          SizedBox(width: 8),
-                          Text(
-                            'History',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Spacer(),
-                          Text(
-                            'Audit information',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        childAspectRatio: 2.6,
-                        children: [
-                          _GridItem(
-                            label: 'Created By',
-                            value: updatedActivity.createdUser,
-                          ),
-                          _GridItem(
-                            label: 'Created Date',
-                            value: _format(updatedActivity.createdDate),
-                          ),
-                          _GridItem(
-                            label: 'Modified By',
-                            value: updatedActivity.modifiedUser ?? 'N/A',
-                          ),
-                          _GridItem(
-                            label: 'Modified Date',
-                            value: updatedActivity.modifiedDate != null
-                                ? _format(updatedActivity.modifiedDate!)
-                                : 'Not modified',
-                          ),
-                          if (isDeleted) ...[
-                            _GridItem(
-                              label: 'Deleted By',
-                              value: updatedActivity.deletedUser ?? 'N/A',
-                            ),
-                            _GridItem(
-                              label: 'Deleted Date',
-                              value: updatedActivity.deletedDate != null
-                                  ? _format(updatedActivity.deletedDate!)
-                                  : 'N/A',
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              _HistorySection(
+                activity: updatedActivity,
+                isDeleted: isDeleted,
+                formatDate: _format,
               ),
             ],
           ),
@@ -282,29 +214,195 @@ class _Label extends StatelessWidget {
   }
 }
 
-class _GridItem extends StatelessWidget {
-  final String label;
-  final String value;
+class _HistorySection extends StatelessWidget {
+  final BusinessActivity activity;
+  final bool isDeleted;
+  final String Function(DateTime) formatDate;
 
-  const _GridItem({required this.label, required this.value});
+  const _HistorySection({
+    required this.activity,
+    required this.isDeleted,
+    required this.formatDate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    String formatUser(String? value, {String fallback = 'N/A'}) {
+      if (value == null || value.trim().isEmpty) return fallback;
+      return value;
+    }
+
+    String formatDateSafe(DateTime? value, {String fallback = 'N/A'}) {
+      if (value == null) return fallback;
+      return formatDate(value);
+    }
+
+    return Column(
+      children: [
+        _HistoryExpansionTile(
+          icon: Icons.flag_circle_outlined,
+          title: 'Created Info',
+          subtitle:
+              'Created by ${formatUser(activity.createdUser, fallback: 'Unknown')}',
+          initiallyExpanded: true,
+          entries: [
+            _HistoryEntry(
+              label: 'Created By',
+              value: formatUser(activity.createdUser, fallback: 'Unknown'),
+            ),
+            _HistoryEntry(
+              label: 'Created Date',
+              value: formatDateSafe(activity.createdDate),
+            ),
+          ],
+        ),
+        _HistoryExpansionTile(
+          icon: Icons.history,
+          title: 'Modified Info',
+          subtitle:
+              'Modified by ${formatUser(activity.modifiedUser, fallback: 'Not modified')}',
+          initiallyExpanded: !isDeleted &&
+              (activity.modifiedUser != null || activity.modifiedDate != null),
+          entries: [
+            _HistoryEntry(
+              label: 'Modified By',
+              value: formatUser(activity.modifiedUser, fallback: 'Not modified'),
+            ),
+            _HistoryEntry(
+              label: 'Modified Date',
+              value: formatDateSafe(
+                activity.modifiedDate,
+                fallback: 'Not modified',
+              ),
+            ),
+          ],
+        ),
+        if (isDeleted)
+          _HistoryExpansionTile(
+            icon: Icons.delete_forever_outlined,
+            title: 'Deleted Info',
+            subtitle:
+                'Deleted by ${formatUser(activity.deletedUser, fallback: 'Unknown')}',
+            initiallyExpanded: true,
+            entries: [
+              _HistoryEntry(
+                label: 'Deleted By',
+                value: formatUser(activity.deletedUser, fallback: 'Unknown'),
+              ),
+              _HistoryEntry(
+                label: 'Deleted Date',
+                value: formatDateSafe(activity.deletedDate, fallback: 'N/A'),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _HistoryExpansionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<_HistoryEntry> entries;
+  final bool initiallyExpanded;
+
+  const _HistoryExpansionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.entries,
+    this.initiallyExpanded = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Container(
-      padding: const EdgeInsets.all(10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: Icon(icon, color: theme.colorScheme.primary),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: theme.textTheme.bodySmall,
+          ),
+          children: [
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entries.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.4,
+              ),
+              itemBuilder: (context, index) => _HistoryChip(
+                entry: entries[index],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryEntry {
+  final String label;
+  final String value;
+  const _HistoryEntry({required this.label, required this.value});
+}
+
+class _HistoryChip extends StatelessWidget {
+  final _HistoryEntry entry;
+  const _HistoryChip({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? theme.cardColor.withOpacity(0.6) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label.toUpperCase(), style: const TextStyle(fontSize: 10)),
+          Text(
+            entry.label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
+              color: theme.hintColor,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(
+            entry.value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
         ],
       ),
     );

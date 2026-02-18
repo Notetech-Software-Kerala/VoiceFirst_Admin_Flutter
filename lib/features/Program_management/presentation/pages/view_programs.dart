@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -56,6 +58,15 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
         );
   }
 
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const FilterBottomSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ref = this.ref;
@@ -76,6 +87,19 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Program Management',
+      bottom: AdvancedSearchHeader(
+        searchController: _searchController,
+        hintText: 'Search programs by name, label or route...',
+        onSearchChanged: notifier.search,
+        onFilterTap: _openFilterSheet,
+        onRefresh: () => notifier.loadAll(
+          filter: ProgramFilter(
+            pageNumber: state.currentPage,
+            pageSize: _pageSize,
+            searchText: state.search.isEmpty ? null : state.search,
+          ),
+        ),
+      ),
       actions: [
         if (!state.isMultiSelect)
           TextButton(
@@ -103,10 +127,6 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
           ),
         ],
       ],
-      searchController: _searchController,
-      onSearchChanged: (q) => notifier.search(q),
-      searchHint: 'Search programs by name, label or route...',
-      
       onRefresh: () async {
         final currentSearch = state.search;
         await notifier.loadAll(
@@ -180,17 +200,44 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                         value: program.active ?? true,
                         onChanged: (val) async {
                           final error = await notifier.toggleStatus(id, val);
-                          if (error != null && context.mounted) {
+                          if (!context.mounted) return;
+
+                          if (error != null) {
                             CustomSnackbar.show(
                               context,
                               message: error,
                               type: SnackBarType.error,
+                            );
+                          } else {
+                            CustomSnackbar.show(
+                              context,
+                              message: val
+                                  ? 'Program activated successfully'
+                                  : 'Program deactivated successfully',
+                              type: SnackBarType.success,
                             );
                           }
                         },
                         activeThumbColor: Colors.green,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
+                    ),
+                  );
+                  actions.add(
+                    StandardActionButton(
+                      icon: Icons.edit_outlined,
+                      color: colorScheme.primary,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ProgramDetailPage(
+                              programId: program.sysProgramId!,
+                              startInEditMode: true,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   );
                   actions.add(
@@ -239,6 +286,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                           MaterialPageRoute(
                             builder: (_) => ProgramDetailPage(
                               programId: program.sysProgramId!,
+                              startInEditMode: false,
                             ),
                           ),
                         ),

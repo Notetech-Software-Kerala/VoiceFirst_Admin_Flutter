@@ -234,6 +234,27 @@ class SidebarWidget extends StatelessWidget {
                       onTap: () => onNavigate(9),
                       subtitle: 'Manage Plans',
                     ),
+                    _SidebarSubItem(
+                      title: "Place Management",
+                      subtitle: "Manage Places",
+                      icon: Icons.settings_applications,
+                      isSelected: currentIndex == 10,
+                      onTap: () => onNavigate(10),
+                    ),
+                    _SidebarSubItem(
+                      title: "Menu Config",
+                      subtitle: "Configure User App Menu",
+                      icon: Icons.menu_open,
+                      isSelected: currentIndex == 10,
+                      onTap: () => onNavigate(10),
+                    ),
+                     _SidebarSubItem(
+                      title: "Place Management",
+                      subtitle: "Manage Places",
+                      icon: Icons.settings_applications,
+                      isSelected: currentIndex == 11,
+                      onTap: () => onNavigate(11),
+                    ),
                   ],
                 ),
 

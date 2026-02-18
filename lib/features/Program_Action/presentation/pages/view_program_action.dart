@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
-import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
-import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
+import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
+import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
+import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_filter.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_provider.dart';
@@ -21,11 +23,13 @@ class ProgramActionView extends ConsumerStatefulWidget {
 
 class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
   final ScrollController _scrollController = ScrollController();
+  late final TextEditingController _searchController;
   static const int _pageSize = 10;
 
   @override
   void initState() {
     super.initState();
+    _searchController = TextEditingController();
     Future.microtask(() {
       ref
           .read(programActionProvider.notifier)
@@ -37,6 +41,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -55,6 +60,15 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
     );
   }
 
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const FilterBottomSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -62,7 +76,9 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
     final state = ref.watch(programActionProvider);
     final notifier = ref.read(programActionProvider.notifier);
 
-    final searchController = TextEditingController(text: state.search);
+    if (_searchController.text != state.search) {
+      _searchController.text = state.search;
+    }
 
     final totalPages = (state.totalCount / _pageSize).ceil();
     final safeTotalPages = totalPages > 0 ? totalPages : 1;
@@ -71,6 +87,27 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Program Actions',
+      bottom: AdvancedSearchHeader(
+        searchController: _searchController,
+        hintText: 'Search program actions...',
+        onSearchChanged: (value) {
+          notifier.loadAll(
+            filter: ProgramActionFilter(
+              search: value,
+              pageNumber: 1,
+              pageSize: _pageSize,
+            ),
+          );
+        },
+        onFilterTap: _openFilterSheet,
+        onRefresh: () => notifier.loadAll(
+          filter: ProgramActionFilter(
+            search: state.search.isEmpty ? null : state.search,
+            pageNumber: state.currentPage,
+            pageSize: _pageSize,
+          ),
+        ),
+      ),
       actions: [
         if (!state.isMultiSelect)
           TextButton(
@@ -106,17 +143,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
             ),
         ],
       ],
-      searchController: searchController,
-      searchHint: 'Search program actions...',
-      onSearchChanged: (value) {
-        notifier.loadAll(
-          filter: ProgramActionFilter(
-            search: value,
-            pageNumber: 1,
-            pageSize: _pageSize,
-          ),
-        );
-      },
       onRefresh: () async {
         await notifier.loadAll(
           filter: ProgramActionFilter(
@@ -182,16 +208,26 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                       scale: 0.8,
                       child: Switch(
                         value: action.active,
+                        activeThumbColor: Colors.green,
                         onChanged: (val) async {
                           final error = await notifier.toggleStatus(
                             action.actionId,
                             val,
                           );
-                          if (context.mounted && error != null) {
+                          if (!context.mounted) return;
+                          if (error != null) {
                             CustomSnackbar.show(
                               context,
                               message: error,
                               type: SnackBarType.error,
+                            );
+                          } else {
+                            CustomSnackbar.show(
+                              context,
+                              message: val
+                                  ? '${action.actionName} activated successfully'
+                                  : '${action.actionName} deactivated successfully',
+                              type: SnackBarType.success,
                             );
                           }
                         },
@@ -243,7 +279,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                     ),
                   );
                 }
-
                 return InkWell(
                   onTap: state.isMultiSelect
                       ? () => notifier.toggleSelection(action.actionId)
@@ -260,9 +295,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: action.actionName,
-                    subtitle: isDeleted
-                        ? 'Deleted'
-                        : (action.active ? 'Active' : 'Inactive'),
+                    subtitle: '',
                     leading: leading,
                     // trailing: statusChip,
                     actions: actions,
