@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
-import '../providers/program_action_provider.dart';
 import '../dialogs/edit_program_action_dialog.dart';
+import '../providers/program_action_provider.dart';
 
 class ProgramActionDetailView extends ConsumerWidget {
   final ProgramActionModel action;
@@ -15,11 +15,9 @@ class ProgramActionDetailView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final primaryColor = const Color(0xFF0D7FF2);
-
+    final theme = Theme.of(context);
     final state = ref.watch(programActionProvider);
 
-    // Get the latest version of this action from the provider
     final updatedAction =
         state.actions
             .where((a) => a.actionId == action.actionId)
@@ -31,366 +29,389 @@ class ProgramActionDetailView extends ConsumerWidget {
             .firstOrNull ??
         action;
 
-    // Determine if action is deleted
     final isDeleted = updatedAction.deleted;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          'Program Action Details',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: primaryColor,
+        title: const Text('Program Action Details'),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: const BackButton(),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
+      body: Stack(
+        children: [
+          ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(child: _Label('ACTION NAME')),
+                        const SizedBox(width: 12),
+                        Text(
+                          updatedAction.actionName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(child: _Label('STATUS')),
+                        const SizedBox(width: 12),
+                        Text(
+                          isDeleted
+                              ? 'Deleted'
+                              : (updatedAction.active ? 'Active' : 'Inactive'),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: isDeleted
+                                ? Colors.red
+                                : (updatedAction.active
+                                      ? Colors.green
+                                      : Colors.orange),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              _HistorySection(
+                action: updatedAction,
+                isDeleted: isDeleted,
+                formatDate: _format,
+              ),
+            ],
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
               decoration: BoxDecoration(
-                color: primaryColor.withAlpha(20),
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    theme.scaffoldBackgroundColor,
+                    theme.scaffoldBackgroundColor.withAlpha(100),
+                    theme.scaffoldBackgroundColor.withAlpha(0),
+                  ],
                 ),
               ),
               child: Row(
                 children: [
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          updatedAction.actionName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
+                  if (isDeleted)
+                    Expanded(
+                      child: StandardRecoveryButton(
+                        label: 'Recover',
+                        onPressed: () => showRecoveryBottomSheet(
+                          context: context,
+                          itemName: updatedAction.actionName,
+                          onRecover: () async {
+                            final error = await ref
+                                .read(programActionProvider.notifier)
+                                .recover(updatedAction.actionId);
+                            if (context.mounted) {
+                              if (error != null) {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: error,
+                                  type: SnackBarType.error,
+                                );
+                              } else {
+                                CustomSnackbar.show(
+                                  context,
+                                  message:
+                                      '${updatedAction.actionName} recovered successfully',
+                                  type: SnackBarType.success,
+                                );
+                              }
+                            }
+                          },
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: updatedAction.active
-                                ? Colors.green.withAlpha(38)
-                                : Colors.red.withAlpha(38),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            updatedAction.active ? 'Active' : 'Inactive',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: updatedAction.active
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
-                            ),
-                          ),
+                      ),
+                    )
+                  else ...[
+                    Expanded(
+                      child: StandardEditButton(
+                        label: 'Edit',
+                        onPressed: () => EditProgramActionDialog.show(
+                          context,
+                          ref,
+                          updatedAction,
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StandardDeleteButton(
+                        label: 'Delete',
+                        onPressed: () => showDeleteBottomSheet(
+                          context: context,
+                          itemName: updatedAction.actionName,
+                          onDelete: () async {
+                            final error = await ref
+                                .read(programActionProvider.notifier)
+                                .delete(updatedAction.actionId);
+                            if (context.mounted) {
+                              if (error != null) {
+                                CustomSnackbar.show(
+                                  context,
+                                  message: error,
+                                  type: SnackBarType.error,
+                                );
+                              } else {
+                                CustomSnackbar.show(
+                                  context,
+                                  message:
+                                      'Program action deleted successfully',
+                                  type: SnackBarType.success,
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _DetailSection(
-                    title: 'Basic Information',
-                    primaryColor: primaryColor,
-                    children: [
-                      _DetailItem(
-                        label: 'Action ID',
-                        value: updatedAction.actionId.toString(),
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Action Name',
-                        value: updatedAction.actionName,
-                        primaryColor: primaryColor,
-                      ),
-                      _DetailItem(
-                        label: 'Active Status',
-                        value: updatedAction.active ? 'Active' : 'Inactive',
-                        primaryColor: primaryColor,
-                        valueColor: updatedAction.active
-                            ? Colors.green
-                            : Colors.red,
-                      ),
-                      _DetailItem(
-                        label: 'Delete Status',
-                        value: isDeleted ? 'Deleted' : 'Not Deleted',
-                        primaryColor: primaryColor,
-                        valueColor: isDeleted ? Colors.red : Colors.green,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (updatedAction.createdUser != null ||
-                      updatedAction.createdDate != null) ...[
-                    _DetailSection(
-                      title: 'Created Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Created By',
-                          value: updatedAction.createdUser ?? 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Created Date',
-                          value: updatedAction.createdDate != null
-                              ? _formatDateTime(updatedAction.createdDate!)
-                              : 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  if (updatedAction.modifiedUser != null ||
-                      updatedAction.modifiedDate != null) ...[
-                    _DetailSection(
-                      title: 'Modified Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Modified By',
-                          value: updatedAction.modifiedUser ?? 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Modified Date',
-                          value: updatedAction.modifiedDate != null
-                              ? _formatDateTime(updatedAction.modifiedDate!)
-                              : 'Not modified',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  if (isDeleted) ...[
-                    _DetailSection(
-                      title: 'Deleted Information',
-                      primaryColor: primaryColor,
-                      children: [
-                        _DetailItem(
-                          label: 'Deleted By',
-                          value: updatedAction.deletedUser?.isEmpty ?? true
-                              ? 'N/A'
-                              : updatedAction.deletedUser!,
-                          primaryColor: primaryColor,
-                        ),
-                        _DetailItem(
-                          label: 'Deleted Date',
-                          value: updatedAction.deletedDate != null
-                              ? _formatDateTime(updatedAction.deletedDate!)
-                              : 'N/A',
-                          primaryColor: primaryColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                  const SizedBox(height: 8),
+          ),
+        ],
+      ),
+    );
+  }
 
-                  Row(
-                    children: [
-                      if (isDeleted)
-                        /// ♻️ RECOVER BUTTON
-                        Expanded(
-                          child: StandardRecoveryButton(
-                            label: 'Recover Action',
-                            onPressed: () => showRecoveryBottomSheet(
-                              context: context,
-                              itemName: updatedAction.actionName,
-                              onRecover: () async {
-                                final error = await ref
-                                    .read(programActionProvider.notifier)
-                                    .recover(updatedAction.actionId);
-                                if (context.mounted) {
-                                  if (error != null) {
-                                    CustomSnackbar.show(
-                                      context,
-                                      message: error,
-                                      type: SnackBarType.error,
-                                    );
-                                  } else {
-                                    CustomSnackbar.show(
-                                      context,
-                                      message:
-                                          '${updatedAction.actionName} recovered successfully',
-                                      type: SnackBarType.success,
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                        )
-                      else ...[
-                        /// ✏️ EDIT
-                        Expanded(
-                          child: StandardEditButton(
-                            label: 'Edit Action',
-                            onPressed: () => EditProgramActionDialog.show(
-                              context,
-                              ref,
-                              updatedAction,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
+  String _format(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}/'
+        '${dt.month.toString().padLeft(2, '0')}/'
+        '${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+}
 
-                        /// 🗑 DELETE
-                        Expanded(
-                          child: StandardDeleteButton(
-                            label: 'Delete Action',
-                            onPressed: () => showDeleteBottomSheet(
-                              context: context,
-                              itemName: updatedAction.actionName,
-                              onDelete: () async {
-                                final error = await ref
-                                    .read(programActionProvider.notifier)
-                                    .delete(updatedAction.actionId);
-                                if (context.mounted) {
-                                  if (error != null) {
-                                    CustomSnackbar.show(
-                                      context,
-                                      message: error,
-                                      type: SnackBarType.error,
-                                    );
-                                  } else {
-                                    CustomSnackbar.show(
-                                      context,
-                                      message:
-                                          'Program action deleted successfully',
-                                      type: SnackBarType.success,
-                                    );
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        letterSpacing: 1.2,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  final ProgramActionModel action;
+  final bool isDeleted;
+  final String Function(DateTime) formatDate;
+
+  const _HistorySection({
+    required this.action,
+    required this.isDeleted,
+    required this.formatDate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    String formatUser(String? value, {String fallback = 'N/A'}) {
+      if (value == null || value.trim().isEmpty) return fallback;
+      return value;
+    }
+
+    String formatDateSafe(DateTime? value, {String fallback = 'N/A'}) {
+      if (value == null) return fallback;
+      return formatDate(value);
+    }
+
+    return Column(
+      children: [
+        _HistoryExpansionTile(
+          icon: Icons.flag_circle_outlined,
+          title: 'Created Info',
+          subtitle:
+              'Created by ${formatUser(action.createdUser, fallback: 'Unknown')}',
+          initiallyExpanded: true,
+          entries: [
+            _HistoryEntry(
+              label: 'Created By',
+              value: formatUser(action.createdUser, fallback: 'Unknown'),
+            ),
+            _HistoryEntry(
+              label: 'Created Date',
+              value: formatDateSafe(action.createdDate),
+            ),
+          ],
+        ),
+        _HistoryExpansionTile(
+          icon: Icons.history,
+          title: 'Modified Info',
+          subtitle:
+              'Modified by ${formatUser(action.modifiedUser, fallback: 'Not modified')}',
+          initiallyExpanded:
+              !isDeleted &&
+              (action.modifiedUser != null || action.modifiedDate != null),
+          entries: [
+            _HistoryEntry(
+              label: 'Modified By',
+              value: formatUser(action.modifiedUser, fallback: 'Not modified'),
+            ),
+            _HistoryEntry(
+              label: 'Modified Date',
+              value: formatDateSafe(
+                action.modifiedDate,
+                fallback: 'Not modified',
               ),
+            ),
+          ],
+        ),
+        if (isDeleted)
+          _HistoryExpansionTile(
+            icon: Icons.delete_forever_outlined,
+            title: 'Deleted Info',
+            subtitle:
+                'Deleted by ${formatUser(action.deletedUser, fallback: 'Unknown')}',
+            initiallyExpanded: true,
+            entries: [
+              _HistoryEntry(
+                label: 'Deleted By',
+                value: formatUser(action.deletedUser, fallback: 'Unknown'),
+              ),
+              _HistoryEntry(
+                label: 'Deleted Date',
+                value: formatDateSafe(action.deletedDate, fallback: 'N/A'),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _HistoryExpansionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<_HistoryEntry> entries;
+  final bool initiallyExpanded;
+
+  const _HistoryExpansionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.entries,
+    this.initiallyExpanded = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: Icon(icon, color: theme.colorScheme.primary),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
+          children: [
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entries.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 2.4,
+              ),
+              itemBuilder: (context, index) =>
+                  _HistoryChip(entry: entries[index]),
             ),
           ],
         ),
       ),
     );
   }
-
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.day.toString().padLeft(2, '0')}/'
-        '${dateTime.month.toString().padLeft(2, '0')}/'
-        '${dateTime.year} '
-        '${dateTime.hour.toString().padLeft(2, '0')}:'
-        '${dateTime.minute.toString().padLeft(2, '0')}';
-  }
 }
 
-class _DetailSection extends StatelessWidget {
-  final String title;
-  final Color primaryColor;
-  final List<Widget> children;
-
-  const _DetailSection({
-    required this.title,
-    required this.primaryColor,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            children: [
-              for (int i = 0; i < children.length; i++) ...[
-                children[i],
-                if (i < children.length - 1)
-                  Divider(height: 0, color: Colors.grey.shade200),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailItem extends StatelessWidget {
+class _HistoryEntry {
   final String label;
   final String value;
-  final Color primaryColor;
-  final Color? valueColor;
+  const _HistoryEntry({required this.label, required this.value});
+}
 
-  const _DetailItem({
-    required this.label,
-    required this.value,
-    required this.primaryColor,
-    this.valueColor,
-  });
+class _HistoryChip extends StatelessWidget {
+  final _HistoryEntry entry;
+  const _HistoryChip({required this.entry});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? theme.cardColor.withOpacity(0.6)
+            : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            label,
+            entry.label.toUpperCase(),
             style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-              fontWeight: FontWeight.w500,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.6,
+              color: theme.hintColor,
             ),
           ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: valueColor ?? Colors.grey.shade900,
-              ),
-            ),
+          const SizedBox(height: 4),
+          Text(
+            entry.value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ],
       ),

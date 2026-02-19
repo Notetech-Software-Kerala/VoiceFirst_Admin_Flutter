@@ -41,7 +41,7 @@ class PaginatedResponse<T> {
 
 class BusinessActivityService {
   Future<BusinessActivity> createActivity(String name) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity');
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: {"activityName":"$name"}');
@@ -64,7 +64,7 @@ class BusinessActivityService {
     BusinessActivityFilter filter,
   ) async {
     final url = Uri.parse(
-      '${ApiEndpoints.baseUrl}/business-activity',
+      '${ApiEndpoints.baseUrl}/activity',
     ).replace(queryParameters: filter.toQueryParams());
 
     debugPrint('API REQUEST: GET $url');
@@ -87,7 +87,7 @@ class BusinessActivityService {
   }
 
   Future<BusinessActivity> getActivityById(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/$id');
 
     debugPrint('API REQUEST: GET $url');
 
@@ -118,7 +118,7 @@ class BusinessActivityService {
     if (active != null) {
       body['active'] = active;
     }
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/$id');
 
     debugPrint('API REQUEST: PATCH $url');
     debugPrint('Request Body: ${jsonEncode(body)}');
@@ -138,9 +138,7 @@ class BusinessActivityService {
   }
 
   Future<void> toggleStatus(int id, bool active) async {
-    final url = Uri.parse(
-      '${ApiEndpoints.baseUrl}/business-activity/$id/status',
-    );
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/$id/status');
 
     debugPrint('API REQUEST: PATCH $url');
     debugPrint('Request Body: ${jsonEncode({'active': active})}');
@@ -157,9 +155,7 @@ class BusinessActivityService {
   }
 
   Future<BusinessActivity> recoverActivity(int id) async {
-    final url = Uri.parse(
-      '${ApiEndpoints.baseUrl}/business-activity/recover/$id',
-    );
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/recover/$id');
 
     final response = await http.patch(
       url,
@@ -175,7 +171,7 @@ class BusinessActivityService {
   }
 
   Future<BusinessActivity> deleteActivity(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/business-activity/$id');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/$id');
 
     final response = await http.delete(
       url,
@@ -191,9 +187,7 @@ class BusinessActivityService {
   }
 
   Future<void> bulkDelete(List<int> ids) async {
-    final url = Uri.parse(
-      '${ApiEndpoints.baseUrl}/business-activity/bulk-delete',
-    );
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/bulk-delete');
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: {"ids":$ids}');

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Country%20Management/country/models/country_model.dart';
-import 'package:voice_first_admin/features/Country%20Management/country/presentation/providers/country_state.dart';
+import 'package:voice_first_admin/features/Country_Management/country/models/country_model.dart';
+import 'package:voice_first_admin/features/Country_Management/country/presentation/providers/country_state.dart';
 
 void main() {
   group('CountryState', () {

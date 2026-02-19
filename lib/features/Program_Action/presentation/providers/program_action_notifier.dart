@@ -121,23 +121,60 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
   }
 
   // Toggle status
+  // Future<String?> toggleStatus(int id, bool active) async {
+  //   try {
+  //     await _service.updateAction(id, active: active);
+
+  //     // Reload the current page to get fresh data
+  //     await loadAll(
+  //       filter: ProgramActionFilter(
+  //         pageNumber: state.currentPage,
+  //         pageSize: 10,
+  //         search: state.search.isEmpty ? null : state.search,
+  //       ),
+  //     );
+
+  //     debugPrint('✅ Status toggled for program action ID: $id');
+  //     return null; // success
+  //   } catch (e) {
+  //     debugPrint('💥 Failed to toggle status: $e');
+  //     return 'Failed to toggle status';
+  //   }
+  // }
   Future<String?> toggleStatus(int id, bool active) async {
+    // ✅ Backup for rollback
+    final previousActions = state.actions;
+    final previousFiltered = state.filtered;
+
+    // ✅ Instant UI update
+    state = state.copyWith(
+      actions: state.actions.map((a) {
+        if (a.actionId == id) {
+          return a.copyWith(active: active);
+        }
+        return a;
+      }).toList(),
+      filtered: state.filtered.map((a) {
+        if (a.actionId == id) {
+          return a.copyWith(active: active);
+        }
+        return a;
+      }).toList(),
+    );
+
     try {
       await _service.updateAction(id, active: active);
 
-      // Reload the current page to get fresh data
-      await loadAll(
-        filter: ProgramActionFilter(
-          pageNumber: state.currentPage,
-          pageSize: 10,
-          search: state.search.isEmpty ? null : state.search,
-        ),
+      debugPrint('✅ Status toggled');
+      return null;
+    } catch (e) {
+      // ❗ rollback if API fails
+      state = state.copyWith(
+        actions: previousActions,
+        filtered: previousFiltered,
       );
 
-      debugPrint('✅ Status toggled for program action ID: $id');
-      return null; // success
-    } catch (e) {
-      debugPrint('💥 Failed to toggle status: $e');
+      debugPrint('💥 Toggle failed → rolled back');
       return 'Failed to toggle status';
     }
   }

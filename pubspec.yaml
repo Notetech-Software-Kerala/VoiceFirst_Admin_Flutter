@@ -41,6 +41,7 @@ dependencies:
   flutter_secure_storage: ^8.1.0
   http: ^1.6.0
   intl: ^0.20.2
+  equatable: ^2.0.8
 
 dev_dependencies:
   flutter_test:
