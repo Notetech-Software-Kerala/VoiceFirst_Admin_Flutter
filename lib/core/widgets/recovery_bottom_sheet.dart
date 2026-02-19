@@ -48,7 +48,9 @@ class _RecoveryConfirmationSheet extends StatelessWidget {
     final cardBg = isDark
         ? const Color(0xFF221A1A)
         : const Color(0xFFF9FAFB); // gray-50
-    final borderColor = isDark ? primary.withOpacity(0.05) : Colors.grey[100]!;
+    final borderColor = isDark
+        ? primary.withValues(alpha: 0.05)
+        : Colors.grey[100]!;
     final textColor = isDark ? Colors.white : Colors.grey[900];
     final subTextColor = isDark ? const Color(0xFF9C8484) : Colors.grey[500];
 
@@ -58,7 +60,7 @@ class _RecoveryConfirmationSheet extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -89,7 +91,7 @@ class _RecoveryConfirmationSheet extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.1),
+                color: primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -160,7 +162,7 @@ class _RecoveryConfirmationSheet extends StatelessWidget {
               backgroundColor: primary,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: primary.withOpacity(0.3),
+              shadowColor: primary.withValues(alpha: 0.3),
               padding: const EdgeInsets.symmetric(vertical: 20),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),

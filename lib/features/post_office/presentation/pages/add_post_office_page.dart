@@ -494,7 +494,7 @@ class _AddPostOfficePageState extends ConsumerState<AddPostOfficePage> {
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 50),
-              backgroundColor: theme.primaryColor,
+              backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
               foregroundColor: Colors.white,
             ),
             onPressed: _isSubmitting ? null : _submitPostOffice,
@@ -592,7 +592,7 @@ class _CountrySelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withOpacity(0.3)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(

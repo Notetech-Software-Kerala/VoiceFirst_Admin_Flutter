@@ -84,7 +84,10 @@ class CountryDetailPage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Divider(color: theme.dividerColor.withOpacity(0.5), height: 1),
+                Divider(
+                  color: theme.dividerColor.withValues(alpha: 0.5),
+                  height: 1,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -137,7 +140,7 @@ class CountryDetailPage extends ConsumerWidget {
                   const SizedBox(height: 8),
                   _RowItem(label: 'Country Code', value: country.countryCode),
                   Divider(
-                    color: theme.dividerColor.withOpacity(0.5),
+                    color: theme.dividerColor.withValues(alpha: 0.5),
                     height: 1,
                   ),
                   _RowItem(
@@ -186,7 +189,7 @@ class CountryDetailPage extends ConsumerWidget {
                       ),
                     if (country.divisionTwoLabel != null) ...[
                       Divider(
-                        color: theme.dividerColor.withOpacity(0.5),
+                        color: theme.dividerColor.withValues(alpha: 0.5),
                         height: 1,
                       ),
                       _RowItem(
@@ -198,7 +201,7 @@ class CountryDetailPage extends ConsumerWidget {
                       if (country.divisionOneLabel != null ||
                           country.divisionTwoLabel != null)
                         Divider(
-                          color: theme.dividerColor.withOpacity(0.5),
+                          color: theme.dividerColor.withValues(alpha: 0.5),
                           height: 1,
                         ),
                       _RowItem(

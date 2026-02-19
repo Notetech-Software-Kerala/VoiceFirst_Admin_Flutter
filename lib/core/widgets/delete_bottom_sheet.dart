@@ -84,7 +84,7 @@ class _DeleteConfirmationSheet extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.1),
+                color: primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.delete_forever, color: primary, size: 32),
@@ -112,7 +112,9 @@ class _DeleteConfirmationSheet extends StatelessWidget {
               color: cardBg,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? primary.withOpacity(0.1) : Colors.grey[200]!,
+                color: isDark
+                    ? primary.withValues(alpha: 0.1)
+                    : Colors.grey[200]!,
               ),
             ),
             child: Text(
@@ -163,7 +165,7 @@ class _DeleteConfirmationSheet extends StatelessWidget {
               backgroundColor: primary,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: primary.withOpacity(0.4),
+              shadowColor: primary.withValues(alpha: 0.4),
               padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

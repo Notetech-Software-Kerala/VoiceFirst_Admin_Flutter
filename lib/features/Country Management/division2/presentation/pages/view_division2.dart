@@ -198,8 +198,8 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(
-                                0.12,
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.12,
                               ),
                               borderRadius: BorderRadius.circular(12),
                             ),

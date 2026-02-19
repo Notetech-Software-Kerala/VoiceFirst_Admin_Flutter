@@ -709,7 +709,7 @@ class _StatusChip extends StatelessWidget {
 
     return Chip(
       label: Text(text),
-      backgroundColor: color.withOpacity(.12),
+      backgroundColor: color.withValues(alpha: 0.12),
       labelStyle: TextStyle(color: color),
       side: BorderSide.none,
     );

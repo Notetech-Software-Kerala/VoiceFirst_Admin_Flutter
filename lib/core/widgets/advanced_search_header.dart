@@ -149,7 +149,7 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final borderColor = isPrimary
-        ? theme.primaryColor.withOpacity(0.4)
+        ? theme.primaryColor.withValues(alpha: 0.4)
         : theme.dividerColor;
 
     return InkWell(

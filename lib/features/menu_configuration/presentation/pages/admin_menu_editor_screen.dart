@@ -125,7 +125,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
           children: [
             _buildBackgroundContext(),
             Positioned.fill(
-              child: Container(color: Colors.black.withOpacity(0.6)),
+              child: Container(color: Colors.black.withValues(alpha: 0.6)),
             ),
             Positioned(
               top: 0,
@@ -155,12 +155,12 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF101622).withOpacity(0.85),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            color: const Color(0xFF101622).withValues(alpha: 0.85),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.5),
+                color: Colors.black.withValues(alpha: 0.5),
                 blurRadius: 30,
                 offset: const Offset(10, 10),
               ),
@@ -227,7 +227,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
         return Container(
           decoration: BoxDecoration(
             color: isHovered
-                ? Theme.of(context).primaryColor.withOpacity(0.2)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.2)
                 : Colors.transparent,
             borderRadius: isHovered
                 ? const BorderRadius.vertical(top: Radius.circular(24))
@@ -269,7 +269,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withOpacity(0.2),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -295,9 +295,9 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
       key: ValueKey(item.appMenuId),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
@@ -349,7 +349,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isHovered
-                      ? Theme.of(context).primaryColor.withOpacity(0.1)
+                      ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                   border: isHovered
@@ -373,7 +373,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.5),
+                                color: Colors.black.withValues(alpha: 0.5),
                                 blurRadius: 10,
                               ),
                             ],
@@ -412,7 +412,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                           child: Icon(
                             Icons.drive_file_move_outline,
                             size: 20,
-                            color: Colors.blue.withOpacity(0.7),
+                            color: Colors.blue.withValues(alpha: 0.7),
                           ),
                         ),
                       ),
@@ -447,7 +447,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
             if (item.children.isNotEmpty)
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF101622).withOpacity(0.5),
+                  color: const Color(0xFF101622).withValues(alpha: 0.5),
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(12),
                   ),
@@ -494,7 +494,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
       key: ValueKey(item.appMenuId),
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.02),
+        color: Colors.white.withValues(alpha: 0.02),
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
@@ -511,7 +511,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withValues(alpha: 0.5),
                     blurRadius: 10,
                   ),
                 ],
@@ -612,7 +612,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Theme.of(context).primaryColor.withOpacity(0.3),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -656,7 +656,9 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 8,
-              shadowColor: Theme.of(context).primaryColor.withOpacity(0.5),
+              shadowColor: Theme.of(
+                context,
+              ).primaryColor.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -703,7 +705,7 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(16),
               ),
             ),

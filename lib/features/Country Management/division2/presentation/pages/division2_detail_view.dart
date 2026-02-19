@@ -63,7 +63,10 @@ class Division2DetailPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Divider(color: theme.dividerColor.withOpacity(0.5), height: 1),
+                Divider(
+                  color: theme.dividerColor.withValues(alpha: 0.5),
+                  height: 1,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -116,12 +119,12 @@ class Division2DetailPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   _RowItem(label: 'Country', value: country.country),
                   Divider(
-                    color: theme.dividerColor.withOpacity(0.5),
+                    color: theme.dividerColor.withValues(alpha: 0.5),
                     height: 1,
                   ),
                   _RowItem(label: 'Country Code', value: country.countryCode),
                   Divider(
-                    color: theme.dividerColor.withOpacity(0.5),
+                    color: theme.dividerColor.withValues(alpha: 0.5),
                     height: 1,
                   ),
                   _RowItem(
