@@ -80,7 +80,7 @@ class _PostOfficeDetailsPageState extends ConsumerState<PostOfficeDetailsPage> {
     return Scaffold(
       // 1. Sticky Header
       appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.9),
+        backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.9),
         elevation: 0,
         scrolledUnderElevation: 0,
         bottom: PreferredSize(
@@ -97,7 +97,9 @@ class _PostOfficeDetailsPageState extends ConsumerState<PostOfficeDetailsPage> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey[100],
             ),
             child: const Icon(Icons.arrow_back_ios_new, size: 20),
           ),
@@ -112,9 +114,11 @@ class _PostOfficeDetailsPageState extends ConsumerState<PostOfficeDetailsPage> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: theme.primaryColor.withOpacity(0.1),
+              color: theme.primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+              border: Border.all(
+                color: theme.primaryColor.withValues(alpha: 0.2),
+              ),
             ),
             child: Icon(
               Icons.local_post_office,
@@ -145,7 +149,7 @@ class _PostOfficeDetailsPageState extends ConsumerState<PostOfficeDetailsPage> {
                   border: Border.all(color: theme.dividerColor),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 2,
                       offset: const Offset(0, 1),
                     ),
@@ -300,8 +304,8 @@ class _PostOfficeDetailsPageState extends ConsumerState<PostOfficeDetailsPage> {
                   end: Alignment.topCenter,
                   colors: [
                     theme.scaffoldBackgroundColor,
-                    theme.scaffoldBackgroundColor.withOpacity(0.95),
-                    theme.scaffoldBackgroundColor.withOpacity(0.0),
+                    theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
+                    theme.scaffoldBackgroundColor.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -324,8 +328,8 @@ class _PostOfficeDetailsPageState extends ConsumerState<PostOfficeDetailsPage> {
                       ),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: theme.colorScheme.error.withOpacity(
-                          0.1,
+                        backgroundColor: theme.colorScheme.error.withValues(
+                          alpha: 0.1,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -431,7 +435,7 @@ class _ExpandableCard extends StatelessWidget {
     final borderColor = isExpanded ? primary : theme.dividerColor;
     final borderWidth = isExpanded ? 2.0 : 1.0;
     final iconBg = isExpanded
-        ? primary.withOpacity(0.1)
+        ? primary.withValues(alpha: 0.1)
         : (theme.brightness == Brightness.dark
               ? Colors.grey[800]
               : Colors.grey[100]);
@@ -446,7 +450,7 @@ class _ExpandableCard extends StatelessWidget {
         boxShadow: isExpanded
             ? [
                 BoxShadow(
-                  color: primary.withOpacity(0.05),
+                  color: primary.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -519,7 +523,7 @@ class _DetailGridItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF101922) : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
