@@ -296,8 +296,28 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: program.programName,
-                    subtitle: isDeleted ? 'Deleted' : (program.labelName),
+                    subtitle: program.labelName ?? '',
                     leading: leading,
+                    trailing: isDeleted
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withAlpha(25),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'Deleted',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        : null,
                     actions: actions,
                   ),
                 );

@@ -11,7 +11,9 @@ void main() {
         labelName: 'Dashboard',
         programRoute: '/dashboard',
         applicationId: 1,
-        programActionIds: [1, 2],
+        actions: [
+          ProgramActionSummary(actionId: 1, actionName: 'View', active: true),
+        ],
       ),
       const ProgramModel(
         sysProgramId: 2,
@@ -19,19 +21,25 @@ void main() {
         labelName: 'Settings',
         programRoute: '/settings',
         applicationId: 1,
-        programActionIds: [3],
+        actions: [
+          ProgramActionSummary(actionId: 2, actionName: 'Edit', active: true),
+        ],
       ),
     ];
 
-    test('initial state should have empty lists and null selections', () {
+    test('initial state should have default values', () {
       final state = ProgramState.initial();
       expect(state.all, isEmpty);
       expect(state.filtered, isEmpty);
       expect(state.search, '');
       expect(state.selectedIds, isEmpty);
       expect(state.isMultiSelect, false);
-      expect(state.selectedApplicationId, null);
-      expect(state.selectedCompanyId, null);
+      expect(state.selectedApplicationId, isNull);
+      expect(state.selectedCompanyId, isNull);
+      expect(state.isLoading, false);
+      expect(state.hasMoreData, true);
+      expect(state.currentPage, 1);
+      expect(state.totalCount, 0);
     });
 
     test('copyWith should create new state with updated fields', () {
@@ -42,6 +50,10 @@ void main() {
         search: 'dashboard',
         isMultiSelect: true,
         selectedApplicationId: 1,
+        isLoading: true,
+        hasMoreData: false,
+        currentPage: 2,
+        totalCount: 10,
       );
 
       expect(newState.all, mockPrograms);
@@ -50,6 +62,10 @@ void main() {
       expect(newState.isMultiSelect, true);
       expect(newState.selectedApplicationId, 1);
       expect(newState.selectedIds, isEmpty);
+      expect(newState.isLoading, true);
+      expect(newState.hasMoreData, false);
+      expect(newState.currentPage, 2);
+      expect(newState.totalCount, 10);
     });
 
     test('copyWith should keep original values when not specified', () {
@@ -76,6 +92,10 @@ void main() {
       expect(newState.isMultiSelect, true);
       expect(newState.selectedApplicationId, 1);
       expect(newState.selectedCompanyId, 5);
+      expect(newState.isLoading, false);
+      expect(newState.hasMoreData, true);
+      expect(newState.currentPage, 1);
+      expect(newState.totalCount, 0);
     });
 
     test('should handle selectedIds updates', () {
@@ -112,7 +132,7 @@ void main() {
         all: mockPrograms,
         filtered: mockPrograms,
         search: '',
-        selectedIds: {},
+        selectedIds: const {},
         isMultiSelect: false,
         selectedApplicationId: null,
         selectedCompanyId: null,

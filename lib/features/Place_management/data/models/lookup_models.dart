@@ -67,19 +67,6 @@ class DivisionThreeLookup {
   }
 }
 
-// class PostOfficeLookup {
-//   final int id;
-//   final String name;
-
-//   PostOfficeLookup({required this.id, required this.name});
-
-//   factory PostOfficeLookup.fromJson(Map<String, dynamic> json) {
-//     return PostOfficeLookup(
-//       id: (json['postOfficeId'] as num).toInt(),
-//       name: json['postOfficeName'] ?? '',
-//     );
-//   }
-// }
 
 class PostOfficeLookup {
   final int postOfficeId;

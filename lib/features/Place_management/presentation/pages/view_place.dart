@@ -4,12 +4,11 @@ import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import '../../data/models/place_model.dart';
+import 'package:voice_first_admin/features/Place_management/presentation/pages/edit_place_page.dart';
 import '../../data/models/place_requests.dart';
 import '../providers/place_provider.dart';
 import 'add_place_page.dart';
@@ -155,7 +154,7 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
                                 : SnackBarType.error,
                           );
                         },
-                        activeThumbColor: Colors.green,
+                        activeThumbColor: Colors.green[400],
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                     ),
@@ -166,10 +165,7 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => PlaceDetailPage(
-                              placeId: place.placeId,
-                              initialPlace: place,
-                            ),
+                            builder: (_) => EditPlacePage(place: place),
                           ),
                         );
                       },
@@ -206,7 +202,7 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
                   key: ValueKey(place.placeId),
                   leading: const StandardIconBox(
                     icon: Icons.location_on,
-                    color: Colors.deepPurple,
+                    color: Colors.blue,
                   ),
                   title: place.placeName,
                   // subtitle:

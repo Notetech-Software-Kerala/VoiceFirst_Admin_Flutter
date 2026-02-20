@@ -52,10 +52,17 @@ class BusinessActivityService {
       body: jsonEncode({'activityName': name}),
     );
 
+    debugPrint(
+      'API RESPONSE: POST $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
       return BusinessActivity.fromJson(json['data']);
     } else {
+      debugPrint(
+        'API ERROR (createActivity): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to create activity');
     }
   }
@@ -74,7 +81,14 @@ class BusinessActivityService {
       headers: {'Content-Type': 'application/json'},
     );
 
+    debugPrint(
+      'API RESPONSE: GET $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (getAllActivities): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to load activities');
     }
 
@@ -93,7 +107,14 @@ class BusinessActivityService {
 
     final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
 
+    debugPrint(
+      'API RESPONSE: GET $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (getActivityById): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to load activity: ${response.statusCode}');
     }
 
@@ -129,7 +150,14 @@ class BusinessActivityService {
       body: jsonEncode(body),
     );
 
+    debugPrint(
+      'API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (updateActivity): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to update activity');
     }
 
@@ -149,7 +177,14 @@ class BusinessActivityService {
       body: jsonEncode({'active': active}),
     );
 
+    debugPrint(
+      'API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (toggleStatus): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to toggle status: ${response.statusCode}');
     }
   }
@@ -157,12 +192,21 @@ class BusinessActivityService {
   Future<BusinessActivity> recoverActivity(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/recover/$id');
 
+    debugPrint('API REQUEST: PATCH $url');
+
     final response = await http.patch(
       url,
       headers: ApiEndpoints.defaultHeaders,
     );
 
+    debugPrint(
+      'API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (recoverActivity): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to recover activity');
     }
 
@@ -173,12 +217,21 @@ class BusinessActivityService {
   Future<BusinessActivity> deleteActivity(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/$id');
 
+    debugPrint('API REQUEST: DELETE $url');
+
     final response = await http.delete(
       url,
       headers: ApiEndpoints.defaultHeaders,
     );
 
+    debugPrint(
+      'API RESPONSE: DELETE $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (deleteActivity): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception('Failed to delete activity');
     }
 
@@ -198,7 +251,14 @@ class BusinessActivityService {
       body: jsonEncode({'ids': ids}),
     );
 
+    debugPrint(
+      'API RESPONSE: POST $url -> ${response.statusCode} ${response.body}',
+    );
+
     if (response.statusCode != 200) {
+      debugPrint(
+        'API ERROR (bulkDelete): status=${response.statusCode}, body=${response.body}',
+      );
       throw Exception(
         'Failed to bulk delete activities: ${response.statusCode}',
       );

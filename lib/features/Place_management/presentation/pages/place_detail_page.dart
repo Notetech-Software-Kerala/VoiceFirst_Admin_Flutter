@@ -4,7 +4,6 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
 import '../providers/place_state.dart';
@@ -51,15 +50,6 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
 
     final bool isDeleted = place.deleted;
 
-    // final totalPostOffices = place.postOffices.length;
-    // final totalZipCodes = place.postOffices.fold<int>(
-    //   0,
-    //   (sum, office) => sum + office.zipCodes.length,
-    // );
-    // final activeZipCodes = place.postOffices.fold<int>(
-    //   0,
-    //   (sum, office) => sum + office.zipCodes.where((zip) => zip.active).length,
-    // );
 
     return Scaffold(
       appBar: AppBar(
@@ -122,57 +112,76 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
               ),
 
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              Builder(
+                builder: (context) {
+                  // Only show post offices that have at least one active zip code
+                  final visibleOffices = place.postOffices
+                      .where(
+                        (office) => office.zipCodes.any((zip) => zip.active),
+                      )
+                      .toList();
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.location_city_outlined),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Linked Post Offices',
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_city_outlined),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Linked Post Offices',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '${visibleOffices.length} entries',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
                         ),
-                        const Spacer(),
-                        Text(
-                          '${place.postOffices.length} entries',
-                          style: theme.textTheme.bodySmall,
-                        ),
+                        const SizedBox(height: 8),
+                        if (visibleOffices.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Text('No post offices available now'),
+                          )
+                        else
+                          ...visibleOffices.map(
+                            (office) => _PostOfficeTile(
+                              office: office,
+                              expanded: _expandedOffices.contains(
+                                office.postOfficeId,
+                              ),
+                              onExpansionChanged: (expanded) {
+                                setState(() {
+                                  if (expanded) {
+                                    _expandedOffices.add(office.postOfficeId);
+                                  } else {
+                                    _expandedOffices.remove(
+                                      office.postOfficeId,
+                                    );
+                                  }
+                                });
+                              },
+                              onPostOfficeInfo: (o) =>
+                                  _showPostOfficeInfoDialog(context, o),
+                              onZipInfo: (zip) => _showZipCodeInfoDialog(
+                                context,
+                                zip,
+                                _fmtDate,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    if (place.postOffices.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: Text('No post offices linked yet'),
-                      )
-                    else
-                      ...place.postOffices.map(
-                        (office) => _PostOfficeTile(
-                          office: office,
-                          expanded: _expandedOffices.contains(
-                            office.postOfficeId,
-                          ),
-                          formatDate: _fmtDate,
-                          onExpansionChanged: (expanded) {
-                            setState(() {
-                              if (expanded) {
-                                _expandedOffices.add(office.postOfficeId);
-                              } else {
-                                _expandedOffices.remove(office.postOfficeId);
-                              }
-                            });
-                          },
-                        ),
-                      ),
-                  ],
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 16),
               Container(
@@ -331,19 +340,128 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
     final minute = dt.minute.toString().padLeft(2, '0');
     return '$day/$month/$year $hour:$minute';
   }
+
+  void _showPostOfficeInfoDialog(BuildContext context, PlacePostOffice office) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        String _fallbackLabel(String? label, String fallback) {
+          if (label == null || label.trim().isEmpty) return fallback;
+          return label;
+        }
+
+        return AlertDialog(
+          title: const Text('Post Office Info'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _InfoRow(
+                  label: 'Country Name',
+                  value: office.countryName ?? 'Unknown',
+                ),
+                const SizedBox(height: 8),
+                _InfoRow(
+                  label: _fallbackLabel(
+                    office.divisionOneLabel,
+                    'Division One',
+                  ),
+                  value: office.divisionOneName ?? 'N/A',
+                ),
+                const SizedBox(height: 4),
+                _InfoRow(
+                  label: _fallbackLabel(
+                    office.divisionTwoLabel,
+                    'Division Two',
+                  ),
+                  value: office.divisionTwoName ?? 'N/A',
+                ),
+                const SizedBox(height: 4),
+                _InfoRow(
+                  label: _fallbackLabel(
+                    office.divisionThreeLabel,
+                    'Division Three',
+                  ),
+                  value: office.divisionThreeName ?? 'N/A',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showZipCodeInfoDialog(
+    BuildContext context,
+    PlaceZipCodeLink zip,
+    String Function(DateTime?) formatDate,
+  ) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final rows = <Widget>[
+          _InfoRow(label: 'Created By', value: zip.createdUser ?? 'Unknown'),
+          _InfoRow(label: 'Created Date', value: formatDate(zip.createdDate)),
+        ];
+
+        if (zip.modifiedUser != null || zip.modifiedDate != null) {
+          rows.add(const SizedBox(height: 8));
+          rows.add(
+            _InfoRow(
+              label: 'Modified By',
+              value: zip.modifiedUser ?? 'Unknown',
+            ),
+          );
+          rows.add(
+            _InfoRow(
+              label: 'Modified Date',
+              value: formatDate(zip.modifiedDate),
+            ),
+          );
+        }
+
+        return AlertDialog(
+          title: const Text('Zip Code Info'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: rows,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _PostOfficeTile extends StatelessWidget {
   final PlacePostOffice office;
   final bool expanded;
   final void Function(bool expanded) onExpansionChanged;
-  final String Function(DateTime?) formatDate;
+  final void Function(PlacePostOffice office) onPostOfficeInfo;
+  final void Function(PlaceZipCodeLink zip) onZipInfo;
 
   const _PostOfficeTile({
     required this.office,
     required this.expanded,
     required this.onExpansionChanged,
-    required this.formatDate,
+    required this.onPostOfficeInfo,
+    required this.onZipInfo,
   });
 
   @override
@@ -365,80 +483,73 @@ class _PostOfficeTile extends StatelessWidget {
           office.postOfficeName,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text('${office.zipCodes.length} zip codes'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(
+                Icons.info_outline,
+                size: 20,
+                color: Colors.blue,
+              ),
+              tooltip: 'Post office info',
+              onPressed: () => onPostOfficeInfo(office),
+            ),
+            const Icon(Icons.expand_more),
+          ],
+        ),
+        subtitle: Text(
+          '${office.zipCodes.where((z) => z.active).length} zip codes',
+        ),
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         children: [
-          if (office.zipCodes.isEmpty)
+          // Only show active zip codes for this post office
+          if (office.zipCodes.where((z) => z.active).isEmpty)
             const Padding(
               padding: EdgeInsets.all(12),
-              child: Text('No zip codes linked'),
+              child: Text('No active zip codes'),
             )
           else
-            ...office.zipCodes.map(
-              (zip) => Container(
-                margin: const EdgeInsets.symmetric(vertical: 6),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: theme.dividerColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+            ...office.zipCodes
+                .where((zip) => zip.active)
+                .map(
+                  (zip) => Container(
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: theme.dividerColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            zip.zipCode,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: (zip.active ? Colors.green : Colors.orange)
-                                .withAlpha(31),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            zip.active ? 'Active' : 'Inactive',
-                            style: TextStyle(
-                              color: zip.active ? Colors.green : Colors.orange,
-                              fontWeight: FontWeight.w600,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                zip.zipCode,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: Colors.blue,
+                              ),
+                              tooltip: 'Zip code info',
+                              onPressed: () => onZipInfo(zip),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    _InfoRow(
-                      label: 'Created By',
-                      value: zip.createdUser ?? 'Unknown',
-                    ),
-                    _InfoRow(
-                      label: 'Created Date',
-                      value: formatDate(zip.createdDate),
-                    ),
-                    if (zip.modifiedUser != null ||
-                        zip.modifiedDate != null) ...[
-                      const SizedBox(height: 6),
-                      _InfoRow(
-                        label: 'Modified By',
-                        value: zip.modifiedUser ?? 'Unknown',
-                      ),
-                      _InfoRow(
-                        label: 'Modified Date',
-                        value: formatDate(zip.modifiedDate),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-            ),
         ],
       ),
     );

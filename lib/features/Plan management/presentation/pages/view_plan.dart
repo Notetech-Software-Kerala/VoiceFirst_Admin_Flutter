@@ -142,7 +142,24 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
                   leading: leading,
                   title: plan.planName,
                   trailing: isDeleted
-                      ? const SizedBox.shrink()
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withAlpha(25),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Text(
+                            'Deleted',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        )
                       : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [

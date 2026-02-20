@@ -42,6 +42,7 @@ dependencies:
   http: ^1.6.0
   intl: ^0.20.2
   equatable: ^2.0.8
+  dropdown_search: ^6.0.2
 
 dev_dependencies:
   flutter_test:

@@ -5,7 +5,7 @@ void main() {
   group('BusinessActivity Model', () {
     final testDate = DateTime(2024, 1, 1);
 
-    test('should create instance with required fields', () {
+    test('creates instance with required fields', () {
       final activity = BusinessActivity(
         activityId: 1,
         activityName: 'Test Activity',
@@ -17,13 +17,15 @@ void main() {
 
       expect(activity.activityId, 1);
       expect(activity.activityName, 'Test Activity');
-      expect(activity.active, true);
-      expect(activity.isDeleted, false);
+      expect(activity.active, isTrue);
+      expect(activity.isDeleted, isFalse);
       expect(activity.createdUser, 'admin');
       expect(activity.createdDate, testDate);
+      expect(activity.modifiedUser, isNull);
+      expect(activity.deletedUser, isNull);
     });
 
-    test('should parse from JSON correctly', () {
+    test('parses from JSON with full data', () {
       final json = {
         'activityId': 1,
         'activityName': 'Test Activity',
@@ -33,19 +35,44 @@ void main() {
         'createdDate': '2024-01-01T00:00:00.000',
         'modifiedUser': 'user1',
         'modifiedDate': '2024-01-02T00:00:00.000',
+        'deletedUser': 'deleter',
+        'deletedDate': '2024-01-03T00:00:00.000',
       };
 
       final activity = BusinessActivity.fromJson(json);
 
       expect(activity.activityId, 1);
       expect(activity.activityName, 'Test Activity');
-      expect(activity.active, true);
-      expect(activity.isDeleted, false);
+      expect(activity.active, isTrue);
+      expect(activity.isDeleted, isFalse);
       expect(activity.createdUser, 'admin');
       expect(activity.modifiedUser, 'user1');
+      expect(activity.modifiedDate, isNotNull);
+      expect(activity.deletedUser, 'deleter');
+      expect(activity.deletedDate, isNotNull);
     });
 
-    test('should handle null optional fields in JSON', () {
+    test('treats empty modified/deleted users as null', () {
+      final json = {
+        'activityId': 1,
+        'activityName': 'Test Activity',
+        'active': true,
+        'deleted': false,
+        'createdUser': 'admin',
+        'createdDate': '2024-01-01T00:00:00.000',
+        'modifiedUser': '   ',
+        'modifiedDate': null,
+        'deletedUser': '',
+        'deletedDate': null,
+      };
+
+      final activity = BusinessActivity.fromJson(json);
+
+      expect(activity.modifiedUser, isNull);
+      expect(activity.deletedUser, isNull);
+    });
+
+    test('handles null optional fields in JSON', () {
       final json = {
         'activityId': 1,
         'activityName': 'Test Activity',
@@ -61,13 +88,13 @@ void main() {
 
       final activity = BusinessActivity.fromJson(json);
 
-      expect(activity.modifiedUser, null);
-      expect(activity.modifiedDate, null);
-      expect(activity.deletedUser, null);
-      expect(activity.deletedDate, null);
+      expect(activity.modifiedUser, isNull);
+      expect(activity.modifiedDate, isNull);
+      expect(activity.deletedUser, isNull);
+      expect(activity.deletedDate, isNull);
     });
 
-    test('copyWith should create new instance with updated fields', () {
+    test('copyWith updates specified fields', () {
       final activity = BusinessActivity(
         activityId: 1,
         activityName: 'Original',
@@ -77,16 +104,21 @@ void main() {
         createdDate: testDate,
       );
 
-      final updated = activity.copyWith(activityName: 'Updated', active: false);
+      final updated = activity.copyWith(
+        activityName: 'Updated',
+        active: false,
+        isDeleted: true,
+      );
 
       expect(updated.activityId, 1);
       expect(updated.activityName, 'Updated');
-      expect(updated.active, false);
+      expect(updated.active, isFalse);
+      expect(updated.isDeleted, isTrue);
       expect(updated.createdUser, 'admin');
       expect(updated.createdDate, testDate);
     });
 
-    test('copyWith should keep original values when not specified', () {
+    test('copyWith keeps original values when not specified', () {
       final activity = BusinessActivity(
         activityId: 1,
         activityName: 'Original',
@@ -94,37 +126,42 @@ void main() {
         isDeleted: false,
         createdUser: 'admin',
         createdDate: testDate,
+        deletedUser: 'deleter',
+        deletedDate: testDate,
       );
 
       final updated = activity.copyWith(activityName: 'Updated');
 
       expect(updated.activityId, activity.activityId);
+      expect(updated.activityName, 'Updated');
       expect(updated.active, activity.active);
       expect(updated.isDeleted, activity.isDeleted);
+      expect(updated.deletedUser, activity.deletedUser);
+      expect(updated.deletedDate, activity.deletedDate);
     });
 
-    // test('copyWith with clearDeletedMeta should clear deleted metadata', () {
-    //   final activity = BusinessActivity(
-    //     activityId: 1,
-    //     activityName: 'Test Activity',
-    //     active: true,
-    //     isDeleted: true,
-    //     createdUser: 'admin',
-    //     createdDate: testDate,
-    //     deletedUser: 'admin',
-    //     deletedDate: testDate,
-    //   );
+    test('copyWith with clearDeletedMeta clears deleted metadata', () {
+      final activity = BusinessActivity(
+        activityId: 1,
+        activityName: 'Test Activity',
+        active: true,
+        isDeleted: true,
+        createdUser: 'admin',
+        createdDate: testDate,
+        deletedUser: 'admin',
+        deletedDate: testDate,
+      );
 
-    //   final updated = activity.copyWith(
-    //     isDeleted: false,
-    //     clearDeletedMeta: true,
-    //   );
+      final updated = activity.copyWith(
+        isDeleted: false,
+        clearDeletedMeta: true,
+      );
 
-    //   expect(updated.isDeleted, false);
-    //   expect(updated.deletedUser, null);
-    //   expect(updated.deletedDate, null);
-    //   expect(updated.activityId, activity.activityId);
-    //   expect(updated.activityName, activity.activityName);
-    // });
+      expect(updated.isDeleted, isFalse);
+      expect(updated.deletedUser, isNull);
+      expect(updated.deletedDate, isNull);
+      expect(updated.activityId, activity.activityId);
+      expect(updated.activityName, activity.activityName);
+    });
   });
 }

@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/providers/business_activity_query.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/providers/business_activity_state.dart';
 
 void main() {
   group('BusinessActivityState', () {
     final testDate = DateTime(2024, 1, 1);
-    final mockActivities = [
+    final mockItems = [
       BusinessActivity(
         activityId: 1,
         activityName: 'Activity 1',
@@ -24,62 +25,71 @@ void main() {
       ),
     ];
 
-    test('initial state should have empty lists and false flags', () {
+    test('initial has empty items and default query', () {
       final state = BusinessActivityState.initial();
 
-      expect(state.activities, isEmpty);
-      expect(state.filtered, isEmpty);
+      expect(state.items, isEmpty);
+      expect(state.query.pageNumber, 1);
+      expect(state.query.limit, 10);
       expect(state.selectedIds, isEmpty);
-      expect(state.isMultiSelect, false);
-      expect(state.search, '');
-      expect(state.isLoading, false);
-      expect(state.hasMoreData, true);
+      expect(state.isMultiSelect, isFalse);
+      expect(state.isLoading, isFalse);
+      expect(state.hasMoreData, isTrue);
       expect(state.currentPage, 1);
       expect(state.totalCount, 0);
     });
 
-    test('copyWith should create new state with updated fields', () {
+    test('copyWith updates provided fields', () {
       final initialState = BusinessActivityState.initial();
+      final newQuery = const BusinessActivityQuery(pageNumber: 2, limit: 20);
+
       final newState = initialState.copyWith(
-        activities: mockActivities,
-        filtered: mockActivities,
+        items: mockItems,
+        query: newQuery,
         isMultiSelect: true,
-      );
-
-      expect(newState.activities, mockActivities);
-      expect(newState.filtered, mockActivities);
-      expect(newState.isMultiSelect, true);
-      expect(newState.selectedIds, isEmpty);
-      expect(newState.search, '');
-    });
-
-    test('copyWith should keep original values when not specified', () {
-      final state = BusinessActivityState(
-        activities: mockActivities,
-        filtered: mockActivities,
-        selectedIds: {1, 2},
-        isMultiSelect: true,
-        search: 'test',
-        isLoading: false,
-        hasMoreData: true,
+        selectedIds: {1},
+        isLoading: true,
+        totalCount: 2,
         currentPage: 1,
-        totalCount: 10,
+        hasMoreData: false,
       );
 
-      final newState = state.copyWith(search: 'updated');
-
-      expect(newState.activities, mockActivities);
-      expect(newState.filtered, mockActivities);
-      expect(newState.selectedIds, {1, 2});
-      expect(newState.isMultiSelect, true);
-      expect(newState.search, 'updated');
-      expect(newState.isLoading, false);
-      expect(newState.hasMoreData, true);
+      expect(newState.items, mockItems);
+      expect(newState.query, newQuery);
+      expect(newState.isMultiSelect, isTrue);
+      expect(newState.selectedIds, {1});
+      expect(newState.isLoading, isTrue);
+      expect(newState.totalCount, 2);
       expect(newState.currentPage, 1);
-      expect(newState.totalCount, 10);
+      expect(newState.hasMoreData, isFalse);
     });
 
-    test('should handle selectedIds updates', () {
+    test('copyWith keeps original values when not specified', () {
+      final query = const BusinessActivityQuery(pageNumber: 3, limit: 50);
+      final state = BusinessActivityState(
+        items: mockItems,
+        query: query,
+        totalCount: 10,
+        currentPage: 2,
+        hasMoreData: false,
+        isLoading: false,
+        isMultiSelect: true,
+        selectedIds: {1, 2},
+      );
+
+      final newState = state.copyWith(totalCount: 20);
+
+      expect(newState.items, mockItems);
+      expect(newState.query, query);
+      expect(newState.selectedIds, {1, 2});
+      expect(newState.isMultiSelect, isTrue);
+      expect(newState.isLoading, isFalse);
+      expect(newState.hasMoreData, isFalse);
+      expect(newState.currentPage, 2);
+      expect(newState.totalCount, 20);
+    });
+
+    test('supports updating selectedIds', () {
       final state = BusinessActivityState.initial();
       final newState = state.copyWith(selectedIds: {1, 2, 3});
 
@@ -87,21 +97,21 @@ void main() {
       expect(newState.selectedIds.length, 3);
     });
 
-    test('should handle multi-select mode toggle', () {
+    test('supports toggling multi-select flag', () {
       final state = BusinessActivityState.initial();
 
       final multiSelectState = state.copyWith(isMultiSelect: true);
-      expect(multiSelectState.isMultiSelect, true);
+      expect(multiSelectState.isMultiSelect, isTrue);
 
       final normalState = multiSelectState.copyWith(isMultiSelect: false);
-      expect(normalState.isMultiSelect, false);
+      expect(normalState.isMultiSelect, isFalse);
     });
 
-    test('should handle pagination state updates', () {
+    test('supports pagination state updates', () {
       final state = BusinessActivityState.initial();
 
       final loadingState = state.copyWith(isLoading: true);
-      expect(loadingState.isLoading, true);
+      expect(loadingState.isLoading, isTrue);
 
       final loadedState = loadingState.copyWith(
         isLoading: false,
@@ -109,13 +119,13 @@ void main() {
         totalCount: 50,
         hasMoreData: true,
       );
-      expect(loadedState.isLoading, false);
+      expect(loadedState.isLoading, isFalse);
       expect(loadedState.currentPage, 2);
       expect(loadedState.totalCount, 50);
-      expect(loadedState.hasMoreData, true);
+      expect(loadedState.hasMoreData, isTrue);
     });
 
-    test('should handle pagination completion', () {
+    test('supports marking pagination completion', () {
       final state = BusinessActivityState.initial();
 
       final finalPageState = state.copyWith(
@@ -126,7 +136,7 @@ void main() {
 
       expect(finalPageState.currentPage, 5);
       expect(finalPageState.totalCount, 100);
-      expect(finalPageState.hasMoreData, false);
+      expect(finalPageState.hasMoreData, isFalse);
     });
   });
 }
