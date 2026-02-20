@@ -4,6 +4,7 @@ class StandardPageLayout extends StatelessWidget {
   final String title;
   final Widget? body; // Standard non-sliver body (optional)
   final List<Widget>? slivers; // Silver content
+  final ScrollController? scrollController;
   final TextEditingController? searchController;
   final ValueChanged<String>? onSearchChanged;
   final String searchHint;
@@ -19,6 +20,7 @@ class StandardPageLayout extends StatelessWidget {
     required this.title,
     this.body,
     this.slivers,
+    this.scrollController,
     this.searchController,
     this.onSearchChanged,
     this.searchHint = "Search...",
@@ -54,6 +56,7 @@ class StandardPageLayout extends StatelessWidget {
 
     return Scaffold(
       body: CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverAppBar(
             pinned: true,

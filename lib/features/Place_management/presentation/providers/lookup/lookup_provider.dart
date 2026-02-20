@@ -58,3 +58,15 @@ final postOfficeLookupProvider = FutureProvider.autoDispose
             placeId: filter.placeId,
           );
     });
+// ===============================
+// UNLINKED ZIP PROVIDER (EDIT PAGE)
+// ===============================
+final unlinkedZipCodesProvider = FutureProvider.autoDispose
+    .family<List<ZipCodeLookup>, ({int postOfficeId, int placeId})>(
+  (ref, params) {
+    return ref.read(placeLookupServiceProvider).getUnlinkedZipCodes(
+          postOfficeIds: [params.postOfficeId],
+          placeId: params.placeId,
+        );
+  },
+);

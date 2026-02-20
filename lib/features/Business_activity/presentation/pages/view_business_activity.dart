@@ -246,11 +246,27 @@ class _ViewBusinessActivityPageState
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: a.activityName,
-                    // subtitle: a.isDeleted
-                    //     ? 'Deleted'
-                    //     : (a.active ? 'Active' : 'Inactive'),
                     leading: leading,
-                    // trailing: statusChip,
+                    trailing: a.isDeleted
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withAlpha(25),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'Deleted',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        : null,
                     actions: actions,
                     subtitle: '',
                   ),

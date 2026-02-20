@@ -132,16 +132,25 @@ class ActivityDetailPage extends ConsumerWidget {
                         onPressed: () => showRecoveryBottomSheet(
                           context: context,
                           itemName: updatedActivity.activityName,
-                          onRecover: () {
-                            ref
+                          onRecover: () async {
+                            final error = await ref
                                 .read(businessActivityProvider.notifier)
                                 .recover(updatedActivity.activityId);
-                            CustomSnackbar.show(
-                              context,
-                              message:
-                                  '${updatedActivity.activityName} recovered successfully',
-                              type: SnackBarType.success,
-                            );
+
+                            if (error == null) {
+                              CustomSnackbar.show(
+                                context,
+                                message:
+                                    '${updatedActivity.activityName} recovered successfully',
+                                type: SnackBarType.success,
+                              );
+                            } else {
+                              CustomSnackbar.show(
+                                context,
+                                message: error,
+                                type: SnackBarType.error,
+                              );
+                            }
                           },
                         ),
                       ),
@@ -164,16 +173,25 @@ class ActivityDetailPage extends ConsumerWidget {
                         onPressed: () => showDeleteBottomSheet(
                           context: context,
                           itemName: updatedActivity.activityName,
-                          onDelete: () {
-                            ref
+                          onDelete: () async {
+                            final error = await ref
                                 .read(businessActivityProvider.notifier)
                                 .delete(updatedActivity.activityId);
-                            CustomSnackbar.show(
-                              context,
-                              message:
-                                  '${updatedActivity.activityName} deleted successfully',
-                              type: SnackBarType.success,
-                            );
+
+                            if (error == null) {
+                              CustomSnackbar.show(
+                                context,
+                                message:
+                                    '${updatedActivity.activityName} deleted successfully',
+                                type: SnackBarType.success,
+                              );
+                            } else {
+                              CustomSnackbar.show(
+                                context,
+                                message: error,
+                                type: SnackBarType.error,
+                              );
+                            }
                           },
                         ),
                       ),
@@ -261,12 +279,16 @@ class _HistorySection extends StatelessWidget {
           title: 'Modified Info',
           subtitle:
               'Modified by ${formatUser(activity.modifiedUser, fallback: 'Not modified')}',
-          initiallyExpanded: !isDeleted &&
+          initiallyExpanded:
+              !isDeleted &&
               (activity.modifiedUser != null || activity.modifiedDate != null),
           entries: [
             _HistoryEntry(
               label: 'Modified By',
-              value: formatUser(activity.modifiedUser, fallback: 'Not modified'),
+              value: formatUser(
+                activity.modifiedUser,
+                fallback: 'Not modified',
+              ),
             ),
             _HistoryEntry(
               label: 'Modified Date',
@@ -336,10 +358,7 @@ class _HistoryExpansionTile extends StatelessWidget {
             title,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-          subtitle: Text(
-            subtitle,
-            style: theme.textTheme.bodySmall,
-          ),
+          subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
           children: [
             GridView.builder(
               shrinkWrap: true,
@@ -351,9 +370,8 @@ class _HistoryExpansionTile extends StatelessWidget {
                 crossAxisSpacing: 12,
                 childAspectRatio: 2.4,
               ),
-              itemBuilder: (context, index) => _HistoryChip(
-                entry: entries[index],
-              ),
+              itemBuilder: (context, index) =>
+                  _HistoryChip(entry: entries[index]),
             ),
           ],
         ),
@@ -379,7 +397,9 @@ class _HistoryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? theme.cardColor.withOpacity(0.6) : const Color(0xFFF8FAFC),
+        color: isDark
+            ? theme.cardColor.withOpacity(0.6)
+            : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: theme.dividerColor.withOpacity(0.6)),
       ),

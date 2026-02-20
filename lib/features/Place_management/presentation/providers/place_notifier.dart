@@ -94,16 +94,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
   }
 
-  // Future<bool> deletePlace(int id) async {
-  //   try {
-  //     final updated = await _service.deletePlace(id);
-  //     _sync(updated);
-  //     return true;
-  //   } catch (e) {
-  //     state = state.copyWith(error: e.toString());
-  //     return false;
-  //   }
-  // }
+  
 
   Future<bool> deletePlace(int id) async {
     // ⭐ OPTIMISTIC UI UPDATE (instant delete feel)
@@ -149,16 +140,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
   }
 
-  // void _sync(PlaceModel updated) {
-  //   state = state.copyWith(
-  //     selectedPlace: state.selectedPlace?.placeId == updated.placeId
-  //         ? updated
-  //         : state.selectedPlace,
-  //     places: state.places
-  //         .map((p) => p.placeId == updated.placeId ? updated : p)
-  //         .toList(),
-  //   );
-  // }
+  
   void _sync(PlaceModel updated) {
     final newPlaces = state.places
         .map((p) => p.placeId == updated.placeId ? updated : p)

@@ -53,11 +53,13 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
           filter: ProgramActionFilter(pageNumber: page, pageSize: _pageSize),
         );
 
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   void _openFilterSheet() {
@@ -87,6 +89,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Program Actions',
+      scrollController: _scrollController,
       bottom: AdvancedSearchHeader(
         searchController: _searchController,
         hintText: 'Search program actions...',
@@ -297,7 +300,26 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                     title: action.actionName,
                     subtitle: '',
                     leading: leading,
-                    // trailing: statusChip,
+                    trailing: isDeleted
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withAlpha(25),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'Deleted',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                        : null,
                     actions: actions,
                   ),
                 );
