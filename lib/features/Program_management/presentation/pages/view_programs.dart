@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -63,7 +64,20 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const FilterBottomSheet(),
+      builder: (_) => GlobalFilterBottomSheet(
+        currentFilter: const BaseFilterModel(),
+        onApply: (filter) {
+          // Apply filter logic here
+          Navigator.pop(context);
+        },
+        searchOptions: const {'name': 'Program Name', 'status': 'Status'},
+        sortOptions: const {
+          'newest': 'Newest',
+          'oldest': 'Oldest',
+          'name_asc': 'Name (A-Z)',
+          'name_desc': 'Name (Z-A)',
+        },
+      ),
     );
   }
 

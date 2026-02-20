@@ -1,3 +1,4 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/post_office_lookup_filter.dart';
 import '../../data/models/place_model.dart';
@@ -16,20 +17,102 @@ class UpdateZipDiff {
   });
 }
 
+
+/// ================= EDIT FORM STATE =================
+class EditPlaceFormState extends Equatable {
+  final int? countryId;
+  final int? divOneId;
+  final int? divTwoId;
+  final int? divThreeId;
+
+  final List<EditZipCodeItem> zipCodeItems;
+  final Set<int> selectedZipIds;
+
+  const EditPlaceFormState({
+    this.countryId,
+    this.divOneId,
+    this.divTwoId,
+    this.divThreeId,
+    this.zipCodeItems = const [],
+    this.selectedZipIds = const {},
+  });
+
+  EditPlaceFormState copyWith({
+    int? countryId,
+    int? divOneId,
+    int? divTwoId,
+    int? divThreeId,
+    List<EditZipCodeItem>? zipCodeItems,
+    Set<int>? selectedZipIds,
+  }) {
+    return EditPlaceFormState(
+      countryId: countryId ?? this.countryId,
+      divOneId: divOneId ?? this.divOneId,
+      divTwoId: divTwoId ?? this.divTwoId,
+      divThreeId: divThreeId ?? this.divThreeId,
+      zipCodeItems: zipCodeItems ?? this.zipCodeItems,
+      selectedZipIds: selectedZipIds ?? this.selectedZipIds,
+    );
+  }
+
+  @override
+  List<Object?> get props => [
+    countryId,
+    divOneId,
+    divTwoId,
+    divThreeId,
+    zipCodeItems,
+    selectedZipIds,
+  ];
+}
+
+
+class EditZipCodeItem {
+  final int postOfficeId;
+  final int zipCodeLinkId;
+  final String zipCode;
+  final String postOfficeName;
+  final bool isNew;
+  final bool isActive;
+
+  const EditZipCodeItem({
+    required this.postOfficeId,
+    required this.zipCodeLinkId,
+    required this.zipCode,
+    required this.postOfficeName,
+    required this.isNew,
+    required this.isActive,
+  });
+
+  EditZipCodeItem copyWith({
+    int? postOfficeId,
+    int? zipCodeLinkId,
+    String? zipCode,
+    String? postOfficeName,
+    bool? isNew,
+    bool? isActive,
+  }) {
+    return EditZipCodeItem(
+      postOfficeId: postOfficeId ?? this.postOfficeId,
+      zipCodeLinkId: zipCodeLinkId ?? this.zipCodeLinkId,
+      zipCode: zipCode ?? this.zipCode,
+      postOfficeName: postOfficeName ?? this.postOfficeName,
+      isNew: isNew ?? this.isNew,
+      isActive: isActive ?? this.isActive,
+    );
+  }
+}
 /// Edit form state for place management
 ///
-class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
+class EditPlaceFormNotifier extends Notifier<EditPlaceFormState> {
   @override
-  AddPlaceFormState build() {
-    return const AddPlaceFormState();
+  EditPlaceFormState build() {
+    return const EditPlaceFormState();
   }
 
   void reset() {
-    state = const AddPlaceFormState();
+    state = const EditPlaceFormState();
   }
-
-  
-
 
   /// Initialize edit form from existing place
   void initializeFromPlace(PlaceModel place) {
@@ -51,10 +134,7 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
       }
     }
 
-    state = state.copyWith(
-      zipCodeItems: items,
-      selectedZipIds: selectedIds,
-    );
+    state = state.copyWith(zipCodeItems: items, selectedZipIds: selectedIds);
   }
 
   void setCountry(int id) {
@@ -79,13 +159,13 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
   }
 
   void clearHierarchy() {
-  state = state.copyWith(
-    countryId: null,
-    divOneId: null,
-    divTwoId: null,
-    divThreeId: null,
-  );
-}
+    state = state.copyWith(
+      countryId: null,
+      divOneId: null,
+      divTwoId: null,
+      divThreeId: null,
+    );
+  }
 
   /// Toggle individual zip code active state
   void toggleZip(int zipCodeLinkId) {
@@ -109,10 +189,7 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
       }
     }
 
-    state = state.copyWith(
-      zipCodeItems: items,
-      selectedZipIds: selectedIds,
-    );
+    state = state.copyWith(zipCodeItems: items, selectedZipIds: selectedIds);
   }
 
   /// Add a new zip code to the place
@@ -139,26 +216,19 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
     final items = List<EditZipCodeItem>.from(state.zipCodeItems)..add(newItem);
     final selectedIds = Set<int>.from(state.selectedZipIds)..add(zipCodeLinkId);
 
-    state = state.copyWith(
-      zipCodeItems: items,
-      selectedZipIds: selectedIds,
-    );
+    state = state.copyWith(zipCodeItems: items, selectedZipIds: selectedIds);
   }
 
   /// Remove a new zip code (only works for isNew = true)
   void removeNewZip(int zipCodeLinkId) {
     final items = state.zipCodeItems
-        .where((item) =>
-            item.zipCodeLinkId != zipCodeLinkId || !item.isNew)
+        .where((item) => item.zipCodeLinkId != zipCodeLinkId || !item.isNew)
         .toList();
 
     final selectedIds = Set<int>.from(state.selectedZipIds)
       ..remove(zipCodeLinkId);
 
-    state = state.copyWith(
-      zipCodeItems: items,
-      selectedZipIds: selectedIds,
-    );
+    state = state.copyWith(zipCodeItems: items, selectedZipIds: selectedIds);
   }
 
   /// Get items for a specific office
@@ -187,22 +257,21 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
     // Add all unlinked zips as new items
     for (final zip in unlinkedZips) {
       if (!selectedIds.contains(zip.zipCodeLinkId)) {
-        items.add(EditZipCodeItem(
-          postOfficeId: officeId,
-          zipCodeLinkId: zip.zipCodeLinkId,
-          zipCode: zip.zipCode,
-          postOfficeName: officeName,
-          isActive: true,
-          isNew: true,
-        ));
+        items.add(
+          EditZipCodeItem(
+            postOfficeId: officeId,
+            zipCodeLinkId: zip.zipCodeLinkId,
+            zipCode: zip.zipCode,
+            postOfficeName: officeName,
+            isActive: true,
+            isNew: true,
+          ),
+        );
         selectedIds.add(zip.zipCodeLinkId);
       }
     }
 
-    state = state.copyWith(
-      zipCodeItems: items,
-      selectedZipIds: selectedIds,
-    );
+    state = state.copyWith(zipCodeItems: items, selectedZipIds: selectedIds);
   }
 
   /// Deselect all zip codes for an office
@@ -225,10 +294,7 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
       }
     }
 
-    state = state.copyWith(
-      zipCodeItems: items,
-      selectedZipIds: selectedIds,
-    );
+    state = state.copyWith(zipCodeItems: items, selectedZipIds: selectedIds);
   }
 
   /// Check if all zip codes for an office are selected and active
@@ -289,10 +355,9 @@ class EditPlaceFormNotifier extends Notifier<AddPlaceFormState> {
   }
 }
 
-
 /// Simple form provider (one edit form at a time)
 final editPlaceFormProvider =
-    NotifierProvider<EditPlaceFormNotifier, AddPlaceFormState>(
+    NotifierProvider<EditPlaceFormNotifier, EditPlaceFormState>(
       EditPlaceFormNotifier.new,
     );
 
@@ -310,5 +375,3 @@ final postOfficeFilterForEditProvider =
         placeId: placeId,
       );
     });
-
-

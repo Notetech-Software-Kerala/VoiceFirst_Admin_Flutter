@@ -33,19 +33,22 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
   }
 
   /// Build grouped zip code summary by post office
-  Widget _buildZipCodeSummary(ThemeData theme, List<PostOfficeLookup> offices) {
+  Widget _buildSelectedZipSection(
+    ThemeData theme,
+    List<PostOfficeLookup> offices,
+  ) {
     final form = ref.watch(addPlaceFormProvider);
 
     if (form.zipCodeIds.isEmpty) {
       return const SizedBox();
     }
 
-    // Build map of postOfficeId -> selected zips
     final Map<int, List<String>> groupedByOffice = {};
     final Map<int, String> officeNames = {};
 
     for (final office in offices) {
       officeNames[office.postOfficeId] = office.postOfficeName;
+
       final selectedZips = office.zipCodes
           .where((zip) => form.zipCodeIds.contains(zip.zipCodeLinkId))
           .map((zip) => zip.zipCode)
@@ -56,52 +59,64 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       }
     }
 
-    if (groupedByOffice.isEmpty) {
-      return const SizedBox();
-    }
+    if (groupedByOffice.isEmpty) return const SizedBox();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
+        color: theme.primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Selected Zip Codes",
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          Row(
+            children: [
+              const Icon(Icons.check_circle, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                "Selected Zip Codes (${form.zipCodeIds.length})",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
+
           ...groupedByOffice.entries.map((entry) {
-            final officeId = entry.key;
-            final zips = entry.value;
-            final officeName = officeNames[officeId] ?? "Unknown";
+            final officeName = officeNames[entry.key] ?? "Unknown";
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     officeName,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
-                    children: zips
-                        .map((zip) => Chip(label: Text(zip)))
+                    children: entry.value
+                        .map(
+                          (zip) => Chip(
+                            label: Text(zip),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        )
                         .toList(),
                   ),
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -165,6 +180,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         : ref.watch(divisionThreeLookupProvider(form.divTwoId!));
 
     final postOfficesAsync = ref.watch(postOfficeLookupProvider(filter));
+    final offices = postOfficesAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => const <PostOfficeLookup>[],
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text("Add Place")),
@@ -183,6 +202,8 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 border: OutlineInputBorder(),
               ),
             ),
+            const SizedBox(height: 16),
+            _buildSelectedZipSection(theme, offices),
             const SizedBox(height: 20),
 
             /// COUNTRY
@@ -290,7 +311,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search post offices...',
+                hintText: 'Search post offices or zip codes...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -307,7 +328,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 ),
               ),
               onChanged: (value) {
-                setState(() {}); // Trigger rebuild for filtering
+                setState(() {}); // rebuild for filtering
               },
             ),
 
@@ -321,15 +342,50 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 }
 
                 // Filter offices based on search query
+                // final searchQuery = _searchController.text.toLowerCase().trim();
+                // final filteredOffices = searchQuery.isEmpty
+                //     ? offices
+                //     : offices
+                //           .where(
+                //             (office) => office.postOfficeName
+                //                 .toLowerCase()
+                //                 .contains(searchQuery),
+                //           )
+                //           .toList();
+
                 final searchQuery = _searchController.text.toLowerCase().trim();
+
                 final filteredOffices = searchQuery.isEmpty
                     ? offices
                     : offices
-                          .where(
-                            (office) => office.postOfficeName
+                          .map((office) {
+                            final officeMatches = office.postOfficeName
                                 .toLowerCase()
-                                .contains(searchQuery),
-                          )
+                                .contains(searchQuery);
+
+                            final matchingZips = office.zipCodes
+                                .where(
+                                  (zip) => zip.zipCode.toLowerCase().contains(
+                                    searchQuery,
+                                  ),
+                                )
+                                .toList();
+
+                            if (officeMatches) {
+                              // If office name matches, show all zips
+                              return office;
+                            } else if (matchingZips.isNotEmpty) {
+                              // If only zip matches, return office with filtered zips
+                              return PostOfficeLookup(
+                                postOfficeId: office.postOfficeId,
+                                postOfficeName: office.postOfficeName,
+                                zipCodes: matchingZips,
+                              );
+                            }
+
+                            return null;
+                          })
+                          .whereType<PostOfficeLookup>()
                           .toList();
 
                 if (filteredOffices.isEmpty) {
@@ -381,8 +437,6 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildZipCodeSummary(theme, offices),
                   ],
                 );
               },

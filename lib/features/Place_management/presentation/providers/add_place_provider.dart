@@ -1,44 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/post_office_lookup_filter.dart';
 
-/// ================= MODELS =================
-
-class EditZipCodeItem {
-  final int postOfficeId;
-  final int zipCodeLinkId;
-  final String zipCode;
-  final String postOfficeName;
-  final bool isNew;
-  final bool isActive;
-
-  const EditZipCodeItem({
-    required this.postOfficeId,
-    required this.zipCodeLinkId,
-    required this.zipCode,
-    required this.postOfficeName,
-    required this.isNew,
-    required this.isActive,
-  });
-
-  EditZipCodeItem copyWith({
-    int? postOfficeId,
-    int? zipCodeLinkId,
-    String? zipCode,
-    String? postOfficeName,
-    bool? isNew,
-    bool? isActive,
-  }) {
-    return EditZipCodeItem(
-      postOfficeId: postOfficeId ?? this.postOfficeId,
-      zipCodeLinkId: zipCodeLinkId ?? this.zipCodeLinkId,
-      zipCode: zipCode ?? this.zipCode,
-      postOfficeName: postOfficeName ?? this.postOfficeName,
-      isNew: isNew ?? this.isNew,
-      isActive: isActive ?? this.isActive,
-    );
-  }
-}
-
 /// ================= STATE =================
 
 class AddPlaceFormState {
@@ -51,8 +13,8 @@ class AddPlaceFormState {
   final Set<int> zipCodeIds;
 
   /// Edit-specific: full zip code items with state
-  final List<EditZipCodeItem> zipCodeItems;
-  final Set<int> selectedZipIds;
+  // final List<EditZipCodeItem> zipCodeItems;
+  // final Set<int> selectedZipIds;
 
   const AddPlaceFormState({
     this.countryId,
@@ -60,8 +22,8 @@ class AddPlaceFormState {
     this.divTwoId,
     this.divThreeId,
     this.zipCodeIds = const {},
-    this.zipCodeItems = const [],
-    this.selectedZipIds = const {},
+    // this.zipCodeItems = const [],
+    // this.selectedZipIds = const {},
   });
 
   AddPlaceFormState copyWith({
@@ -70,8 +32,8 @@ class AddPlaceFormState {
     int? divTwoId,
     int? divThreeId,
     Set<int>? zipCodeIds,
-    List<EditZipCodeItem>? zipCodeItems,
-    Set<int>? selectedZipIds,
+    // List<EditZipCodeItem>? zipCodeItems,
+    // Set<int>? selectedZipIds,
   }) {
     return AddPlaceFormState(
       countryId: countryId ?? this.countryId,
@@ -79,8 +41,8 @@ class AddPlaceFormState {
       divTwoId: divTwoId ?? this.divTwoId,
       divThreeId: divThreeId ?? this.divThreeId,
       zipCodeIds: zipCodeIds ?? this.zipCodeIds,
-      zipCodeItems: zipCodeItems ?? this.zipCodeItems,
-      selectedZipIds: selectedZipIds ?? this.selectedZipIds,
+      // zipCodeItems: zipCodeItems ?? this.zipCodeItems,
+      // selectedZipIds: selectedZipIds ?? this.selectedZipIds,
     );
   }
 }
@@ -163,5 +125,3 @@ final postOfficeFilterProvider = Provider<PostOfficeLookupFilter>((ref) {
     divThreeId: form.divThreeId,
   );
 });
-
-

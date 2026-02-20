@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/providers/add_place_provider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/editPlaceFormProvider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
 import 'package:voice_first_admin/features/Place_management/widgets/searchable_dropdown.dart';
@@ -36,42 +35,90 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
     super.dispose();
   }
 
-  Widget _buildActiveZipSummary(ThemeData theme) {
+  Widget _buildSelectedZipSection(
+    ThemeData theme,
+    List<PostOfficeLookup> offices,
+  ) {
     final form = ref.watch(editPlaceFormProvider);
-    final activeItems = form.zipCodeItems.where((z) => z.isActive).toList();
 
-    if (activeItems.isEmpty) {
+    // ✅ Only NEWLY added + ACTIVE zip codes
+    final newActiveZips = form.zipCodeItems
+        .where((z) => z.isNew && z.isActive)
+        .toList();
+
+    if (newActiveZips.isEmpty) {
       return const SizedBox();
     }
 
+    // Group by post office
+    final Map<int, List<EditZipCodeItem>> grouped = {};
+
+    for (final item in newActiveZips) {
+      grouped.putIfAbsent(item.postOfficeId, () => []).add(item);
+    }
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
+        color: theme.primaryColor.withAlpha(25),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Selected Zip Codes Summary",
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+          Row(
+            children: [
+              const Icon(Icons.add_circle, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                "Newly Added Zip Codes (${newActiveZips.length})",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            "Total Selected: ${activeItems.length}",
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: activeItems
-                .map((z) => Chip(label: Text(z.zipCode)))
-                .toList(),
-          ),
+          const SizedBox(height: 10),
+
+          ...grouped.entries.map((entry) {
+            final officeName = entry.value.first.postOfficeName;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    officeName,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: entry.value
+                        .map(
+                          (item) => Chip(
+                            label: Text(item.zipCode),
+                            visualDensity: VisualDensity.compact,
+                            deleteIcon: const Icon(Icons.close, size: 18),
+                            onDeleted: () {
+                              ref
+                                  .read(editPlaceFormProvider.notifier)
+                                  .removeNewZip(item.zipCodeLinkId);
+                            },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -84,6 +131,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
     final postOfficesAsync = filter.isReady
         ? ref.watch(postOfficeLookupProvider(filter))
         : const AsyncValue<List<PostOfficeLookup>>.data(<PostOfficeLookup>[]);
+    final offices = postOfficesAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => const <PostOfficeLookup>[],
+    );
 
     final theme = Theme.of(context);
     final form = ref.watch(editPlaceFormProvider);
@@ -103,7 +154,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
         }
       },
       loading: () {},
-      error: (_, __) {},
+      error: (_, _) {},
     );
 
     String resolveLabel(String? label, String fallback) {
@@ -150,7 +201,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ================= SUMMARY CARD AT TOP =================
-            _buildActiveZipSummary(theme),
+            _buildSelectedZipSection(theme, offices),
 
             const _FormLabel('Select Hierarchy'),
             const SizedBox(height: 8),
@@ -181,7 +232,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Failed to load countries'),
+              error: (_, _) => const Text('Failed to load countries'),
             ),
 
             const SizedBox(height: 12),
@@ -213,7 +264,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Failed to load division'),
+                error: (_, _) => const Text('Failed to load division'),
               ),
 
             const SizedBox(height: 12),
@@ -245,7 +296,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Failed to load division'),
+                error: (_, _) => const Text('Failed to load division'),
               ),
 
             const SizedBox(height: 12),
@@ -277,7 +328,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Failed to load division'),
+                error: (_, _) => const Text('Failed to load division'),
               ),
 
             const SizedBox(height: 24),
@@ -290,7 +341,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search post offices...',
+                hintText: 'Search post offices or zip codes...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -307,7 +358,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                 ),
               ),
               onChanged: (value) {
-                setState(() {}); // Trigger rebuild for filtering
+                setState(() {}); // rebuild for filtering
               },
             ),
 
@@ -325,17 +376,41 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                 }
 
                 // Filter offices based on search query
+
                 final searchQuery = _searchController.text.toLowerCase().trim();
+
                 final filteredOffices = searchQuery.isEmpty
                     ? offices
                     : offices
-                          .where(
-                            (office) => office.postOfficeName
+                          .map((office) {
+                            final officeMatches = office.postOfficeName
                                 .toLowerCase()
-                                .contains(searchQuery),
-                          )
-                          .toList();
+                                .contains(searchQuery);
 
+                            final matchingZips = office.zipCodes
+                                .where(
+                                  (zip) => zip.zipCode.toLowerCase().contains(
+                                    searchQuery,
+                                  ),
+                                )
+                                .toList();
+
+                            if (officeMatches) {
+                              // If office name matches, show all zips
+                              return office;
+                            } else if (matchingZips.isNotEmpty) {
+                              // If only zip matches, return office with filtered zips
+                              return PostOfficeLookup(
+                                postOfficeId: office.postOfficeId,
+                                postOfficeName: office.postOfficeName,
+                                zipCodes: matchingZips,
+                              );
+                            }
+
+                            return null;
+                          })
+                          .whereType<PostOfficeLookup>()
+                          .toList();
                 if (filteredOffices.isEmpty) {
                   return Container(
                     padding: const EdgeInsets.all(16),
@@ -365,23 +440,43 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                           title: Text(office.postOfficeName),
                           subtitle: Text('${office.zipCodes.length} zip codes'),
                           children: office.zipCodes.map<Widget>((zip) {
-                            final alreadyAdded = form.selectedZipIds.contains(
-                              zip.zipCodeLinkId,
+                            // final alreadyAdded = form.selectedZipIds.contains(
+                            //   zip.zipCodeLinkId,
+                            // );
+                            final existing = form.zipCodeItems.firstWhere(
+                              (z) => z.zipCodeLinkId == zip.zipCodeLinkId,
+                              orElse: () => EditZipCodeItem(
+                                postOfficeId: office.postOfficeId,
+                                zipCodeLinkId: zip.zipCodeLinkId,
+                                zipCode: zip.zipCode,
+                                postOfficeName: office.postOfficeName,
+                                isNew: false,
+                                isActive: zip.active,
+                              ),
                             );
 
+                            final isChecked = existing.isActive;
+
+                            // return CheckboxListTile(
+                            //   value: alreadyAdded,
+                            //   title: Text(zip.zipCode),
+                            //   onChanged: alreadyAdded
+                            //       ? null
+                            //       : (_) {
+                            //           notifier.addNewZip(
+                            //             postOfficeId: office.postOfficeId,
+                            //             zipCodeLinkId: zip.zipCodeLinkId,
+                            //             zipCode: zip.zipCode,
+                            //             postOfficeName: office.postOfficeName,
+                            //           );
+                            //         },
+                            // );
                             return CheckboxListTile(
-                              value: alreadyAdded,
+                              value: isChecked,
                               title: Text(zip.zipCode),
-                              onChanged: alreadyAdded
-                                  ? null
-                                  : (_) {
-                                      notifier.addNewZip(
-                                        postOfficeId: office.postOfficeId,
-                                        zipCodeLinkId: zip.zipCodeLinkId,
-                                        zipCode: zip.zipCode,
-                                        postOfficeName: office.postOfficeName,
-                                      );
-                                    },
+                              onChanged: (_) {
+                                notifier.toggleZip(zip.zipCodeLinkId);
+                              },
                             );
                           }).toList(),
                         ),
@@ -391,7 +486,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Failed to load zipcodes'),
+              error: (_, _) => const Text('Failed to load zipcodes'),
             ),
 
             const SizedBox(height: 24),
