@@ -23,7 +23,7 @@ class StandardPaginationControls extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         border: Border(
-          top: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
+          top: BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
         ),
       ),
       child: Row(

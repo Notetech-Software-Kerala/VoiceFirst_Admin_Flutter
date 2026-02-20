@@ -66,7 +66,10 @@ class Division3DetailPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Divider(color: theme.dividerColor.withOpacity(0.5), height: 1),
+                Divider(
+                  color: theme.dividerColor.withValues(alpha: 0.5),
+                  height: 1,
+                ),
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -204,7 +207,7 @@ class _DividerLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Divider(color: theme.dividerColor.withOpacity(0.5), height: 1);
+    return Divider(color: theme.dividerColor.withValues(alpha: 0.5), height: 1);
   }
 }
 

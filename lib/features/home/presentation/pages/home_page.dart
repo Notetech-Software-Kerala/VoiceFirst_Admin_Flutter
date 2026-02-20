@@ -11,6 +11,7 @@ import 'package:voice_first_admin/features/roles/presentation/pages/roles_page.d
 import 'package:voice_first_admin/features/post_office/presentation/pages/post_office_list_page.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import 'package:voice_first_admin/features/menu_configuration/presentation/pages/admin_menu_editor_screen.dart';
+import 'package:voice_first_admin/features/user_management/presentation/pages/user_list_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,19 +33,7 @@ class _HomePageState extends State<HomePage> {
       children: [
         DashboardPage(),
         RolesPage(),
-        Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.group, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text(
-                "Users Page Coming Soon",
-                style: TextStyle(fontSize: 18, color: Colors.grey),
-              ),
-            ],
-          ),
-        ), // 2 (Users)
+        UserListScreen(), // 2 (Users)
         ProfilePage(), // 3 (Settings/Profile)
         PostOfficeListScreen(),
         ViewBusinessActivityPage(), // 4 (Business Activity)

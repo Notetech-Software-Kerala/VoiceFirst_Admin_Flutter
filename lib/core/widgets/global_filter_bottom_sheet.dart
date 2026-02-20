@@ -327,7 +327,7 @@ class _FilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         decoration: BoxDecoration(
           color: isSelected
-              ? theme.primaryColor.withOpacity(0.1)
+              ? theme.primaryColor.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
@@ -380,7 +380,7 @@ class _DropdownField extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: theme.dividerColor.withOpacity(0.1),
+            color: theme.dividerColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: theme.dividerColor),
           ),
@@ -483,7 +483,7 @@ class _DateBox extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: theme.dividerColor.withOpacity(0.1),
+          color: theme.dividerColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? theme.primaryColor : theme.dividerColor,

@@ -61,7 +61,9 @@ class StandardPageLayout extends StatelessWidget {
           SliverAppBar(
             pinned: true,
             floating: true,
-            backgroundColor: theme.scaffoldBackgroundColor.withOpacity(0.95),
+            backgroundColor: theme.scaffoldBackgroundColor.withValues(
+              alpha: 0.95,
+            ),
             elevation: 0,
             toolbarHeight: 70,
             leading:
@@ -76,7 +78,7 @@ class StandardPageLayout extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isDark
-                                ? Colors.white.withOpacity(0.05)
+                                ? Colors.white.withValues(alpha: 0.05)
                                 : Colors.grey[100],
                           ),
                           child: const Icon(Icons.arrow_back_ios_new, size: 20),
@@ -92,7 +94,7 @@ class StandardPageLayout extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isDark
-                                ? Colors.white.withOpacity(0.05)
+                                ? Colors.white.withValues(alpha: 0.05)
                                 : Colors.grey[100],
                           ),
                           child: const Icon(Icons.menu, size: 20),
