@@ -4,6 +4,7 @@ class UserModel {
   final String lastName;
   final String email;
   final String? mobileNo;
+  final String? birthYear;
   final bool active;
   final DateTime? createdDate;
   final String? roleName; // Assuming API returns role name or ID
@@ -15,6 +16,7 @@ class UserModel {
     required this.lastName,
     required this.email,
     this.mobileNo,
+    this.birthYear,
     required this.active,
     this.createdDate,
     this.roleName,
@@ -27,7 +29,8 @@ class UserModel {
       firstName: json['firstName'] ?? '',
       lastName: json['lastName'] ?? '',
       email: json['email'] ?? '',
-      mobileNo: json['mobileNo'],
+      mobileNo: json['mobileNo']?.toString(),
+      birthYear: json['birthYear']?.toString(),
       active: json['active'] ?? true,
       createdDate: json['createdDate'] != null
           ? DateTime.tryParse(json['createdDate'])

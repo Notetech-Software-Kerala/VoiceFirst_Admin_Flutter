@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/pages/change_password_page.dart';
+import '../../../../features/auth/presentation/providers/auth_provider.dart';
+import '../../../../features/auth/presentation/pages/login_screen.dart';
 import '../providers/profile_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 
@@ -315,7 +317,17 @@ class ProfilePage extends ConsumerWidget {
                       vertical: 32,
                     ),
                     child: InkWell(
-                      onTap: () {},
+                      onTap: () async {
+                        await ref.read(authProvider.notifier).logout();
+                        if (context.mounted) {
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        }
+                      },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),

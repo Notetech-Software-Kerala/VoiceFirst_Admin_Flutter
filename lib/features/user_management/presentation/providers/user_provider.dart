@@ -100,4 +100,48 @@ class UserNotifier extends Notifier<UserState> {
   void setPage(int page) {
     fetchUsers(page: page);
   }
+
+  /// Unified save method for Create (POST) or Update (PATCH)
+  Future<void> saveUser({
+    int? id, // null means Create, otherwise Update
+    required String firstName,
+    required String lastName,
+    required String gender,
+    required String birthYear,
+    required String email,
+    required String mobileNo,
+    required int dialCodeId,
+    required List<int> roleIds,
+    required bool active,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    final payload = {
+      "firstName": firstName,
+      "lastName": lastName,
+      "gender": gender, // Ensure it's passed consistently (e.g. lowercase)
+      "birthYear": int.tryParse(birthYear) ?? 0,
+      "email": email,
+      "mobileNo": mobileNo,
+      "dialCodeId": dialCodeId,
+      "roleIds": roleIds,
+      "active": active,
+    };
+
+    try {
+      if (id == null) {
+        // Create
+        await _repository.createUser(payload);
+      } else {
+        // Update (PATCH expects the same payload structure typically)
+        await _repository.updateUser(id, payload);
+      }
+
+      // Refresh list after successful save
+      await fetchUsers(page: 1);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow; // Re-throw so the UI can show a specific error SnackBar
+    }
+  }
 }

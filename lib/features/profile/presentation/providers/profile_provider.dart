@@ -38,7 +38,7 @@ class ProfileState {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Profile extends _$Profile {
   @override
   ProfileState build() {
@@ -63,5 +63,46 @@ class Profile extends _$Profile {
 
   void updateProfile(String name, String role) {
     state = state.copyWith(userName: name, userRole: role);
+  }
+
+  void setUserFromToken(Map<String, dynamic> jwtPayload) {
+    // Determine the user's name (try specific fields from backend payload)
+    final firstName =
+        jwtPayload['FirstName'] ??
+        jwtPayload['firstName'] ??
+        jwtPayload['given_name'] ??
+        '';
+    final lastName =
+        jwtPayload['LastName'] ??
+        jwtPayload['lastName'] ??
+        jwtPayload['family_name'] ??
+        '';
+
+    String name = "$firstName $lastName".trim();
+
+    if (name.isEmpty) {
+      name =
+          jwtPayload['name']?.toString() ??
+          jwtPayload['email']?.toString() ??
+          "Unknown User";
+    }
+
+    final role =
+        jwtPayload['role'] ?? jwtPayload['roles']?.toString() ?? "System User";
+
+    final id =
+        jwtPayload['uid'] ??
+        jwtPayload['id'] ??
+        jwtPayload['userId'] ??
+        jwtPayload['sub'] ??
+        "0000";
+
+    // Update the state
+    state = state.copyWith(
+      userName: name,
+      userRole: role.toString(),
+      userId: id.toString(),
+      // Keep existing avatar or provide a default
+    );
   }
 }

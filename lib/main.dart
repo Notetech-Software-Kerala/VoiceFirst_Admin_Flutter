@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/theme/app_theme.dart';
-import 'package:voice_first_admin/features/home/presentation/pages/home_page.dart';
 import 'package:voice_first_admin/core/providers/theme_provider.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:voice_first_admin/features/auth/presentation/pages/login_screen.dart';
 
 /// 🚨 DEV ONLY — REMOVE AFTER SSL IS FIXED
 class MyHttpOverrides extends HttpOverrides {
@@ -39,7 +39,7 @@ class VoiceFirstAdminApp extends ConsumerWidget {
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      home: const HomePage(),
+      home: const LoginScreen(),
     );
   }
 }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/presentation/providers/auth_provider.dart';
+import '../../features/auth/presentation/pages/login_screen.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
 
-class SidebarWidget extends StatelessWidget {
+class SidebarWidget extends ConsumerWidget {
   final Function(int) onNavigate;
   final int currentIndex;
 
@@ -11,12 +15,14 @@ class SidebarWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.primaryColor;
     final textColor = theme.textTheme.bodyMedium?.color;
     final subTextColor = theme.iconTheme.color;
+
+    final profileState = ref.watch(profileProvider);
 
     return Container(
       width: 280,
@@ -64,10 +70,14 @@ class SidebarWidget extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      const Center(
+                      Center(
                         child: Text(
-                          "JD",
-                          style: TextStyle(
+                          profileState.userName.isNotEmpty
+                              ? profileState.userName
+                                    .substring(0, 1)
+                                    .toUpperCase()
+                              : "?",
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
@@ -100,7 +110,9 @@ class SidebarWidget extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "John Doe",
+                        profileState.userName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
@@ -118,7 +130,9 @@ class SidebarWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          "SUPER ADMIN",
+                          profileState.userRole.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -406,6 +420,15 @@ class SidebarWidget extends StatelessWidget {
                   icon: Icons.logout,
                   color: Colors.red[400],
                   isCompact: true,
+                  onTap: () async {
+                    await ref.read(authProvider.notifier).logout();
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    }
+                  },
                 ),
 
                 const SizedBox(height: 20),
