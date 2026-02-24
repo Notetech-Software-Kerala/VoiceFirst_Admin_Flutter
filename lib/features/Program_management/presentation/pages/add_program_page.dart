@@ -7,7 +7,6 @@ import 'package:voice_first_admin/features/Program_Action/presentation/providers
 
 class AddProgramPage extends ConsumerStatefulWidget {
   const AddProgramPage({super.key});
-
   @override
   ConsumerState<AddProgramPage> createState() => _AddProgramPageState();
 }
@@ -16,7 +15,6 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _labelCtrl = TextEditingController();
   final TextEditingController _routeCtrl = TextEditingController();
-
   final ScrollController _actionsScrollController = ScrollController();
 
   int _applicationId = 1;
@@ -232,9 +230,7 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
@@ -304,15 +300,13 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
                           },
                           loading: () =>
                               const LinearProgressIndicator(minHeight: 2),
-                          error: (_, __) =>
+                          error: (_, _) =>
                               const Text('Failed to load applications'),
                         ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 16),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -361,7 +355,7 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
                                       shrinkWrap: true,
                                       physics: const ClampingScrollPhysics(),
                                       itemCount: actions.length,
-                                      separatorBuilder: (_, __) => Divider(
+                                      separatorBuilder: (_, _) => Divider(
                                         height: 1,
                                         color: theme.dividerColor.withAlpha(
                                           128,
@@ -402,7 +396,7 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
                       },
                       loading: () =>
                           const LinearProgressIndicator(minHeight: 2),
-                      error: (_, __) =>
+                      error: (_, _) =>
                           const Text('Failed to load program actions'),
                     ),
               ),

@@ -430,7 +430,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                           );
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
+                        error: (_, _) => const SizedBox.shrink(),
                       ),
 
                   const SizedBox(height: 24),
@@ -560,7 +560,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                             padding: EdgeInsets.all(8.0),
                             child: LinearProgressIndicator(minHeight: 2),
                           ),
-                          error: (_, __) => const Padding(
+                          error: (_, _) => const Padding(
                             padding: EdgeInsets.all(8.0),
                             child: Text('Failed to load actions'),
                           ),

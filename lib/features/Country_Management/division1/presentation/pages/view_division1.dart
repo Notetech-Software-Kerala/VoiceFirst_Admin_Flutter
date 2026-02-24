@@ -96,26 +96,29 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
             child: const Text('Select'),
           ),
       ],
-      bottom: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ArrowBreadcrumb(
-            items: [
-              BreadcrumbItem(
-                label: widget.country.country,
-                onTap: () => Navigator.pop(context),
-              ),
-              BreadcrumbItem(label: label, isActive: true),
-            ],
-          ),
-          AdvancedSearchHeader(
-            searchController: _searchController,
-            hintText: 'Search $label...',
-            onSearchChanged: notifier.search,
-            onFilterTap: _openFilterSheet,
-            onRefresh: () => _goToPage(state.currentPage),
-          ),
-        ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(96),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ArrowBreadcrumb(
+              items: [
+                BreadcrumbItem(
+                  label: widget.country.country,
+                  onTap: () => Navigator.pop(context),
+                ),
+                BreadcrumbItem(label: label, isActive: true),
+              ],
+            ),
+            AdvancedSearchHeader(
+              searchController: _searchController,
+              hintText: 'Search $label...',
+              onSearchChanged: notifier.search,
+              onFilterTap: _openFilterSheet,
+              onRefresh: () => _goToPage(state.currentPage),
+            ),
+          ],
+        ),
       ),
       onRefresh: () async {
         _goToPage(state.currentPage);
