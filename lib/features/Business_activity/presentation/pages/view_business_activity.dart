@@ -17,7 +17,7 @@ import 'activity_detail_page.dart';
 
 class ViewBusinessActivityPage extends ConsumerStatefulWidget {
   const ViewBusinessActivityPage({super.key});
-
+  
   @override
   ConsumerState<ViewBusinessActivityPage> createState() =>
       _ViewBusinessActivityPageState();
@@ -174,56 +174,20 @@ class _ViewBusinessActivityPageState
                       );
 
                 final actions = <Widget>[];
-                if (!a.isDeleted) {
-                  actions.add(
-                    Transform.scale(
-                      scale: 0.8,
-                      child: Switch(
-                        value: a.active,
-                        activeThumbColor: Colors.green,
-                        onChanged: (val) async {
-                          final error = await notifier.update(
-                            id: a.activityId,
-                            active: val,
-                          );
-                          if (!context.mounted) return;
-                          if (error != null) {
-                            CustomSnackbar.show(
-                              context,
-                              message: error,
-                              type: SnackBarType.error,
-                            );
-                          } else {
-                            CustomSnackbar.show(
-                              context,
-                              message: val
-                                  ? '${a.activityName} activated Successfully'
-                                  : '${a.activityName} deactivated Successfully',
-                              type: SnackBarType.success,
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                  actions.add(
-                    StandardActionButton(
-                      icon: Icons.edit,
-                      color: Colors.grey,
-                      onTap: () => EditActivityDialog.show(context, ref, a),
-                    ),
-                  );
-                  actions.add(
-                    StandardActionButton(
-                      icon: Icons.delete,
-                      color: Colors.red,
-                      onTap: () {
-                        showDeleteBottomSheet(
-                          context: context,
-                          itemName: a.activityName,
-                          onDelete: () async {
-                            final error = await notifier.delete(a.activityId);
-                            if (context.mounted) {
+                actions.add(
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: a.active,
+                      activeThumbColor: Colors.green,
+                      onChanged: a.isDeleted
+                          ? null
+                          : (val) async {
+                              final error = await notifier.update(
+                                id: a.activityId,
+                                active: val,
+                              );
+                              if (!context.mounted) return;
                               if (error != null) {
                                 CustomSnackbar.show(
                                   context,
@@ -233,17 +197,102 @@ class _ViewBusinessActivityPageState
                               } else {
                                 CustomSnackbar.show(
                                   context,
-                                  message: 'Activity deleted successfully',
+                                  message: val
+                                      ? '${a.activityName} activated Successfully'
+                                      : '${a.activityName} deactivated Successfully',
                                   type: SnackBarType.success,
                                 );
                               }
-                            }
-                          },
-                        );
-                      },
+                            },
                     ),
-                  );
-                }
+                  ),
+                );
+                actions.add(
+                  // StandardActionButton(
+                  //   icon: Icons.edit,
+                  //   color: a.isDeleted ? Colors.grey.withAlpha((0.4 * 255).toInt()) : Colors.grey,
+                  //   onTap: a.isDeleted ? null : () => EditActivityDialog.show(context, ref, a),
+                  // ),
+                  StandardActionButton(
+                    icon: Icons.edit,
+                    color: a.isDeleted
+                        ? Colors.grey.withAlpha((0.4 * 255).toInt())
+                        : Colors.grey,
+                    onTap: () {
+                      if (a.isDeleted) return;
+
+                      EditActivityDialog.show(context, ref, a);
+                    },
+                  ),
+                );
+                actions.add(
+                  // StandardActionButton(
+                  //   icon: Icons.delete,
+                  //   color: a.isDeleted
+                  //       ? Colors.red.withAlpha((0.4 * 255).toInt())
+                  //       : Colors.red,
+                  //   onTap: a.isDeleted
+                  //       ? null
+                  //       : () {
+                  //           showDeleteBottomSheet(
+                  //             context: context,
+                  //             itemName: a.activityName,
+                  //             onDelete: () async {
+                  //               final error = await notifier.delete(
+                  //                 a.activityId,
+                  //               );
+                  //               if (context.mounted) {
+                  //                 if (error != null) {
+                  //                   CustomSnackbar.show(
+                  //                     context,
+                  //                     message: error,
+                  //                     type: SnackBarType.error,
+                  //                   );
+                  //                 } else {
+                  //                   CustomSnackbar.show(
+                  //                     context,
+                  //                     message: 'Activity deleted successfully',
+                  //                     type: SnackBarType.success,
+                  //                   );
+                  //                 }
+                  //               }
+                  //             },
+                  //           );
+                  //         },
+                  // ),
+                  StandardActionButton(
+                    icon: Icons.delete,
+                    color: a.isDeleted
+                        ? Colors.red.withAlpha((0.4 * 255).toInt())
+                        : Colors.red,
+                    onTap: () {
+                      if (a.isDeleted) return;
+
+                      showDeleteBottomSheet(
+                        context: context,
+                        itemName: a.activityName,
+                        onDelete: () async {
+                          final error = await notifier.delete(a.activityId);
+                          if (context.mounted) {
+                            if (error != null) {
+                              CustomSnackbar.show(
+                                context,
+                                message: error,
+                                type: SnackBarType.error,
+                              );
+                            } else {
+                              CustomSnackbar.show(
+                                context,
+                                message: 'Activity deleted successfully',
+                                type: SnackBarType.success,
+                              );
+                            }
+                          }
+                        },
+                      );
+                    },
+                  ),
+                );
 
                 return InkWell(
                   onTap: state.isMultiSelect
@@ -261,26 +310,7 @@ class _ViewBusinessActivityPageState
                   child: StandardListCard(
                     title: a.activityName,
                     leading: leading,
-                    trailing: a.isDeleted
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withAlpha(25),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              'Deleted',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        : null,
+                    trailing: null,
                     actions: actions,
                     subtitle: '',
                   ),
@@ -314,3 +344,6 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
+
+
+

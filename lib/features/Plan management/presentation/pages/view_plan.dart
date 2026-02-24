@@ -24,6 +24,7 @@ class ViewPlanPage extends ConsumerStatefulWidget {
 class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
   late final TextEditingController _searchController;
   static const int _pageSize = 10;
+  final Map<int, bool> _localStatus = {};
 
   @override
   void initState() {
@@ -152,78 +153,86 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
 
                 final bool isDeleted = plan.deleted == true;
 
+                final actions = <Widget>[];
+                actions.add(
+                  Transform.scale(
+                    scale: 0.85,
+                    child: Switch(
+                      value: _localStatus[plan.planId] ?? (plan.active ?? true),
+                      activeThumbColor: Colors.green,
+                      onChanged: isDeleted
+                          ? null
+                          : (val) {
+                              setState(() {
+                                _localStatus[plan.planId] = val;
+                              });
+                              CustomSnackbar.show(
+                                context,
+                                message: val
+                                    ? '${plan.planName} activated (UI only)'
+                                    : '${plan.planName} deactivated (UI only)',
+                                type: SnackBarType.info,
+                              );
+                            },
+                      inactiveThumbColor: isDeleted
+                          ? Colors.grey.withAlpha(102)
+                          : null,
+                    ),
+                  ),
+                );
+                actions.add(const SizedBox(width: 4));
+                actions.add(
+                  StandardActionButton(
+                    icon: Icons.edit,
+                    color: isDeleted
+                        ? Colors.grey.withAlpha(102)
+                        : Colors.blueAccent,
+                    onTap: () {
+                      if (isDeleted) return;
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PlanDetailPage(plan: plan),
+                        ),
+                      );
+                    },
+                  ),
+                );
+                actions.add(
+                  StandardActionButton(
+                    icon: Icons.delete,
+                    color: isDeleted ? Colors.red.withAlpha(102) : Colors.red,
+                    onTap: () {
+                      if (isDeleted) return;
+
+                      showDeleteBottomSheet(
+                        context: context,
+                        itemName: plan.planName,
+                        onDelete: () async {
+                          final success = await notifier.deletePlan(
+                            plan.planId,
+                          );
+                          if (!context.mounted) return;
+
+                          CustomSnackbar.show(
+                            context,
+                            message: success
+                                ? 'Plan deleted successfully'
+                                : 'Failed to delete plan',
+                            type: success
+                                ? SnackBarType.success
+                                : SnackBarType.error,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                );
                 return StandardListCard(
                   leading: leading,
                   title: plan.planName,
-                  trailing: isDeleted
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withAlpha(25),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            'Deleted',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            StandardActionButton(
-                              icon: Icons.edit,
-                              color: Colors.blueAccent,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PlanDetailPage(plan: plan),
-                                  ),
-                                ).then((_) {
-                                  notifier.loadPlans(
-                                    page: state.currentPage,
-                                    pageSize: _pageSize,
-                                    search: state.search,
-                                  );
-                                });
-                              },
-                            ),
-                            StandardActionButton(
-                              icon: Icons.delete,
-                              color: Colors.red,
-                              onTap: () {
-                                showDeleteBottomSheet(
-                                  context: context,
-                                  itemName: plan.planName,
-                                  onDelete: () async {
-                                    final success = await notifier.deletePlan(
-                                      plan.planId,
-                                    );
-
-                                    if (!context.mounted) return;
-
-                                    CustomSnackbar.show(
-                                      context,
-                                      message: success
-                                          ? 'Plan deleted successfully'
-                                          : 'Failed to delete plan',
-                                      type: success
-                                          ? SnackBarType.success
-                                          : SnackBarType.error,
-                                    );
-                                  },
-                                );
-                              },
-                            ),
-                          ],
-                        ),
+                  actions: actions,
                   onTap: () {
                     Navigator.push(
                       context,

@@ -112,7 +112,11 @@ class PlanService {
     required List<int> actionIds,
   }) async {
     final uri = Uri.parse('$baseUrl/plan');
-
+    debugPrint('[CREATE PLAN] URI: $uri');
+    debugPrint('[CREATE PLAN] HEADERS: $defaultHeaders');
+    debugPrint(
+      '[CREATE PLAN] BODY: ${jsonEncode({"planName": planName, "programActionLinkIds": actionIds})}',
+    );
     final response = await http.post(
       uri,
       headers: defaultHeaders,
@@ -121,13 +125,12 @@ class PlanService {
         "programActionLinkIds": actionIds,
       }),
     );
-
+    debugPrint('[CREATE PLAN] STATUS: ${response.statusCode}');
+    debugPrint('[CREATE PLAN] RESPONSE BODY: ${response.body}');
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to create plan: ${response.statusCode}');
     }
-
     final jsonBody = jsonDecode(response.body);
-
     return Plan.fromJson(jsonBody['data']);
   }
 
@@ -137,15 +140,15 @@ class PlanService {
 
   Future<Plan> deletePlan(int id) async {
     final uri = Uri.parse('$baseUrl/plan/$id');
-
+    debugPrint('[DELETE PLAN] URI: $uri');
+    debugPrint('[DELETE PLAN] HEADERS: $defaultHeaders');
     final response = await http.delete(uri, headers: defaultHeaders);
-
+    debugPrint('[DELETE PLAN] STATUS: ${response.statusCode}');
+    debugPrint('[DELETE PLAN] BODY: ${response.body}');
     if (response.statusCode != 200) {
       throw Exception('Failed to delete plan: ${response.statusCode}');
     }
-
     final jsonBody = jsonDecode(response.body);
-
     return Plan.fromJson(jsonBody['data']);
   }
 
@@ -155,20 +158,17 @@ class PlanService {
 
   Future<Plan> recoverPlan(int id) async {
     final uri = Uri.parse('$baseUrl/plan/recover/$id');
-
+    debugPrint('[RECOVER PLAN] URI: $uri');
+    debugPrint('[RECOVER PLAN] HEADERS: $defaultHeaders');
     final response = await http.patch(uri, headers: defaultHeaders);
-
-    debugPrint("RECOVER STATUS: ${response.statusCode}");
-    debugPrint("RECOVER BODY: ${response.body}");
-
+    debugPrint('[RECOVER PLAN] STATUS: ${response.statusCode}');
+    debugPrint('[RECOVER PLAN] BODY: ${response.body}');
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw Exception(
         'Failed to recover plan: ${response.statusCode} ${response.body}',
       );
     }
-
     final jsonBody = jsonDecode(response.body);
-
     return Plan.fromJson(jsonBody['data']);
   }
 
@@ -178,19 +178,20 @@ class PlanService {
 
   Future<List<ProgramActionLinkProgram>> getProgramActionLinkLookup() async {
     final uri = Uri.parse('$baseUrl/program/for-plan');
-
+    debugPrint('[GET PROGRAM ACTION LINK LOOKUP] URI: $uri');
+    debugPrint('[GET PROGRAM ACTION LINK LOOKUP] HEADERS: $defaultHeaders');
     final response = await http.get(uri, headers: defaultHeaders);
-
+    debugPrint(
+      '[GET PROGRAM ACTION LINK LOOKUP] STATUS: ${response.statusCode}',
+    );
+    debugPrint('[GET PROGRAM ACTION LINK LOOKUP] BODY: ${response.body}');
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
         'Failed to load program/action links: ${response.statusCode}',
       );
     }
-
     final jsonBody = jsonDecode(response.body);
-
     final list = (jsonBody['data'] as List? ?? []);
-
     return list.map((e) => ProgramActionLinkProgram.fromJson(e)).toList();
   }
 }

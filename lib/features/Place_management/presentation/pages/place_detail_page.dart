@@ -50,7 +50,6 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
 
     final bool isDeleted = place.deleted;
 
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Place Details'),
@@ -345,7 +344,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        String _fallbackLabel(String? label, String fallback) {
+        String fallbackLabel(String? label, String fallback) {
           if (label == null || label.trim().isEmpty) return fallback;
           return label;
         }
@@ -363,23 +362,17 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                 ),
                 const SizedBox(height: 8),
                 _InfoRow(
-                  label: _fallbackLabel(
-                    office.divisionOneLabel,
-                    'Division One',
-                  ),
+                  label: fallbackLabel(office.divisionOneLabel, 'Division One'),
                   value: office.divisionOneName ?? 'N/A',
                 ),
                 const SizedBox(height: 4),
                 _InfoRow(
-                  label: _fallbackLabel(
-                    office.divisionTwoLabel,
-                    'Division Two',
-                  ),
+                  label: fallbackLabel(office.divisionTwoLabel, 'Division Two'),
                   value: office.divisionTwoName ?? 'N/A',
                 ),
                 const SizedBox(height: 4),
                 _InfoRow(
-                  label: _fallbackLabel(
+                  label: fallbackLabel(
                     office.divisionThreeLabel,
                     'Division Three',
                   ),
@@ -550,53 +543,6 @@ class _PostOfficeTile extends StatelessWidget {
                     ),
                   ),
                 ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 24),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

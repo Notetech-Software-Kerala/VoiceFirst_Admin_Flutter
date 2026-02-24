@@ -206,42 +206,53 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                       );
 
                 final actions = <Widget>[];
-                if (!isDeleted && id != null) {
+                if (id != null) {
                   actions.add(
                     Transform.scale(
                       scale: 0.75,
                       child: Switch(
                         value: program.active ?? true,
-                        onChanged: (val) async {
-                          final error = await notifier.toggleStatus(id, val);
-                          if (!context.mounted) return;
-
-                          if (error != null) {
-                            CustomSnackbar.show(
-                              context,
-                              message: error,
-                              type: SnackBarType.error,
-                            );
-                          } else {
-                            CustomSnackbar.show(
-                              context,
-                              message: val
-                                  ? 'Program activated successfully'
-                                  : 'Program deactivated successfully',
-                              type: SnackBarType.success,
-                            );
-                          }
-                        },
+                        onChanged: isDeleted
+                            ? null
+                            : (val) async {
+                                final error = await notifier.toggleStatus(
+                                  id,
+                                  val,
+                                );
+                                if (!context.mounted) return;
+                                if (error != null) {
+                                  CustomSnackbar.show(
+                                    context,
+                                    message: error,
+                                    type: SnackBarType.error,
+                                  );
+                                } else {
+                                  CustomSnackbar.show(
+                                    context,
+                                    message: val
+                                        ? 'Program activated successfully'
+                                        : 'Program deactivated successfully',
+                                    type: SnackBarType.success,
+                                  );
+                                }
+                              },
                         activeThumbColor: Colors.green,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        inactiveThumbColor: isDeleted
+                            ? Colors.grey.withAlpha(102)
+                            : null,
                       ),
                     ),
                   );
                   actions.add(
                     StandardActionButton(
                       icon: Icons.edit_outlined,
-                      color: colorScheme.primary,
+                      color: isDeleted
+                          ? Colors.grey.withAlpha(102)
+                          : colorScheme.primary,
                       onTap: () {
+                        if (isDeleted) return;
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -257,8 +268,10 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   actions.add(
                     StandardActionButton(
                       icon: Icons.delete,
-                      color: Colors.red,
+                      color: isDeleted ? Colors.red.withAlpha(102) : Colors.red,
                       onTap: () {
+                        if (isDeleted) return;
+
                         showDeleteBottomSheet(
                           context: context,
                           itemName: program.programName,
@@ -310,28 +323,8 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: program.programName,
-                    subtitle: program.labelName ?? '',
+                    subtitle: program.labelName ,
                     leading: leading,
-                    trailing: isDeleted
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withAlpha(25),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: const Text(
-                              'Deleted',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        : null,
                     actions: actions,
                   ),
                 );
@@ -377,7 +370,7 @@ class _ApplicationFilter extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox(height: 56),
-      error: (_, __) => const Text('Failed to load applications'),
+      error: (_, _) => const Text('Failed to load applications'),
     );
   }
 }
@@ -545,7 +538,7 @@ class _ProgramCard extends StatelessWidget {
                     child: Switch(
                       value: isActive,
                       onChanged: onToggle,
-                      activeColor: Colors.green,
+                      activeThumbColor: Colors.green,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),

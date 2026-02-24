@@ -144,73 +144,84 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
                 final isDeleted = place.deleted;
 
                 final actions = <Widget>[];
-                if (!isDeleted) {
-                  actions.addAll([
-                    Transform.scale(
-                      scale: 0.75,
-                      child: Switch(
-                        value: place.active,
-                        onChanged: (val) async {
-                          final success = await notifier.updatePlace(
+                actions.addAll([
+                  Transform.scale(
+                    scale: 0.75,
+                    child: Switch(
+                      value: place.active,
+                      onChanged: isDeleted
+                          ? null
+                          : (val) async {
+                              final success = await notifier.updatePlace(
+                                place.placeId,
+                                UpdatePlaceRequest(active: val),
+                              );
+                              if (!context.mounted) return;
+                              CustomSnackbar.show(
+                                context,
+                                message: success
+                                    ? (val
+                                          ? 'Place activated successfully'
+                                          : 'Place deactivated successfully')
+                                    : 'Failed to update place status',
+                                type: success
+                                    ? SnackBarType.success
+                                    : SnackBarType.error,
+                              );
+                            },
+                      activeThumbColor: Colors.green[400],
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      inactiveThumbColor: isDeleted
+                          ? Colors.grey.withAlpha(102)
+                          : null,
+                    ),
+                  ),
+                  StandardActionButton(
+                    icon: Icons.edit,
+                    color: isDeleted
+                        ? Colors.grey.withAlpha(102)
+                        : Colors.blueAccent,
+                    onTap: () {
+                      if (isDeleted) return;
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditPlacePage(place: place),
+                        ),
+                      );
+                    },
+                  ),
+                  StandardActionButton(
+                    icon: Icons.delete,
+                    color: isDeleted ? Colors.red.withAlpha(102) : Colors.red,
+
+                    onTap: () {
+                      if (isDeleted) return;
+
+                      showDeleteBottomSheet(
+                        context: context,
+                        itemName: place.placeName,
+                        onDelete: () async {
+                          final success = await notifier.deletePlace(
                             place.placeId,
-                            UpdatePlaceRequest(active: val),
                           );
                           if (!context.mounted) return;
+
                           CustomSnackbar.show(
                             context,
                             message: success
-                                ? (val
-                                      ? 'Place activated successfully'
-                                      : 'Place deactivated successfully')
-                                : 'Failed to update place status',
+                                ? 'Place deleted successfully'
+                                : 'Failed to delete place',
                             type: success
                                 ? SnackBarType.success
                                 : SnackBarType.error,
                           );
                         },
-                        activeThumbColor: Colors.green[400],
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                    StandardActionButton(
-                      icon: Icons.edit,
-                      color: Colors.blueAccent,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditPlacePage(place: place),
-                          ),
-                        );
-                      },
-                    ),
-                    StandardActionButton(
-                      icon: Icons.delete,
-                      color: Colors.red,
-                      onTap: () {
-                        showDeleteBottomSheet(
-                          context: context,
-                          itemName: place.placeName,
-                          onDelete: () async {
-                            final success = await notifier.deletePlace(
-                              place.placeId,
-                            );
-                            if (!context.mounted) return;
-                            CustomSnackbar.show(
-                              context,
-                              message: success
-                                  ? 'Place deleted successfully'
-                                  : 'Failed to delete place',
-                              type: success
-                                  ? SnackBarType.success
-                                  : SnackBarType.error,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ]);
-                }
+                      );
+                    },
+                  ),
+                ]);
 
                 return StandardListCard(
                   key: ValueKey(place.placeId),
@@ -219,28 +230,6 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
                     color: Colors.blue,
                   ),
                   title: place.placeName,
-                  // subtitle:
-                  //     'Created by ${place.createdUser ?? 'Unknown'} on ${_fmtDate(place.createdDate)}',
-                  trailing: isDeleted
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withAlpha(25),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            'Deleted',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        )
-                      : null,
                   actions: actions,
                   onTap: () {
                     Navigator.push(

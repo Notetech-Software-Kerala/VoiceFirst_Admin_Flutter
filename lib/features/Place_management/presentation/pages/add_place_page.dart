@@ -65,7 +65,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.primaryColor.withOpacity(0.05),
+        color: theme.primaryColor.withAlpha(13),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -143,7 +143,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         }
       },
       loading: () {},
-      error: (_, __) {},
+      error: (_, _) {},
     );
 
     String resolveLabel(String? label, String fallback) {
@@ -226,7 +226,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text("Failed to load countries"),
+              error: (_, _) => const Text("Failed to load countries"),
             ),
 
             /// DIVISION 1
@@ -250,7 +250,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text("Failed"),
+                error: (_, _) => const Text("Failed"),
               ),
 
             /// DIVISION 2
@@ -274,7 +274,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text("Failed"),
+                error: (_, _) => const Text("Failed"),
               ),
 
             /// DIVISION 3
@@ -298,7 +298,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   );
                 },
                 loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text("Failed"),
+                error: (_, _) => const Text("Failed"),
               ),
 
             const SizedBox(height: 24),
@@ -441,7 +441,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text("Failed to load post offices"),
+              error: (_, _) => const Text("Failed to load post offices"),
             ),
 
             const SizedBox(height: 30),
