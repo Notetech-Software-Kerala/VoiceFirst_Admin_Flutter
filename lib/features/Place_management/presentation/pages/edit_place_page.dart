@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/place_model.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/place_requests.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/editPlaceFormProvider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
+import 'package:voice_first_admin/features/Place_management/presentation/pages/add_more_zip_codes_page.dart';
 import '../providers/place_provider.dart';
 
 class EditPlacePage extends ConsumerStatefulWidget {
@@ -18,64 +21,24 @@ class EditPlacePage extends ConsumerStatefulWidget {
 
 class _EditPlacePageState extends ConsumerState<EditPlacePage> {
   late TextEditingController _nameController;
-  late List<_ZipCodeItem> _zipCodeItems;
-  late Set<int> _selectedZipIds;
 
   bool _isSubmitting = false;
 
   @override
-  // void initState() {
-  //   super.initState();
-  //   _nameController = TextEditingController(text: widget.place.placeName);
-  //   // Initialize zip codes from all post offices
-  //   _zipCodeItems = [];
-  //   for (final office in widget.place.postOffices) {
-  //     for (final zip in office.zipCodes) {
-  //       _zipCodeItems.add(
-  //         _ZipCodeItem(
-  //           zipCodeLinkId: zip.zipCodeLinkId,
-  //           zipCode: zip.zipCode,
-  //           postOfficeName: office.postOfficeName,
-  //           isActive: zip.active,
-  //           isNew: false,
-  //         ),
-  //       );
-  //     }
-  //   }
-  //   _selectedZipIds = _zipCodeItems.map((e) => e.zipCodeLinkId).toSet();
-  // }
   void initState() {
     super.initState();
     // Always start with a fresh edit form state, but
     // delay the mutation until after the first frame
     Future.microtask(() {
-      ref.read(editPlaceFormProvider.notifier).reset();
+      final notifier = ref.read(editPlaceFormProvider.notifier);
+      notifier.reset();
+      notifier.initializeFromPlace(widget.place);
     });
     _nameController = TextEditingController(text: widget.place.placeName);
-
-    _zipCodeItems = [];
-
-    for (final office in widget.place.postOffices) {
-      for (final zip in office.zipCodes) {
-        _zipCodeItems.add(
-          _ZipCodeItem(
-            zipCodeLinkId: zip.zipCodeLinkId,
-            zipCode: zip.zipCode,
-            postOfficeName: office.postOfficeName,
-            isActive: zip.active,
-            isNew: false,
-          ),
-        );
-      }
-    }
-
-    // ✅ PERFORMANCE BOOST
-    _selectedZipIds = _zipCodeItems.map((e) => e.zipCodeLinkId).toSet();
   }
 
   @override
   void dispose() {
-    // ref.read(editPlaceFormProvider.notifier).clear();
     _nameController.dispose();
     super.dispose();
   }
@@ -89,34 +52,14 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Build update zip code list (modified existing zips)
-      final updateZipCodes = <ZipCodeLinkUpdate>[];
-      final insertZipIds = <int>[];
+      // Use provider's diff logic
+      final formNotifier = ref.read(editPlaceFormProvider.notifier);
+      final diff = formNotifier.buildZipDiff(widget.place);
 
-      for (final item in _zipCodeItems) {
-        // Find original state
-        final originalItem = _findOriginalZip(item.zipCodeLinkId);
-
-        if (item.isNew) {
-          // New zip codes
-          if (item.isActive) {
-            insertZipIds.add(item.zipCodeLinkId);
-          }
-        } else {
-          // Existing zip codes - track if status changed
-          if (originalItem != null && originalItem.isActive != item.isActive) {
-            updateZipCodes.add(
-              ZipCodeLinkUpdate(
-                zipCodeLinkId: item.zipCodeLinkId,
-                active: item.isActive,
-              ),
-            );
-          }
-        }
-      }
-
-      debugPrint('[EditPlacePage] updateZipCodes: ${updateZipCodes.length}');
-      debugPrint('[EditPlacePage] insertZipIds: ${insertZipIds.length}');
+      debugPrint(
+        '[EditPlacePage] updateZipCodes: ${diff.updateZipCodes.length}',
+      );
+      debugPrint('[EditPlacePage] insertZipIds: ${diff.insertZipIds.length}');
 
       // ⭐⭐⭐ ENTERPRISE DIFF CHECK
       final original = widget.place;
@@ -125,7 +68,7 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
           _nameController.text.trim() != original.placeName;
 
       final bool hasZipChanges =
-          updateZipCodes.isNotEmpty || insertZipIds.isNotEmpty;
+          diff.updateZipCodes.isNotEmpty || diff.insertZipIds.isNotEmpty;
 
       if (!nameChanged && !hasZipChanges) {
         _showSnack('No changes detected', isError: true);
@@ -135,8 +78,8 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
 
       final request = UpdatePlaceRequest(
         placeName: _nameController.text.trim(),
-        updateZipCodeLinkIds: updateZipCodes,
-        insertZipCodeLinkIds: insertZipIds,
+        updateZipCodeLinkIds: diff.updateZipCodes,
+        insertZipCodeLinkIds: diff.insertZipIds,
       );
 
       debugPrint('[EditPlacePage] Payload: ${request.toJson()}');
@@ -161,87 +104,218 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
     }
   }
 
-  _ZipCodeItem? _findOriginalZip(int zipCodeLinkId) {
-    for (final office in widget.place.postOffices) {
-      for (final zip in office.zipCodes) {
-        if (zip.zipCodeLinkId == zipCodeLinkId) {
-          return _ZipCodeItem(
-            zipCodeLinkId: zip.zipCodeLinkId,
-            zipCode: zip.zipCode,
-            postOfficeName: office.postOfficeName,
-            isActive: zip.active,
-            isNew: false,
-          );
-        }
-      }
+  List<Widget> _buildGroupedZipCodeTiles(ThemeData theme) {
+    final form = ref.watch(editPlaceFormProvider);
+    final formNotifier = ref.read(editPlaceFormProvider.notifier);
+
+    final Map<int, List<EditZipCodeItem>> grouped = {};
+
+    for (final item in form.zipCodeItems) {
+      grouped.putIfAbsent(item.postOfficeId, () => []).add(item);
     }
-    return null;
-  }
 
-  void _toggleZipCode(int zipCodeLinkId) {
-    setState(() {
-      final index = _zipCodeItems.indexWhere(
-        (z) => z.zipCodeLinkId == zipCodeLinkId,
+    if (grouped.isEmpty) return const [];
+
+    return grouped.entries.map((entry) {
+      final officeId = entry.key;
+      final items = entry.value;
+      final officeName = items.first.postOfficeName;
+
+      final unlinkedAsync = ref.watch(
+        unlinkedZipCodesProvider((
+          postOfficeId: officeId,
+          placeId: widget.place.placeId,
+        )),
       );
-      if (index >= 0) {
-        _zipCodeItems[index].isActive = !_zipCodeItems[index].isActive;
-      }
-    });
+
+      return unlinkedAsync.when(
+        loading: () => const Padding(
+          padding: EdgeInsets.all(8),
+          child: LinearProgressIndicator(),
+        ),
+        error: (_, _) => const Padding(
+          padding: EdgeInsets.all(8),
+          child: Text('Failed to load zipcodes'),
+        ),
+        data: (unlinkedZips) {
+          // Get backend linked count
+          int backendLinkedCount = 0;
+          for (final office in widget.place.postOffices) {
+            if (office.postOfficeId == officeId) {
+              backendLinkedCount = office.zipCodes.length;
+              break;
+            }
+          }
+
+          final allLinked = formNotifier.isOfficeFullyLinked(
+            officeId,
+            backendLinkedCount,
+            unlinkedZips.length,
+          );
+
+          final rows = <Widget>[];
+
+          // Existing
+          for (final item in items) {
+            rows.add(_buildExistingZipRow(theme, item));
+          }
+
+          // Unlinked
+          for (final zip in unlinkedZips) {
+            if (!form.selectedZipIds.contains(zip.zipCodeLinkId)) {
+              rows.add(_buildUnlinkedZipRow(theme, officeId, officeName, zip));
+            }
+          }
+
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: theme.dividerColor),
+            ),
+            child: ExpansionTile(
+              leading: Checkbox(
+                value: allLinked,
+                onChanged: (value) {
+                  if (value == true) {
+                    formNotifier.selectAllOffice(
+                      officeId,
+                      officeName,
+                      unlinkedZips,
+                    );
+                  } else {
+                    formNotifier.deselectOffice(officeId);
+                  }
+                },
+              ),
+              title: Text(
+                officeName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text('${rows.length} zip codes'),
+              childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              children: rows,
+            ),
+          );
+        },
+      );
+    }).toList();
   }
 
-  // void _removeZipCode(int zipCodeLinkId) {
-  //   setState(() {
-  //     _zipCodeItems.removeWhere((z) => z.zipCodeLinkId == zipCodeLinkId);
-  //   });
-  // }
-  void _removeZipCode(int zipCodeLinkId) {
-    setState(() {
-      _zipCodeItems.removeWhere((z) => z.zipCodeLinkId == zipCodeLinkId);
+  Widget _buildExistingZipRow(ThemeData theme, EditZipCodeItem item) {
+    final formNotifier = ref.read(editPlaceFormProvider.notifier);
 
-      _selectedZipIds.remove(zipCodeLinkId);
-    });
+    Color borderColor;
+
+    if (item.isNew) {
+      // NEW items never show orange
+      borderColor = item.isActive ? Colors.green : theme.dividerColor;
+    } else {
+      // EXISTING items
+      borderColor = item.isActive ? Colors.green : Colors.orange;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 1.2),
+      ),
+      child: Row(
+        children: [
+          Checkbox(
+            value: item.isActive,
+            onChanged: (value) {
+              if (value == null) return;
+              formNotifier.toggleZip(item.zipCodeLinkId);
+            },
+          ),
+          Expanded(
+            child: Text(
+              item.zipCode,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnlinkedZipRow(
+    ThemeData theme,
+    int postOfficeId,
+    String postOfficeName,
+    ZipCodeLookup zip,
+  ) {
+    final formNotifier = ref.read(editPlaceFormProvider.notifier);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: theme.dividerColor, width: 1.0),
+      ),
+      child: Row(
+        children: [
+          Checkbox(
+            value: false,
+            onChanged: (value) {
+              if (value != true) return;
+              formNotifier.addNewZip(
+                postOfficeId: postOfficeId,
+                zipCodeLinkId: zip.zipCodeLinkId,
+                zipCode: zip.zipCode,
+                postOfficeName: postOfficeName,
+              );
+            },
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  zip.zipCode,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(postOfficeName, style: theme.textTheme.bodySmall),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
   }
 
   void _showSnack(String msg, {required bool isError}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: isError ? Colors.red : Colors.green,
-      ),
+    CustomSnackbar.show(
+      context,
+      message: msg,
+      type: isError ? SnackBarType.error : SnackBarType.success,
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final form = ref.watch(editPlaceFormProvider);
     final filter = ref.watch(
       postOfficeFilterForEditProvider(widget.place.placeId),
     );
 
     final postOfficesAsync = filter.isReady
         ? ref.watch(postOfficeLookupProvider(filter))
-        : const AsyncValue.data([]);
-
-    final theme = Theme.of(context);
-    // ✅ WATCH EDIT FORM
-    final form = ref.watch(editPlaceFormProvider);
-
-    final notifier = ref.read(editPlaceFormProvider.notifier);
-
-    // ✅ LOOKUPS
-    final countriesAsync = ref.watch(countryLookupProvider);
-
-    final divOneAsync = form.countryId == null
-        ? null
-        : ref.watch(divisionOneLookupProvider(form.countryId!));
-
-    final divTwoAsync = form.divOneId == null
-        ? null
-        : ref.watch(divisionTwoLookupProvider(form.divOneId!));
-
-    final divThreeAsync = form.divTwoId == null
-        ? null
-        : ref.watch(divisionThreeLookupProvider(form.divTwoId!));
+        : const AsyncValue<List<PostOfficeLookup>>.data(<PostOfficeLookup>[]);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Place'), centerTitle: true),
@@ -262,7 +336,7 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
             const SizedBox(height: 24),
             const _FormLabel('Zip Codes'),
             const SizedBox(height: 8),
-            if (_zipCodeItems.isEmpty)
+            if (form.zipCodeItems.isEmpty)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -279,274 +353,90 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
-                  children: _zipCodeItems.map((item) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: item.isActive ? Colors.green : Colors.orange,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.zipCode,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  item.postOfficeName,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  (item.isActive ? Colors.green : Colors.orange)
-                                      .withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              item.isActive ? 'Active' : 'Inactive',
-                              style: TextStyle(
-                                color: item.isActive
-                                    ? Colors.green
-                                    : Colors.orange,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          PopupMenuButton<String>(
-                            onSelected: (value) {
-                              if (value == 'toggle') {
-                                _toggleZipCode(item.zipCodeLinkId);
-                              } else if (value == 'remove') {
-                                _removeZipCode(item.zipCodeLinkId);
-                              }
-                            },
-                            itemBuilder: (BuildContext context) => [
-                              PopupMenuItem(
-                                value: 'toggle',
-                                child: Text(
-                                  item.isActive ? 'Deactivate' : 'Activate',
-                                ),
-                              ),
-                              if (item.isNew)
-                                const PopupMenuItem(
-                                  value: 'remove',
-                                  child: Text('Remove'),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Group zip codes by post office showing existing
+                    // and unlinked zip codes for each office.
+                    ..._buildGroupedZipCodeTiles(theme),
+
+                    // postOfficesAsync.when(
+                    //   data: (offices) {
+                    //     return Column(
+                    //       children: offices.map((office) {
+                    //         final zipCodes = office.zipCodes;
+
+                    //         return Container(
+                    //           margin: const EdgeInsets.symmetric(vertical: 6),
+                    //           decoration: BoxDecoration(
+                    //             color: theme.cardColor,
+                    //             borderRadius: BorderRadius.circular(12),
+                    //             border: Border.all(color: theme.dividerColor),
+                    //           ),
+                    //           child: ExpansionTile(
+                    //             title: Text(
+                    //               office.postOfficeName,
+                    //               style: const TextStyle(
+                    //                 fontWeight: FontWeight.w600,
+                    //               ),
+                    //             ),
+                    //             subtitle: Text('${zipCodes.length} zip codes'),
+                    //             children: zipCodes.map((zip) {
+                    //               final existing = form.zipCodeItems.firstWhere(
+                    //                 (z) => z.zipCodeLinkId == zip.zipCodeLinkId,
+                    //                 orElse: () => EditZipCodeItem(
+                    //                   postOfficeId: office.postOfficeId,
+                    //                   zipCodeLinkId: zip.zipCodeLinkId,
+                    //                   zipCode: zip.zipCode,
+                    //                   postOfficeName: office.postOfficeName,
+                    //                   isNew: false,
+                    //                   isActive: zip.active,
+                    //                 ),
+                    //               );
+
+                    //               final isChecked = existing.isActive;
+
+                    //               return CheckboxListTile(
+                    //                 value: isChecked,
+                    //                 title: Text(zip.zipCode),
+                    //                 onChanged: (_) {
+                    //                   ref
+                    //                       .read(editPlaceFormProvider.notifier)
+                    //                       .toggleZip(zip.zipCodeLinkId);
+                    //                 },
+                    //               );
+                    //             }).toList(),
+                    //           ),
+                    //         );
+                    //       }).toList(),
+                    //     );
+                    //   },
+                    //   loading: () => const LinearProgressIndicator(),
+                    //   error: (_, __) => const Text('Failed to load zipcodes'),
+                    // ),
+                  ],
                 ),
               ),
             const SizedBox(height: 32),
-            const SizedBox(height: 24),
-            const _FormLabel('Add Zip Codes'),
-            const SizedBox(height: 8),
 
-            // ================= COUNTRY =================
-            countriesAsync.when(
-              data: (countries) {
-                final validValue = countries.any((c) => c.id == form.countryId)
-                    ? form.countryId
-                    : null;
-                return DropdownButtonFormField<int>(
-                  value: validValue,
-                  decoration: const InputDecoration(labelText: 'Country'),
-                  items: countries
-                      .map(
-                        (c) =>
-                            DropdownMenuItem(value: c.id, child: Text(c.name)),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      notifier.setCountry(val);
-                    }
-                  },
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Failed to load countries'),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ================= DIVISION ONE =================
-            if (divOneAsync != null)
-              divOneAsync.when(
-                data: (divs) {
-                  final validValue = divs.any((d) => d.id == form.divOneId)
-                      ? form.divOneId
-                      : null;
-                  return DropdownButtonFormField<int>(
-                    value: validValue,
-                    decoration: const InputDecoration(
-                      labelText: 'State / Division 1',
-                    ),
-                    items: divs
-                        .map(
-                          (d) => DropdownMenuItem(
-                            value: d.id,
-                            child: Text(d.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        notifier.setDivOne(val);
-                      }
-                    },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Failed to load division'),
-              ),
-
-            const SizedBox(height: 12),
-
-            // ================= DIVISION TWO =================
-            if (divTwoAsync != null)
-              divTwoAsync.when(
-                data: (divs) {
-                  final validValue = divs.any((d) => d.id == form.divTwoId)
-                      ? form.divTwoId
-                      : null;
-
-                  return DropdownButtonFormField<int>(
-                    value: validValue,
-                    decoration: const InputDecoration(
-                      labelText: 'District / Division 2',
-                    ),
-                    items: divs
-                        .map(
-                          (d) => DropdownMenuItem(
-                            value: d.id,
-                            child: Text(d.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        notifier.setDivTwo(val);
-                      }
-                    },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Failed to load division'),
-              ),
-
-            const SizedBox(height: 12),
-
-            // ================= DIVISION THREE =================
-            if (divThreeAsync != null)
-              divThreeAsync.when(
-                data: (divs) {
-                  final validValue = divs.any((d) => d.id == form.divThreeId)
-                      ? form.divThreeId
-                      : null;
-                  return DropdownButtonFormField<int>(
-                    value: validValue,
-                    decoration: const InputDecoration(
-                      labelText: 'City / Division 3',
-                    ),
-                    items: divs
-                        .map(
-                          (d) => DropdownMenuItem(
-                            value: d.id,
-                            child: Text(d.name),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) notifier.setDivThree(val);
-                    },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Failed to load division'),
-              ),
-
-            const SizedBox(height: 20),
-
-            postOfficesAsync.when(
-              data: (offices) {
-                // if (!filter.isReady || offices.isEmpty) {
-                //   return const SizedBox();
-                // }
-                if (!filter.isReady) {
-                  return const SizedBox(); // show nothing
-                }
-
-                if (offices.isEmpty) {
-                  return const Text('No zipcodes found for selected hierarchy');
-                }
-
-                return Card(
-                  child: Column(
-                    children: offices.map<Widget>((office) {
-                      return ExpansionTile(
-                        title: Text(office.postOfficeName),
-                        children: office.zipCodes.map<Widget>((zip) {
-                          final alreadyAdded = _selectedZipIds.contains(
-                            zip.zipCodeLinkId,
-                          );
-
-                          return CheckboxListTile(
-                            value: alreadyAdded,
-                            title: Text(zip.zipCode),
-                            onChanged: alreadyAdded
-                                ? null
-                                : (_) {
-                                    setState(() {
-                                      _zipCodeItems.add(
-                                        _ZipCodeItem(
-                                          zipCodeLinkId: zip.zipCodeLinkId,
-                                          zipCode: zip.zipCode,
-                                          postOfficeName: office.postOfficeName,
-                                          isActive: true,
-                                          isNew: true,
-                                        ),
-                                      );
-                                      _selectedZipIds.add(zip.zipCodeLinkId);
-                                    });
-                                  },
-                          );
-                        }).toList(),
-                      );
-                    }).toList(),
+            // Add More Zip Codes Button
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddMoreZipCodesPage(placeId: widget.place.placeId),
                   ),
                 );
               },
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Failed to load zipcodes'),
+              icon: const Icon(Icons.add),
+              label: const Text('Add More Zip Codes'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+              ),
             ),
+
+            const SizedBox(height: 24),
 
             Row(
               children: [
@@ -600,20 +490,4 @@ class _FormLabel extends StatelessWidget {
       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
     );
   }
-}
-
-class _ZipCodeItem {
-  final int zipCodeLinkId;
-  final String zipCode;
-  final String postOfficeName;
-  bool isActive;
-  final bool isNew;
-
-  _ZipCodeItem({
-    required this.zipCodeLinkId,
-    required this.zipCode,
-    required this.postOfficeName,
-    required this.isActive,
-    required this.isNew,
-  });
 }

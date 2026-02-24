@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/features/reset_password/presentation/pages/change_password_page.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/auth/presentation/pages/login_screen.dart';
 import '../providers/profile_provider.dart';
@@ -287,6 +288,20 @@ class ProfilePage extends ConsumerWidget {
                       ),
                       _buildTile(
                         context,
+                        icon: Icons.lock,
+                        iconColor: Colors.indigo,
+                        title: "Change Password",
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ChangePasswordPage(),
+                            ),
+                          );
+                        },
+                      ),
+                      _buildTile(
+                        context,
                         icon: Icons.manage_accounts,
                         iconColor: Colors.indigo,
                         title: "User Roles",
@@ -381,6 +396,53 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
+  // Widget _buildTile(
+  //   BuildContext context, {
+  //   required IconData icon,
+  //   required Color iconColor,
+  //   required String title,
+  //   Widget? trailing,
+  //   bool isLast = false,
+  // }) {
+  //   final theme = Theme.of(context);
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //     constraints: const BoxConstraints(minHeight: 56),
+  //     decoration: BoxDecoration(
+  //       border: isLast
+  //           ? null
+  //           : Border(
+  //               bottom: BorderSide(
+  //                 color: theme.dividerColor.withValues(alpha: 0.5),
+  //               ),
+  //             ),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Container(
+  //           width: 32,
+  //           height: 32,
+  //           decoration: BoxDecoration(
+  //             color: iconColor.withValues(alpha: 0.1),
+  //             shape: BoxShape.circle,
+  //           ),
+  //           child: Icon(icon, size: 18, color: iconColor),
+  //         ),
+  //         const SizedBox(width: 12),
+  //         Expanded(
+  //           child: Text(
+  //             title,
+  //             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+  //           ),
+  //         ),
+  //         if (trailing != null)
+  //           trailing
+  //         else
+  //           Icon(Icons.chevron_right, color: theme.iconTheme.color),
+  //       ],
+  //     ),
+  //   );
+  // }
   Widget _buildTile(
     BuildContext context, {
     required IconData icon,
@@ -388,43 +450,53 @@ class ProfilePage extends ConsumerWidget {
     required String title,
     Widget? trailing,
     bool isLast = false,
+    VoidCallback? onTap, // 👈 ADD THIS
   }) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      constraints: const BoxConstraints(minHeight: 56),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : Border(
-                bottom: BorderSide(
-                  color: theme.dividerColor.withValues(alpha: 0.5),
+
+    return InkWell(
+      // 👈 WRAP WITH INKWELL
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: const BoxConstraints(minHeight: 56),
+        decoration: BoxDecoration(
+          border: isLast
+              ? null
+              : Border(
+                  bottom: BorderSide(
+                    color: theme.dividerColor.withValues(alpha: 0.5),
+                  ),
+                ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: iconColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ),
-          if (trailing != null)
-            trailing
-          else
-            Icon(Icons.chevron_right, color: theme.iconTheme.color),
-        ],
+            if (trailing != null)
+              trailing
+            else
+              Icon(Icons.chevron_right, color: theme.iconTheme.color),
+          ],
+        ),
       ),
     );
   }

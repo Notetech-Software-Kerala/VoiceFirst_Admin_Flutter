@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -63,7 +64,20 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const FilterBottomSheet(),
+      builder: (_) => GlobalFilterBottomSheet(
+        currentFilter: const BaseFilterModel(),
+        onApply: (filter) {
+          // Apply filter logic here
+          Navigator.pop(context);
+        },
+        searchOptions: const {'name': 'Program Name', 'status': 'Status'},
+        sortOptions: const {
+          'newest': 'Newest',
+          'oldest': 'Oldest',
+          'name_asc': 'Name (A-Z)',
+          'name_desc': 'Name (Z-A)',
+        },
+      ),
     );
   }
 
@@ -192,42 +206,53 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                       );
 
                 final actions = <Widget>[];
-                if (!isDeleted && id != null) {
+                if (id != null) {
                   actions.add(
                     Transform.scale(
                       scale: 0.75,
                       child: Switch(
                         value: program.active ?? true,
-                        onChanged: (val) async {
-                          final error = await notifier.toggleStatus(id, val);
-                          if (!context.mounted) return;
-
-                          if (error != null) {
-                            CustomSnackbar.show(
-                              context,
-                              message: error,
-                              type: SnackBarType.error,
-                            );
-                          } else {
-                            CustomSnackbar.show(
-                              context,
-                              message: val
-                                  ? 'Program activated successfully'
-                                  : 'Program deactivated successfully',
-                              type: SnackBarType.success,
-                            );
-                          }
-                        },
+                        onChanged: isDeleted
+                            ? null
+                            : (val) async {
+                                final error = await notifier.toggleStatus(
+                                  id,
+                                  val,
+                                );
+                                if (!context.mounted) return;
+                                if (error != null) {
+                                  CustomSnackbar.show(
+                                    context,
+                                    message: error,
+                                    type: SnackBarType.error,
+                                  );
+                                } else {
+                                  CustomSnackbar.show(
+                                    context,
+                                    message: val
+                                        ? 'Program activated successfully'
+                                        : 'Program deactivated successfully',
+                                    type: SnackBarType.success,
+                                  );
+                                }
+                              },
                         activeThumbColor: Colors.green,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        inactiveThumbColor: isDeleted
+                            ? Colors.grey.withAlpha(102)
+                            : null,
                       ),
                     ),
                   );
                   actions.add(
                     StandardActionButton(
                       icon: Icons.edit_outlined,
-                      color: colorScheme.primary,
+                      color: isDeleted
+                          ? Colors.grey.withAlpha(102)
+                          : colorScheme.primary,
                       onTap: () {
+                        if (isDeleted) return;
+
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -243,8 +268,10 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   actions.add(
                     StandardActionButton(
                       icon: Icons.delete,
-                      color: Colors.red,
+                      color: isDeleted ? Colors.red.withAlpha(102) : Colors.red,
                       onTap: () {
+                        if (isDeleted) return;
+
                         showDeleteBottomSheet(
                           context: context,
                           itemName: program.programName,
@@ -296,7 +323,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: program.programName,
-                    subtitle: isDeleted ? 'Deleted' : (program.labelName),
+                    subtitle: program.labelName ,
                     leading: leading,
                     actions: actions,
                   ),
@@ -343,7 +370,7 @@ class _ApplicationFilter extends ConsumerWidget {
         );
       },
       loading: () => const SizedBox(height: 56),
-      error: (_, __) => const Text('Failed to load applications'),
+      error: (_, _) => const Text('Failed to load applications'),
     );
   }
 }
@@ -511,7 +538,7 @@ class _ProgramCard extends StatelessWidget {
                     child: Switch(
                       value: isActive,
                       onChanged: onToggle,
-                      activeColor: Colors.green,
+                      activeThumbColor: Colors.green,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                   ),

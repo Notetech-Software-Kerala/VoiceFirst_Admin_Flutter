@@ -122,4 +122,35 @@ class PlaceLookupService {
 
     return list.map((e) => PostOfficeLookup.fromJson(e)).toList();
   }
+
+
+  // ===============================
+// UNLINKED ZIP CODES (NEW API)
+// ===============================
+Future<List<ZipCodeLookup>> getUnlinkedZipCodes({
+  required List<int> postOfficeIds,
+  required int placeId,
+}) async {
+  final uri = Uri.parse(
+    '${ApiEndpoints.baseUrl}/zipcodes/lookup/post-office-ids',
+  ).replace(
+    queryParameters: {
+      'PostOfficeIds': postOfficeIds.join(','),
+      'PlaceId': placeId.toString(),
+    },
+  );
+
+  debugPrint('[getUnlinkedZipCodes] URL: $uri');
+
+  final response = await http.get(uri, headers: headers);
+
+  debugPrint('[getUnlinkedZipCodes] Status: ${response.statusCode}');
+  debugPrint('[getUnlinkedZipCodes] Body: ${response.body}');
+
+  final body = _decode(response);
+  final List list = body['data'] ?? [];
+
+  return list.map((e) => ZipCodeLookup.fromJson(e)).toList();
+}
+
 }

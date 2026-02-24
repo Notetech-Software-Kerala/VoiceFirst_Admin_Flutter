@@ -14,12 +14,21 @@ class AddPlanPage extends ConsumerStatefulWidget {
 
 class _AddPlanPageState extends ConsumerState<AddPlanPage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _actionController = TextEditingController();
+
+  bool _isDropdownOpen = false;
+  final Set<int> _expandedProgramIds = {};
+  bool _isSelectedExpanded = true;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  // ScrollController for dropdown Scrollbar
+  final ScrollController _dropdownScrollController = ScrollController();
 
   @override
   void dispose() {
     _nameController.dispose();
-    _actionController.dispose();
+    _searchController.dispose();
+    _dropdownScrollController.dispose();
     super.dispose();
   }
 
@@ -35,254 +44,387 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
 
     return StandardPageLayout(
       title: 'Add Plan',
-      leading: InkWell(
-        onTap: () => Navigator.pop(context),
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: theme.brightness == Brightness.dark
-                ? Colors.white.withAlpha(13)
-                : Colors.grey[100],
-          ),
-          child: const Icon(Icons.arrow_back_ios_new, size: 20),
-        ),
-      ),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              // Basic Info
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.dividerColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Basic Information',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _nameController,
-                      onChanged: notifier.setName,
-                      decoration: InputDecoration(
-                        labelText: 'Plan Name',
-                        hintText: 'Enter plan name',
-                        filled: true,
-                        fillColor: theme.cardColor,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: theme.dividerColor),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              _buildBasicInfo(theme, notifier),
               const SizedBox(height: 16),
-              // Program & Actions selection
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.dividerColor),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Select Program Actions',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final lookupAsync = ref.watch(
-                          programActionLinkLookupProvider,
-                        );
-                        return lookupAsync.when(
-                          loading: () => const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Center(child: CircularProgressIndicator()),
-                          ),
-                          error: (e, st) => Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              'Failed to load program actions',
-                              style: TextStyle(color: theme.colorScheme.error),
-                            ),
-                          ),
-                          data: (programs) {
-                            if (programs.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  'No programs available',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              );
-                            }
-                            return Column(
-                              children: programs.map((p) {
-                                return _ProgramActionsTile(
-                                  program: p,
-                                  selectedIds: state.actionIds,
-                                  onToggle: (id, checked) {
-                                    if (checked) {
-                                      notifier.addActionId(id);
-                                    } else {
-                                      notifier.removeActionId(id);
-                                    }
-                                  },
-                                );
-                              }).toList(),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: state.actionIds
-                          .map(
-                            (id) => Chip(
-                              label: Text('Selected: $id'),
-                              deleteIcon: const Icon(Icons.close),
-                              onDeleted: () => notifier.removeActionId(id),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                    if (state.actionIds.isEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'Select at least one program action to proceed',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.disabledColor,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              if (state.error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  state.error!,
-                  style: TextStyle(color: theme.colorScheme.error),
-                ),
-              ],
+              _buildDropdownSection(theme, state, notifier),
             ]),
           ),
         ),
       ],
-      bottomNavigationBar: Container(
-        height: 70,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: theme.scaffoldBackgroundColor,
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            FilledButton.icon(
-              onPressed: state.isSubmitting
-                  ? null
-                  : () async {
-                      final created = await notifier.submit();
-                      if (created != null) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Plan created successfully'),
-                            ),
-                          );
-                          Navigator.pop(context, created.planId);
-                        }
-                      }
-                    },
-              icon: state.isSubmitting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save),
-              label: const Text('Create Plan'),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildBottomBar(theme, state, notifier),
     );
   }
-}
 
-class _ProgramActionsTile extends StatelessWidget {
-  final ProgramActionLinkProgram program;
-  final List<int> selectedIds;
-  final void Function(int id, bool checked) onToggle;
+  ////////////////////////////////////////////////////////////
+  /// BASIC INFO
+  ////////////////////////////////////////////////////////////
 
-  const _ProgramActionsTile({
-    required this.program,
-    required this.selectedIds,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildBasicInfo(ThemeData theme, AddPlanNotifier notifier) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.dividerColor),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Plan Name',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _nameController,
+            onChanged: notifier.setName,
+            decoration: InputDecoration(
+              hintText: 'Enter plan name',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  ////////////////////////////////////////////////////////////
+  /// DROPDOWN WITH EXPANSION LIST
+  ////////////////////////////////////////////////////////////
+
+  Widget _buildDropdownSection(
+    ThemeData theme,
+    AddPlanState state,
+    AddPlanNotifier notifier,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Consumer(
+        builder: (context, ref, _) {
+          final lookupAsync = ref.watch(programActionLinkLookupProvider);
+
+          return lookupAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, st) => Text(
+              'Failed to load programs',
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+            data: (programs) {
+              /// GROUP SELECTED BY PROGRAM
+              final Map<String, List<Map<String, dynamic>>> grouped = {};
+
+              for (final program in programs) {
+                for (final action in program.actions) {
+                  if (state.actionIds.contains(action.actionLinkId)) {
+                    grouped.putIfAbsent(program.programName, () => []);
+                    grouped[program.programName]!.add({
+                      "id": action.actionLinkId,
+                      "name": action.actionName,
+                    });
+                  }
+                }
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  //////////////////////////////////////////////////////
+                  /// 🔥 COLLAPSIBLE SELECTED SECTION
+                  //////////////////////////////////////////////////////
+                  if (grouped.isNotEmpty) ...[
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _isSelectedExpanded = !_isSelectedExpanded;
+                        });
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Selected (${state.actionIds.length})',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Icon(
+                            _isSelectedExpanded
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 250),
+                      crossFadeState: _isSelectedExpanded
+                          ? CrossFadeState.showFirst
+                          : CrossFadeState.showSecond,
+                      firstChild: Column(
+                        children: grouped.entries.map((entry) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  entry.key,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+
+                                ...entry.value.map(
+                                  (action) => CheckboxListTile(
+                                    dense: true,
+                                    value: true,
+                                    onChanged: (v) {
+                                      notifier.removeActionId(action["id"]);
+                                    },
+                                    title: Text(action["name"]),
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      secondChild: const SizedBox(),
+                    ),
+
+                    const Divider(height: 30),
+                  ],
+
+                  //////////////////////////////////////////////////////
+                  /// 🔥 ANIMATED DROPDOWN HEADER
+                  //////////////////////////////////////////////////////
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isDropdownOpen = !_isDropdownOpen;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: theme.dividerColor),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Choose Programs and Actions'),
+                          Icon(
+                            _isDropdownOpen
+                                ? Icons.keyboard_arrow_up
+                                : Icons.keyboard_arrow_down,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  //////////////////////////////////////////////////////
+                  /// 🔥 ANIMATED DROPDOWN BODY
+                  //////////////////////////////////////////////////////
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: _isDropdownOpen
+                        ? Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Container(
+                              constraints: const BoxConstraints(maxHeight: 400),
+                              child: Column(
+                                children: [
+                                  /// 🔍 SEARCH FIELD
+                                  TextField(
+                                    controller: _searchController,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _searchQuery = val.toLowerCase();
+                                      });
+                                    },
+                                    decoration: InputDecoration(
+                                      hintText: 'Search program or action...',
+                                      prefixIcon: const Icon(Icons.search),
+                                      isDense: true,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 12),
+
+                                  /// 🔥 FILTERED LIST WITH SCROLLBAR
+                                  Expanded(
+                                    child: Scrollbar(
+                                      thumbVisibility: true,
+                                      controller: _dropdownScrollController,
+                                      child: SingleChildScrollView(
+                                        controller: _dropdownScrollController,
+                                        child: Column(
+                                          children: programs
+                                              .where((program) {
+                                                if (_searchQuery.isEmpty) {
+                                                  return true;
+                                                }
+
+                                                final programMatch = program
+                                                    .programName
+                                                    .toLowerCase()
+                                                    .contains(_searchQuery);
+
+                                                final actionMatch = program
+                                                    .actions
+                                                    .any(
+                                                      (a) => a.actionName
+                                                          .toLowerCase()
+                                                          .contains(
+                                                            _searchQuery,
+                                                          ),
+                                                    );
+
+                                                return programMatch ||
+                                                    actionMatch;
+                                              })
+                                              .map(
+                                                (program) =>
+                                                    _buildExpandableTile(
+                                                      theme,
+                                                      program,
+                                                      state,
+                                                      notifier,
+                                                    ),
+                                              )
+                                              .toList(),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : const SizedBox(),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+  ////////////////////////////////////////////////////////////
+  /// EXPANSION TILE
+  ////////////////////////////////////////////////////////////
+
+  Widget _buildExpandableTile(
+    ThemeData theme,
+    ProgramActionLinkProgram program,
+    AddPlanState state,
+    AddPlanNotifier notifier,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
       child: ExpansionTile(
+        key: PageStorageKey(program.programId),
         title: Text(
           program.programName,
           style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
-        children: [
-          ...program.actions.map((a) {
-            final checked = selectedIds.contains(a.actionLinkId);
-            return CheckboxListTile(
-              value: checked,
-              onChanged: (v) => onToggle(a.actionLinkId, v ?? false),
-              title: Text(a.actionName),
-              secondary: Text(
-                '#${a.actionLinkId}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.disabledColor,
-                ),
+        children: program.actions.map((a) {
+          final checked = state.actionIds.contains(a.actionLinkId);
+
+          return CheckboxListTile(
+            value: checked,
+            onChanged: (v) {
+              if (v == true) {
+                notifier.addActionId(a.actionLinkId);
+              } else {
+                notifier.removeActionId(a.actionLinkId);
+              }
+            },
+            title: Text(a.actionName),
+            secondary: Text(
+              '#${a.actionLinkId}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.disabledColor,
               ),
-            );
-          }),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  ////////////////////////////////////////////////////////////
+  /// BOTTOM BAR
+  ////////////////////////////////////////////////////////////
+
+  Widget _buildBottomBar(
+    ThemeData theme,
+    AddPlanState state,
+    AddPlanNotifier notifier,
+  ) {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FilledButton.icon(
+            onPressed: state.isSubmitting
+                ? null
+                : () async {
+                    final created = await notifier.submit();
+                    if (created != null && mounted) {
+                      Navigator.pop(context, created.planId);
+                    }
+                  },
+            icon: state.isSubmitting
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.save),
+            label: const Text('Create Plan'),
+          ),
         ],
       ),
     );

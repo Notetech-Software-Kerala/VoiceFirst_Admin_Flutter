@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -53,11 +54,13 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
           filter: ProgramActionFilter(pageNumber: page, pageSize: _pageSize),
         );
 
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   void _openFilterSheet() {
@@ -65,7 +68,20 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const FilterBottomSheet(),
+      builder: (_) => GlobalFilterBottomSheet(
+        currentFilter: const BaseFilterModel(),
+        onApply: (filter) {
+          // Apply filter logic here
+          Navigator.pop(context);
+        },
+        searchOptions: const {'name': 'Action Name', 'status': 'Status'},
+        sortOptions: const {
+          'newest': 'Newest',
+          'oldest': 'Oldest',
+          'name_asc': 'Name (A-Z)',
+          'name_desc': 'Name (Z-A)',
+        },
+      ),
     );
   }
 
@@ -87,6 +103,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
           : 'Program Actions',
+      scrollController: _scrollController,
       bottom: AdvancedSearchHeader(
         searchController: _searchController,
         hintText: 'Search program actions...',
@@ -202,62 +219,20 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                       );
 
                 final actions = <Widget>[];
-                if (!isDeleted) {
-                  actions.add(
-                    Transform.scale(
-                      scale: 0.8,
-                      child: Switch(
-                        value: action.active,
-                        activeThumbColor: Colors.green,
-                        onChanged: (val) async {
-                          final error = await notifier.toggleStatus(
-                            action.actionId,
-                            val,
-                          );
-                          if (!context.mounted) return;
-                          if (error != null) {
-                            CustomSnackbar.show(
-                              context,
-                              message: error,
-                              type: SnackBarType.error,
-                            );
-                          } else {
-                            CustomSnackbar.show(
-                              context,
-                              message: val
-                                  ? '${action.actionName} activated successfully'
-                                  : '${action.actionName} deactivated successfully',
-                              type: SnackBarType.success,
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                }
-
-                if (!isDeleted) {
-                  actions.add(
-                    StandardActionButton(
-                      icon: Icons.edit,
-                      color: Colors.blue,
-                      onTap: () =>
-                          EditProgramActionDialog.show(context, ref, action),
-                    ),
-                  );
-                  actions.add(
-                    StandardActionButton(
-                      icon: Icons.delete,
-                      color: Colors.red,
-                      onTap: () {
-                        showDeleteBottomSheet(
-                          context: context,
-                          itemName: action.actionName,
-                          onDelete: () async {
-                            final error = await notifier.delete(
-                              action.actionId,
-                            );
-                            if (context.mounted) {
+                actions.add(
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: action.active,
+                      activeThumbColor: Colors.green,
+                      onChanged: isDeleted
+                          ? null
+                          : (val) async {
+                              final error = await notifier.toggleStatus(
+                                action.actionId,
+                                val,
+                              );
+                              if (!context.mounted) return;
                               if (error != null) {
                                 CustomSnackbar.show(
                                   context,
@@ -267,18 +242,62 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                               } else {
                                 CustomSnackbar.show(
                                   context,
-                                  message:
-                                      'Program action deleted successfully',
+                                  message: val
+                                      ? '${action.actionName} activated successfully'
+                                      : '${action.actionName} deactivated successfully',
                                   type: SnackBarType.success,
                                 );
                               }
-                            }
-                          },
-                        );
-                      },
+                            },
+                      inactiveThumbColor: isDeleted
+                          ? Colors.grey.withAlpha(100)
+                          : null,
                     ),
-                  );
-                }
+                  ),
+                );
+                actions.add(
+                  StandardActionButton(
+                    icon: Icons.edit,
+                    color: isDeleted ? Colors.grey.withAlpha(100) : Colors.blue,
+                    onTap: () {
+                      if (isDeleted) return;
+                      EditProgramActionDialog.show(context, ref, action);
+                    },
+                  ),
+                );
+                actions.add(
+                  StandardActionButton(
+                    icon: Icons.delete,
+                    color: isDeleted ? Colors.red.withAlpha(100) : Colors.red,
+                    onTap: () {
+                      if (isDeleted) return;
+
+                      showDeleteBottomSheet(
+                        context: context,
+                        itemName: action.actionName,
+                        onDelete: () async {
+                          final error = await notifier.delete(action.actionId);
+
+                          if (!context.mounted) return;
+
+                          if (error != null) {
+                            CustomSnackbar.show(
+                              context,
+                              message: error,
+                              type: SnackBarType.error,
+                            );
+                          } else {
+                            CustomSnackbar.show(
+                              context,
+                              message: 'Program action deleted successfully',
+                              type: SnackBarType.success,
+                            );
+                          }
+                        },
+                      );
+                    },
+                  ),
+                );
                 return InkWell(
                   onTap: state.isMultiSelect
                       ? () => notifier.toggleSelection(action.actionId)
@@ -297,7 +316,6 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
                     title: action.actionName,
                     subtitle: '',
                     leading: leading,
-                    // trailing: statusChip,
                     actions: actions,
                   ),
                 );

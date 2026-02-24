@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/add_place_provider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
+import 'package:voice_first_admin/features/Place_management/widgets/searchable_dropdown.dart';
 import '../../data/models/lookup_models.dart';
 import '../../data/models/place_requests.dart';
 import '../providers/place_provider.dart';
@@ -15,72 +17,173 @@ class AddPlacePage extends ConsumerStatefulWidget {
 
 class _AddPlacePageState extends ConsumerState<AddPlacePage> {
   final _nameController = TextEditingController();
+  late TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  /// Build grouped zip code summary by post office
+  Widget _buildSelectedZipSection(
+    ThemeData theme,
+    List<PostOfficeLookup> offices,
+  ) {
+    final form = ref.watch(addPlaceFormProvider);
+
+    if (form.zipCodeIds.isEmpty) {
+      return const SizedBox();
+    }
+
+    final Map<int, List<String>> groupedByOffice = {};
+    final Map<int, String> officeNames = {};
+
+    for (final office in offices) {
+      officeNames[office.postOfficeId] = office.postOfficeName;
+
+      final selectedZips = office.zipCodes
+          .where((zip) => form.zipCodeIds.contains(zip.zipCodeLinkId))
+          .map((zip) => zip.zipCode)
+          .toList();
+
+      if (selectedZips.isNotEmpty) {
+        groupedByOffice[office.postOfficeId] = selectedZips;
+      }
+    }
+
+    if (groupedByOffice.isEmpty) return const SizedBox();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.primaryColor.withAlpha(13),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle, size: 18),
+              const SizedBox(width: 6),
+              Text(
+                "Selected Zip Codes (${form.zipCodeIds.length})",
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          ...groupedByOffice.entries.map((entry) {
+            final officeName = officeNames[entry.key] ?? "Unknown";
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    officeName,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: entry.value
+                        .map(
+                          (zip) => Chip(
+                            label: Text(zip),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final form = ref.watch(addPlaceFormProvider);
     final notifier = ref.read(addPlaceFormProvider.notifier);
-
     final filter = ref.watch(postOfficeFilterProvider);
 
-    final countries = ref.watch(countryLookupProvider);
+    final countriesAsync = ref.watch(countryLookupProvider);
 
-    // Resolve dynamic division labels based on selected country
-    List<CountryLookup>? countryList;
-    countries.when(
-      data: (list) {
-        countryList = list;
+    CountryLookup? selectedCountry;
+
+    countriesAsync.when(
+      data: (countries) {
+        for (final c in countries) {
+          if (c.id == form.countryId) {
+            selectedCountry = c;
+            break;
+          }
+        }
       },
       loading: () {},
       error: (_, _) {},
     );
 
-    CountryLookup? selectedCountry;
-    if (countryList != null && form.countryId != null) {
-      for (final c in countryList!) {
-        if (c.id == form.countryId) {
-          selectedCountry = c;
-          break;
-        }
-      }
-    }
-
-    String lableOrFallback
-    (String? value, String fallback) {
-      if (value == null) return fallback;
-      final trimmed = value.trim();
+    String resolveLabel(String? label, String fallback) {
+      if (label == null) return fallback;
+      final trimmed = label.trim();
       return trimmed.isEmpty ? fallback : trimmed;
     }
 
-    final div1Label = lableOrFallback
-    (
+    final div1Label = resolveLabel(
       selectedCountry?.divisionOneLabel,
-      'Division 1',
-    );
-    final div2Label = lableOrFallback
-    (
-      selectedCountry?.divisionTwoLabel,
-      'Division 2',
-    );
-    final div3Label = lableOrFallback
-    (
-      selectedCountry?.divisionThreeLabel,
-      'Division 3',
+      "Division 1",
     );
 
-    final divOne = form.countryId == null
+    final div2Label = resolveLabel(
+      selectedCountry?.divisionTwoLabel,
+      "Division 2",
+    );
+
+    final div3Label = resolveLabel(
+      selectedCountry?.divisionThreeLabel,
+      "Division 3",
+    );
+
+    final divOneAsync = form.countryId == null
         ? null
         : ref.watch(divisionOneLookupProvider(form.countryId!));
 
-    final divTwo = form.divOneId == null
+    final divTwoAsync = form.divOneId == null
         ? null
         : ref.watch(divisionTwoLookupProvider(form.divOneId!));
 
-    final divThree = form.divTwoId == null
+    final divThreeAsync = form.divTwoId == null
         ? null
         : ref.watch(divisionThreeLookupProvider(form.divTwoId!));
 
     final postOfficesAsync = ref.watch(postOfficeLookupProvider(filter));
+    final offices = postOfficesAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => const <PostOfficeLookup>[],
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text("Add Place")),
@@ -88,10 +191,9 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /// NAME
+            /// PLACE NAME
             const _FormLabel("Place Name"),
             const SizedBox(height: 8),
-
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(
@@ -100,104 +202,239 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 16),
+            _buildSelectedZipSection(theme, offices),
+            const SizedBox(height: 20),
 
             /// COUNTRY
-            countries.when(
-              data: (list) => _dropdown(
-                label: "Country",
-                value: form.countryId,
-                items: list
-                    .map(
-                      (e) => DropdownMenuItem(value: e.id, child: Text(e.name)),
-                    )
-                    .toList(),
-                onChanged: (v) => notifier.setCountry(v!),
-              ),
+            countriesAsync.when(
+              data: (countries) {
+                final selected = countries
+                    .where((c) => c.id == form.countryId)
+                    .cast<CountryLookup?>()
+                    .firstOrNull;
+
+                return SearchableDropdown<CountryLookup>(
+                  label: "Country",
+                  value: selected,
+                  items: countries,
+                  itemLabel: (c) => c.name,
+                  itemId: (c) => c.id,
+                  onChanged: (c) {
+                    if (c != null) notifier.setCountry(c.id);
+                  },
+                );
+              },
               loading: () => const LinearProgressIndicator(),
               error: (_, _) => const Text("Failed to load countries"),
             ),
 
-            if (divOne != null)
-              divOne.when(
-                data: (list) => _dropdown(
-                  label: div1Label,
-                  value: form.divOneId,
-                  items: list
-                      .map(
-                        (e) =>
-                            DropdownMenuItem(value: e.id, child: Text(e.name)),
-                      )
-                      .toList(),
-                  onChanged: (v) => notifier.setDivOne(v!),
-                ),
+            /// DIVISION 1
+            if (divOneAsync != null)
+              divOneAsync.when(
+                data: (divs) {
+                  final selected = divs
+                      .where((d) => d.id == form.divOneId)
+                      .cast<DivisionOneLookup?>()
+                      .firstOrNull;
+
+                  return SearchableDropdown<DivisionOneLookup>(
+                    label: div1Label,
+                    value: selected,
+                    items: divs,
+                    itemLabel: (d) => d.name,
+                    itemId: (d) => d.id,
+                    onChanged: (d) {
+                      if (d != null) notifier.setDivOne(d.id);
+                    },
+                  );
+                },
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => const Text("Failed"),
               ),
 
-            if (divTwo != null)
-              divTwo.when(
-                data: (list) => _dropdown(
-                  label: div2Label,
-                  value: form.divTwoId,
-                  items: list
-                      .map(
-                        (e) =>
-                            DropdownMenuItem(value: e.id, child: Text(e.name)),
-                      )
-                      .toList(),
-                  onChanged: (v) => notifier.setDivTwo(v!),
-                ),
+            /// DIVISION 2
+            if (divTwoAsync != null)
+              divTwoAsync.when(
+                data: (divs) {
+                  final selected = divs
+                      .where((d) => d.id == form.divTwoId)
+                      .cast<DivisionTwoLookup?>()
+                      .firstOrNull;
+
+                  return SearchableDropdown<DivisionTwoLookup>(
+                    label: div2Label,
+                    value: selected,
+                    items: divs,
+                    itemLabel: (d) => d.name,
+                    itemId: (d) => d.id,
+                    onChanged: (d) {
+                      if (d != null) notifier.setDivTwo(d.id);
+                    },
+                  );
+                },
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => const Text("Failed"),
               ),
 
-            if (divThree != null)
-              divThree.when(
-                data: (list) => _dropdown(
-                  label: div3Label,
-                  value: form.divThreeId,
-                  items: list
-                      .map(
-                        (e) =>
-                            DropdownMenuItem(value: e.id, child: Text(e.name)),
-                      )
-                      .toList(),
-                  onChanged: (v) => notifier.setDivThree(v!),
-                ),
+            /// DIVISION 3
+            if (divThreeAsync != null)
+              divThreeAsync.when(
+                data: (divs) {
+                  final selected = divs
+                      .where((d) => d.id == form.divThreeId)
+                      .cast<DivisionThreeLookup?>()
+                      .firstOrNull;
+
+                  return SearchableDropdown<DivisionThreeLookup>(
+                    label: div3Label,
+                    value: selected,
+                    items: divs,
+                    itemLabel: (d) => d.name,
+                    itemId: (d) => d.id,
+                    onChanged: (d) {
+                      if (d != null) notifier.setDivThree(d.id);
+                    },
+                  );
+                },
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => const Text("Failed"),
               ),
 
             const SizedBox(height: 24),
 
-            /// POST OFFICES + ZIPCODES
+            // ================= ZIP CODES SECTION =================
+            const _FormLabel("Zip Codes"),
+            const SizedBox(height: 12),
+
+            // Search Field
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search post offices or zip codes...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {}); // rebuild for filtering
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            // Scrollable Post Office List
             postOfficesAsync.when(
-              data: (List<PostOfficeLookup> offices) {
+              data: (offices) {
                 if (!filter.isReady || offices.isEmpty) {
                   return const SizedBox();
                 }
 
+                // Filter offices based on search query
+                // final searchQuery = _searchController.text.toLowerCase().trim();
+                // final filteredOffices = searchQuery.isEmpty
+                //     ? offices
+                //     : offices
+                //           .where(
+                //             (office) => office.postOfficeName
+                //                 .toLowerCase()
+                //                 .contains(searchQuery),
+                //           )
+                //           .toList();
+
+                final searchQuery = _searchController.text.toLowerCase().trim();
+
+                final filteredOffices = searchQuery.isEmpty
+                    ? offices
+                    : offices
+                          .map((office) {
+                            final officeMatches = office.postOfficeName
+                                .toLowerCase()
+                                .contains(searchQuery);
+
+                            final matchingZips = office.zipCodes
+                                .where(
+                                  (zip) => zip.zipCode.toLowerCase().contains(
+                                    searchQuery,
+                                  ),
+                                )
+                                .toList();
+
+                            if (officeMatches) {
+                              // If office name matches, show all zips
+                              return office;
+                            } else if (matchingZips.isNotEmpty) {
+                              // If only zip matches, return office with filtered zips
+                              return PostOfficeLookup(
+                                postOfficeId: office.postOfficeId,
+                                postOfficeName: office.postOfficeName,
+                                zipCodes: matchingZips,
+                              );
+                            }
+
+                            return null;
+                          })
+                          .whereType<PostOfficeLookup>()
+                          .toList();
+
+                if (filteredOffices.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    child: const Text(
+                      'No post offices match your search',
+                      style: TextStyle(fontStyle: FontStyle.italic),
+                    ),
+                  );
+                }
+
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _FormLabel("Zip Codes"),
-                    const SizedBox(height: 8),
-
-                    /// GLOBAL SELECT
-                    _GlobalSelectTile(offices: offices),
-
-                    Card(
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
+                    Container(
+                      height: 400, // Fixed height for scrollable area
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.dividerColor),
                         borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.grey.withAlpha(30)),
                       ),
-                      child: Column(
-                        children: offices
-                            .map((office) => _PostOfficeTile(office: office))
-                            .toList(),
+                      child: ListView.builder(
+                        itemCount: filteredOffices.length,
+                        itemBuilder: (context, index) {
+                          final office = filteredOffices[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            child: ExpansionTile(
+                              title: Text(office.postOfficeName),
+                              subtitle: Text(
+                                '${office.zipCodes.length} zip codes',
+                              ),
+                              children: office.zipCodes.map<Widget>((zip) {
+                                final selected = form.zipCodeIds.contains(
+                                  zip.zipCodeLinkId,
+                                );
+
+                                return CheckboxListTile(
+                                  value: selected,
+                                  title: Text(zip.zipCode),
+                                  onChanged: (_) =>
+                                      notifier.toggleZip(zip.zipCodeLinkId),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -215,8 +452,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
               child: ElevatedButton(
                 onPressed: () async {
                   if (_nameController.text.isEmpty || form.zipCodeIds.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Fill all required fields")),
+                    CustomSnackbar.show(
+                      context,
+                      message: "Fill all required fields",
+                      type: SnackBarType.error,
                     );
                     return;
                   }
@@ -229,6 +468,11 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   await ref.read(placeProvider.notifier).createPlace(request);
 
                   if (context.mounted) {
+                    CustomSnackbar.show(
+                      context,
+                      message: "Place created successfully",
+                      type: SnackBarType.success,
+                    );
                     Navigator.pop(context, true);
                   }
                 },
@@ -240,131 +484,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       ),
     );
   }
-
-  Widget _dropdown({
-    required String label,
-    required int? value,
-    required List<DropdownMenuItem<int>> items,
-    required void Function(int?) onChanged,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _FormLabel(label),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<int>(
-          initialValue: value,
-          isExpanded: true,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          hint: Text("Select $label"),
-          items: items,
-          onChanged: onChanged,
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
 }
-
-/// ================= POST OFFICE TILE =================
-
-class _PostOfficeTile extends ConsumerWidget {
-  final PostOfficeLookup office;
-
-  const _PostOfficeTile({required this.office});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final form = ref.watch(addPlaceFormProvider);
-    final notifier = ref.read(addPlaceFormProvider.notifier);
-
-    final zips = office.zipCodes;
-    final ids = zips.map((e) => e.zipCodeLinkId).toList();
-
-    final allSelected =
-        ids.isNotEmpty && ids.every((id) => form.zipCodeIds.contains(id));
-
-    return ExpansionTile(
-      title: Text(office.postOfficeName),
-      children: [
-        Column(
-          children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  if (allSelected) {
-                    notifier.unselectAllZipCodes(ids);
-                  } else {
-                    notifier.selectAllZipCodes(ids);
-                  }
-                },
-                child: Text(allSelected ? "Unselect All" : "Select All"),
-              ),
-            ),
-
-            ...zips.map((zip) {
-              final selected = form.zipCodeIds.contains(zip.zipCodeLinkId);
-
-              return CheckboxListTile(
-                value: selected,
-                title: Text(zip.zipCode),
-                onChanged: (_) => notifier.toggleZip(zip.zipCodeLinkId),
-              );
-            }),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// ================= GLOBAL SELECT =================
-
-class _GlobalSelectTile extends ConsumerWidget {
-  final List<PostOfficeLookup> offices;
-
-  const _GlobalSelectTile({required this.offices});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final form = ref.watch(addPlaceFormProvider);
-    final notifier = ref.read(addPlaceFormProvider.notifier);
-
-    final allIds = <int>[];
-    for (final office in offices) {
-      allIds.addAll(office.zipCodes.map((e) => e.zipCodeLinkId));
-    }
-
-    final allSelected =
-        allIds.isNotEmpty && allIds.every((id) => form.zipCodeIds.contains(id));
-
-    return CheckboxListTile(
-      title: const Text(
-        "Select ALL Zip Codes",
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      value: allSelected,
-      onChanged: (_) async {
-        if (allSelected) {
-          notifier.unselectAllZipCodes(allIds);
-        } else {
-          notifier.selectAllZipCodes(allIds);
-        }
-      },
-    );
-  }
-}
-
-/// ================= LABEL =================
 
 class _FormLabel extends StatelessWidget {
   final String text;

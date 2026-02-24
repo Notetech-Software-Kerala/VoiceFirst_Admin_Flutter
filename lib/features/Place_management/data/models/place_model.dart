@@ -77,36 +77,30 @@ class PlaceModel {
     );
   }
 
-  // Map<String, dynamic> toCreateBody(List<int> zipCodeLinkIds) {
-  //   return {
-  //     'placeName': placeName,
-  //     'zipCodeLinkIds': zipCodeLinkIds,
-  //   };
-  // }
-
-  // Map<String, dynamic> toUpdateBody({
-  //   bool? isActive,
-  //   List<ZipCodeLinkUpdate> updateZipCodeLinkIds = const [],
-  //   List<int> insertZipCodeLinkIds = const [],
-  // }) {
-  //   return {
-  //     'placeName': placeName,
-  //     if (isActive != null) 'active': isActive,
-  //     'updateZipCodeLinkIds':
-  //         updateZipCodeLinkIds.map((e) => e.toJson()).toList(),
-  //     'insertZipCodeLinkIds': insertZipCodeLinkIds,
-  //   };
-  // }
 }
 
 class PlacePostOffice {
   final int postOfficeId;
   final String postOfficeName;
+  final String? countryName;
+  final String? divisionOneLabel;
+  final String? divisionTwoLabel;
+  final String? divisionThreeLabel;
+  final String? divisionOneName;
+  final String? divisionTwoName;
+  final String? divisionThreeName;
   final List<PlaceZipCodeLink> zipCodes;
 
   const PlacePostOffice({
     required this.postOfficeId,
     required this.postOfficeName,
+    required this.countryName,
+    this.divisionOneLabel,
+    this.divisionTwoLabel,
+    this.divisionThreeLabel,
+    this.divisionOneName,
+    this.divisionTwoName,
+    this.divisionThreeName,
     required this.zipCodes,
   });
 
@@ -115,6 +109,13 @@ class PlacePostOffice {
       // postOfficeId: json['postOfficeId'] as int,
       postOfficeId: (json['postOfficeId'] as num).toInt(),
       postOfficeName: json['postOfficeName'] as String? ?? '',
+      countryName: json['countryName'] as String? ?? 'Unknown',
+      divisionOneLabel: json['divisionOneLabel'] as String?,
+      divisionTwoLabel: json['divisionTwoLabel'] as String?,
+      divisionThreeLabel: json['divisionThreeLabel'] as String?,
+      divisionOneName: json['divisionOneName'] as String?,
+      divisionTwoName: json['divisionTwoName'] as String?,
+      divisionThreeName: json['divisionThreeName'] as String?,
       zipCodes: (json['zipCodes'] as List<dynamic>? ?? [])
           .map((e) => PlaceZipCodeLink.fromJson(e as Map<String, dynamic>))
           .toList(),

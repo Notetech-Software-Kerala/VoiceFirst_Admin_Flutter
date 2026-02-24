@@ -5,10 +5,10 @@ import 'package:voice_first_admin/features/Country_Management/country/presentati
 void main() {
   group('CountryState', () {
     final mockCountries = [
-      CountryModel(id: '1', country: 'USA', countryCode: 'US', status: true),
-      CountryModel(id: '2', country: 'Canada', countryCode: 'CA', status: true),
+      CountryModel(id: 1, country: 'USA', countryCode: 'US', status: true),
+      CountryModel(id: 2, country: 'Canada', countryCode: 'CA', status: true),
       CountryModel(
-        id: '3',
+        id: 3,
         country: 'Mexico',
         countryCode: 'MX',
         status: false,

@@ -67,20 +67,6 @@ class DivisionThreeLookup {
   }
 }
 
-// class PostOfficeLookup {
-//   final int id;
-//   final String name;
-
-//   PostOfficeLookup({required this.id, required this.name});
-
-//   factory PostOfficeLookup.fromJson(Map<String, dynamic> json) {
-//     return PostOfficeLookup(
-//       id: (json['postOfficeId'] as num).toInt(),
-//       name: json['postOfficeName'] ?? '',
-//     );
-//   }
-// }
-
 class PostOfficeLookup {
   final int postOfficeId;
   final String postOfficeName;
@@ -106,13 +92,15 @@ class PostOfficeLookup {
 class ZipCodeLookup {
   final int zipCodeLinkId;
   final String zipCode;
+  final bool active;
 
-  ZipCodeLookup({required this.zipCodeLinkId, required this.zipCode});
+  ZipCodeLookup({required this.zipCodeLinkId, required this.zipCode, required this.active});
 
   factory ZipCodeLookup.fromJson(Map<String, dynamic> json) {
     return ZipCodeLookup(
       zipCodeLinkId: (json['zipCodeLinkId'] as num).toInt(),
       zipCode: json['zipCode'] ?? '',
+      active: json['active'] ?? false,
     );
   }
 }

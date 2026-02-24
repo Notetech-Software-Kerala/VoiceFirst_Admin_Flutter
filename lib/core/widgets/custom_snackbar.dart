@@ -7,27 +7,93 @@ class CustomSnackbar {
     BuildContext context, {
     required String message,
     required SnackBarType type,
-    Duration duration = const Duration(seconds: 3),
+    SnackBarAction? action,
+    Duration? duration,
   }) {
     final color = _getColor(type);
     final icon = _getIcon(type);
 
+    // Auto duration logic
+    final resolvedDuration =
+        duration ??
+        (action != null
+            ? const Duration(seconds: 6) // With action → 5–8 sec
+            : _getDefaultDuration(type));
+
     ScaffoldMessenger.of(context).showSnackBar(
+      // SnackBar(
+      //   content: Row(
+      //     children: [
+      //       Icon(icon, color: Colors.white),
+      //       const SizedBox(width: 12),
+      //       Expanded(child: Text(message)),
+      //       IconButton(
+      //         icon: const Icon(Icons.close, color: Colors.white),
+      //         tooltip: 'Close',
+      //         onPressed: () {
+      //           ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      //         },
+      //         padding: EdgeInsets.zero,
+      //         constraints: const BoxConstraints(),
+      //       ),
+      //     ],
+      //   ),
+      //   backgroundColor: color,
+      //   duration: resolvedDuration,
+      //   action: action,
+      //   behavior: SnackBarBehavior.floating,
+      //   margin: const EdgeInsets.all(16),
+      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      // ),
       SnackBar(
-        content: Row(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(width: 12),
-            Expanded(child: Text(message)),
-          ],
+        content: SizedBox(
+          height: message.length > 60 ? 64 : 48, // Standard Material height
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+                child: const Icon(Icons.close, color: Colors.white, size: 20),
+              ),
+            ],
+          ),
         ),
         backgroundColor: color,
-        duration: duration,
+        duration: resolvedDuration,
+        action: action,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+        ), // remove vertical padding
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
+  }
+
+  static Duration _getDefaultDuration(SnackBarType type) {
+    switch (type) {
+      case SnackBarType.success:
+        return const Duration(seconds: 3); // 2–3 sec
+      case SnackBarType.info:
+        return const Duration(seconds: 4); // 3–4 sec
+      case SnackBarType.warning:
+        return const Duration(seconds: 4); // 4 sec
+      case SnackBarType.error:
+        return const Duration(seconds: 5); // 4–6 sec
+    }
   }
 
   static Color _getColor(SnackBarType type) {

@@ -388,10 +388,10 @@ class _HistoryChip extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark
-            ? theme.cardColor.withOpacity(0.6)
+            ? theme.cardColor.withAlpha(100)
             : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.6)),
+        border: Border.all(color: theme.dividerColor.withAlpha(153)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
