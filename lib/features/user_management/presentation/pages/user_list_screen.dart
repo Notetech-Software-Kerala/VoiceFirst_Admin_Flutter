@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/user_provider.dart';
+import 'user_detail_screen.dart';
+import 'edit_user_screen.dart';
+import '../../../../core/widgets/standard_pagination_controls.dart';
+import '../../../../core/widgets/standard_page_layout.dart';
 
 class UserListScreen extends ConsumerWidget {
   const UserListScreen({super.key});
@@ -10,143 +14,158 @@ class UserListScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final userState = ref.watch(userProvider);
     final userNotifier = ref.read(userProvider.notifier);
-    return Scaffold(
-      // 1. Sticky Header
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {
-            Scaffold.of(context).openDrawer();
-          },
-        ),
-        centerTitle: true,
-        title: const Text(
-          "Users",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        actions: [
-          IconButton(icon: const Icon(Icons.settings), onPressed: () {}),
-          const SizedBox(width: 8),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: theme.dividerColor, height: 1),
-        ),
-      ),
+    // Pagination Info
+    final totalPages = (userState.totalCount / userState.filter.limit).ceil();
+    final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: theme.primaryColor,
-        child: const Icon(Icons.person_add, color: Colors.white),
-      ),
-
-      // 2. Main Content
-      body: Column(
-        children: [
-          // Search Bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-            child: TextField(
-              onChanged: (value) => userNotifier.setSearch(value),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: theme.cardColor,
-                hintText: "Search by name or email...",
-                hintStyle: TextStyle(color: theme.hintColor),
-                prefixIcon: Icon(Icons.search, color: theme.hintColor),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: theme.dividerColor),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: theme.dividerColor),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: theme.primaryColor),
+    return StandardPageLayout(
+      title: "User Management",
+      onRefresh: () => userNotifier.fetchUsers(page: 1),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(130), // Search + Filters roughly
+        child: Column(
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: SizedBox(
+                height: 48,
+                child: TextField(
+                  onChanged: (value) => userNotifier.setSearch(value),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor:
+                        theme.cardColor, // Re-use standard search appearance
+                    hintText: "Search by name or email...",
+                    hintStyle: TextStyle(color: theme.hintColor),
+                    prefixIcon: Icon(Icons.search, color: theme.hintColor),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.dividerColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.dividerColor),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.primaryColor),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-
-          // Filter Chips (Horizontal Scroll)
-          // Filter Chips (Horizontal Scroll)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _FilterChip(
-                  label: "All",
-                  isSelected: userState.filter.role == null,
-                  onTap: () => userNotifier.setRoleFilter(null),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Super Admin",
-                  isSelected: userState.filter.role == "Super Admin",
-                  onTap: () => userNotifier.setRoleFilter("Super Admin"),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Company Admin",
-                  isSelected: userState.filter.role == "Company Admin",
-                  onTap: () => userNotifier.setRoleFilter("Company Admin"),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Sales",
-                  isSelected: userState.filter.role == "Sales",
-                  onTap: () => userNotifier.setRoleFilter("Sales"),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: "Support",
-                  isSelected: userState.filter.role == "Support",
-                  onTap: () => userNotifier.setRoleFilter("Support"),
-                ),
-              ],
+            // Filter Chips (Horizontal Scroll)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  _FilterChip(
+                    label: "All",
+                    isSelected: userState.filter.role == null,
+                    onTap: () => userNotifier.setRoleFilter(null),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Super Admin",
+                    isSelected: userState.filter.role == "Super Admin",
+                    onTap: () => userNotifier.setRoleFilter("Super Admin"),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Company Admin",
+                    isSelected: userState.filter.role == "Company Admin",
+                    onTap: () => userNotifier.setRoleFilter("Company Admin"),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Sales",
+                    isSelected: userState.filter.role == "Sales",
+                    onTap: () => userNotifier.setRoleFilter("Sales"),
+                  ),
+                  const SizedBox(width: 8),
+                  _FilterChip(
+                    label: "Support",
+                    isSelected: userState.filter.role == "Support",
+                    onTap: () => userNotifier.setRoleFilter("Support"),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: "userFab",
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EditUserScreen()),
+          );
+        },
+        backgroundColor: theme.primaryColor,
+        elevation: 4,
+        child: const Icon(Icons.person_add, color: Colors.white, size: 30),
+      ),
+      slivers: [
+        if (userState.isLoading && userState.users.isEmpty)
+          const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (userState.errorMessage != null)
+          SliverFillRemaining(
+            child: Center(child: Text("Error: ${userState.errorMessage}")),
+          )
+        else if (userState.users.isEmpty)
+          const SliverFillRemaining(
+            child: Center(child: Text("No users found.")),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final user = userState.users[index];
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => UserDetailScreen(user: user),
+                      ),
+                    );
+                  },
+                  child: _UserCard(
+                    name: "${user.firstName} ${user.lastName}",
+                    email: user.email,
+                    role: user.roleName ?? "User",
+                    status: user.active ? "Active" : "Inactive",
+                    joinText: user.createdDate != null
+                        ? "Joined ${user.createdDate.toString().split(' ')[0]}" // Simple formatting
+                        : "Unknown date",
+                    imageUrl:
+                        user.imageUrl ??
+                        "https://i.pravatar.cc/150?u=${user.id}", // Fallback
+                    statusColor: user.active ? Colors.green : Colors.grey,
+                    roleColor: Colors.blue, // Simplify for now
+                    isDimmed: !user.active,
+                  ),
+                );
+              }, childCount: userState.users.length),
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // User List
-          // User List
-          Expanded(
-            child: userState.isLoading && userState.users.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : userState.errorMessage != null
-                ? Center(child: Text("Error: ${userState.errorMessage}"))
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    itemCount: userState.users.length,
-                    itemBuilder: (context, index) {
-                      final user = userState.users[index];
-                      return _UserCard(
-                        name: user.firstName + " " + user.lastName,
-                        email: user.email,
-                        role: user.roleName ?? "User",
-                        status: user.active ? "Active" : "Inactive",
-                        joinText: user.createdDate != null
-                            ? "Joined ${user.createdDate.toString().split(' ')[0]}" // Simple formatting
-                            : "Unknown date",
-                        imageUrl:
-                            user.imageUrl ??
-                            "https://i.pravatar.cc/150?u=${user.id}", // Fallback
-                        statusColor: user.active ? Colors.green : Colors.grey,
-                        roleColor: Colors.blue, // Simplify for now
-                        isDimmed: !user.active,
-                      );
-                    },
-                  ),
-          ),
-        ],
+      ],
+      bottomNavigationBar: StandardPaginationControls(
+        currentPage: userState.filter.pageNumber,
+        totalPages: safeTotalPages,
+        onPageChanged: (newPage) {
+          if (!userState.isLoading) {
+            userNotifier.setPage(newPage);
+          }
+        },
       ),
     );
   }

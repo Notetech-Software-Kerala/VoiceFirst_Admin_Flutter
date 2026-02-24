@@ -10,6 +10,7 @@ import '../providers/roles_provider.dart';
 import 'create_role_page.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import '../../models/role_model.dart';
+import 'role_details_page.dart';
 
 class RolesPage extends ConsumerStatefulWidget {
   const RolesPage({super.key});
@@ -166,48 +167,58 @@ class _RolesPageState extends ConsumerState<RolesPage> {
                 final role = roles[index];
                 final isActive = role.active;
 
-                return StandardListCard(
-                  title: role.roleName,
-                  subtitle: isActive ? "Active Role" : "Inactive Role",
-                  leading: StandardIconBox(
-                    icon: Icons.shield,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white
-                        : Colors.blue,
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RoleDetailsPage(role: role),
+                      ),
+                    );
+                  },
+                  child: StandardListCard(
+                    title: role.roleName,
+                    subtitle: isActive ? "Active Role" : "Inactive Role",
+                    leading: StandardIconBox(
+                      icon: Icons.shield,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : Colors.blue,
                     ),
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      isActive ? "Active" : "Inactive",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isActive ? Colors.green : Colors.grey,
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.grey.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        isActive ? "Active" : "Inactive",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isActive ? Colors.green : Colors.grey,
+                        ),
                       ),
                     ),
+                    actions: [
+                      StandardActionButton(
+                        icon: Icons.edit,
+                        color: Colors.blue,
+                        onTap: () => _showAddEditDialog(role),
+                      ),
+                      const SizedBox(width: 8),
+                      StandardActionButton(
+                        icon: Icons.delete,
+                        color: Colors.red,
+                        onTap: () => _deleteRole(role.id, role.roleName),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    StandardActionButton(
-                      icon: Icons.edit,
-                      color: Colors.blue,
-                      onTap: () => _showAddEditDialog(role),
-                    ),
-                    const SizedBox(width: 8),
-                    StandardActionButton(
-                      icon: Icons.delete,
-                      color: Colors.red,
-                      onTap: () => _deleteRole(role.id, role.roleName),
-                    ),
-                  ],
                 );
               }, childCount: roles.length),
             ),

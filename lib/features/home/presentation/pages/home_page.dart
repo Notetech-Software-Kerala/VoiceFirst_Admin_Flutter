@@ -42,7 +42,7 @@ class _HomePageState extends State<HomePage> {
         ProgramManagementView(),
         ViewPlanPage(),
         AdminMenuEditorScreen(),
-        ViewPlacePage()
+        ViewPlacePage(),
       ],
     );
 
@@ -111,7 +111,7 @@ class _CustomBottomNav extends StatelessWidget {
           ),
           _NavItem(
             icon: Icons.domain,
-            label: "Org Setup",
+            label: "Roles",
             index: 1,
             isSelected: currentIndex == 1,
             onTap: onTap,
