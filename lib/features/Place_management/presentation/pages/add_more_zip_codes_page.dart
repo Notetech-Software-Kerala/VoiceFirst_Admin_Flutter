@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/Place_management/data/place_service/place_lookup_service.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/editPlaceFormProvider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/searchable_dropdown.dart';
 
 class AddMoreZipCodesPage extends ConsumerStatefulWidget {
   final int placeId;
@@ -17,16 +17,50 @@ class AddMoreZipCodesPage extends ConsumerStatefulWidget {
 
 class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
   late TextEditingController _searchController;
+  late ScrollController _scrollController;
+  bool isLoadingMore = false;
+  int _currentPage = 1;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
 
-    // 🔥 Clear only hierarchy when entering page
     Future.microtask(() {
       ref.read(editPlaceFormProvider.notifier).clearHierarchy();
     });
+
+    _scrollController = ScrollController();
+
+_scrollController.addListener(() {
+  final filter = ref.read(postOfficeFilterForEditProvider(widget.placeId));
+  final asyncValue = ref.read(
+    postOfficeLookupProvider((
+      filter,
+      _currentPage,
+      _searchController.text.trim(),
+    )),
+  );
+
+  if (!asyncValue.hasValue) return;
+  final data = asyncValue.requireValue;
+
+  if (!isLoadingMore &&
+      _scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 200 &&
+      data.currentPage < data.totalPages) {
+
+    isLoadingMore = true;
+
+    setState(() {
+      _currentPage++;
+    });
+
+    Future.microtask(() {
+      isLoadingMore = false;
+    });
+  }
+});
   }
 
   @override
@@ -35,160 +69,30 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
     super.dispose();
   }
 
-  Widget _buildSelectedZipSection(
-    ThemeData theme,
-    List<PostOfficeLookup> offices,
-  ) {
-    final form = ref.watch(editPlaceFormProvider);
-
-    // ✅ Only NEWLY added + ACTIVE zip codes
-    final newActiveZips = form.zipCodeItems
-        .where((z) => z.isNew && z.isActive)
-        .toList();
-
-    if (newActiveZips.isEmpty) {
-      return const SizedBox();
-    }
-
-    // Group by post office
-    final Map<int, List<EditZipCodeItem>> grouped = {};
-
-    for (final item in newActiveZips) {
-      grouped.putIfAbsent(item.postOfficeId, () => []).add(item);
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.primaryColor.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.add_circle, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                "Newly Added Zip Codes (${newActiveZips.length})",
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          ...grouped.entries.map((entry) {
-            final officeName = entry.value.first.postOfficeName;
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    officeName,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: entry.value
-                        .map(
-                          (item) => Chip(
-                            label: Text(item.zipCode),
-                            visualDensity: VisualDensity.compact,
-                            deleteIcon: const Icon(Icons.close, size: 18),
-                            onDeleted: () {
-                              ref
-                                  .read(editPlaceFormProvider.notifier)
-                                  .removeNewZip(item.zipCodeLinkId);
-                            },
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final filter = ref.watch(postOfficeFilterForEditProvider(widget.placeId));
-
-    final postOfficesAsync = filter.isReady
-        ? ref.watch(postOfficeLookupProvider(filter))
-        : const AsyncValue<List<PostOfficeLookup>>.data(<PostOfficeLookup>[]);
-    final offices = postOfficesAsync.maybeWhen(
-      data: (data) => data,
-      orElse: () => const <PostOfficeLookup>[],
-    );
-
     final theme = Theme.of(context);
     final form = ref.watch(editPlaceFormProvider);
     final notifier = ref.read(editPlaceFormProvider.notifier);
 
-    // ✅ LOOKUPS
-    final countriesAsync = ref.watch(countryLookupProvider);
-    CountryLookup? selectedCountry;
+    final filter = ref.watch(postOfficeFilterForEditProvider(widget.placeId));
 
-    countriesAsync.when(
-      data: (countries) {
-        for (final c in countries) {
-          if (c.id == form.countryId) {
-            selectedCountry = c;
-            break;
-          }
-        }
-      },
-      loading: () {},
-      error: (_, _) {},
-    );
-
-    String resolveLabel(String? label, String fallback) {
-      if (label == null) return fallback;
-      final trimmed = label.trim();
-      return trimmed.isEmpty ? fallback : trimmed;
-    }
-
-    final div1Label = resolveLabel(
-      selectedCountry?.divisionOneLabel,
-      "Division 1",
-    );
-
-    final div2Label = resolveLabel(
-      selectedCountry?.divisionTwoLabel,
-      "Division 2",
-    );
-
-    final div3Label = resolveLabel(
-      selectedCountry?.divisionThreeLabel,
-      "Division 3",
-    );
-
-    final divOneAsync = form.countryId == null
-        ? null
-        : ref.watch(divisionOneLookupProvider(form.countryId!));
-
-    final divTwoAsync = form.divOneId == null
-        ? null
-        : ref.watch(divisionTwoLookupProvider(form.divOneId!));
-
-    final divThreeAsync = form.divTwoId == null
-        ? null
-        : ref.watch(divisionThreeLookupProvider(form.divTwoId!));
+    final postOfficesAsync = filter.isReady
+        ? ref.watch(
+            postOfficeLookupProvider((
+              filter,
+              _currentPage,
+              _searchController.text.trim(),
+            )),
+          )
+        : AsyncValue<PaginatedLookupResponse<PostOfficeLookup>>.data(
+            PaginatedLookupResponse(
+              items: const [],
+              totalCount: 0,
+              totalPages: 1,
+              currentPage: 1,
+            ),
+          );
 
     return Scaffold(
       appBar: AppBar(
@@ -200,148 +104,14 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ================= SUMMARY CARD AT TOP =================
-            _buildSelectedZipSection(theme, offices),
-
-            const _FormLabel('Select Hierarchy'),
-            const SizedBox(height: 8),
-
-            // ================= COUNTRY =================
-            countriesAsync.when(
-              data: (countries) {
-                CountryLookup? selected;
-
-                for (final c in countries) {
-                  if (c.id == form.countryId) {
-                    selected = c;
-                    break;
-                  }
-                }
-
-                return SearchableDropdown<CountryLookup>(
-                  label: "Country",
-                  value: selected,
-                  items: countries,
-                  itemLabel: (c) => c.name,
-                  itemId: (c) => c.id,
-                  onChanged: (c) {
-                    if (c != null) {
-                      notifier.setCountry(c.id);
-                    }
-                  },
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (_, _) => const Text('Failed to load countries'),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ================= DIVISION ONE =================
-            if (divOneAsync != null)
-              divOneAsync.when(
-                data: (divs) {
-                  DivisionOneLookup? selected;
-
-                  for (final d in divs) {
-                    if (d.id == form.divOneId) {
-                      selected = d;
-                      break;
-                    }
-                  }
-
-                  return SearchableDropdown<DivisionOneLookup>(
-                    label: div1Label,
-                    value: selected,
-                    items: divs,
-                    itemLabel: (d) => d.name,
-                    itemId: (d) => d.id,
-                    onChanged: (d) {
-                      if (d != null) {
-                        notifier.setDivOne(d.id);
-                      }
-                    },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Failed to load division'),
-              ),
-
-            const SizedBox(height: 12),
-
-            // ================= DIVISION TWO =================
-            if (divTwoAsync != null)
-              divTwoAsync.when(
-                data: (divs) {
-                  DivisionTwoLookup? selected;
-
-                  for (final d in divs) {
-                    if (d.id == form.divTwoId) {
-                      selected = d;
-                      break;
-                    }
-                  }
-
-                  return SearchableDropdown<DivisionTwoLookup>(
-                    label: div2Label,
-                    value: selected,
-                    items: divs,
-                    itemLabel: (d) => d.name,
-                    itemId: (d) => d.id,
-                    onChanged: (d) {
-                      if (d != null) {
-                        notifier.setDivTwo(d.id);
-                      }
-                    },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Failed to load division'),
-              ),
-
-            const SizedBox(height: 12),
-
-            // ================= DIVISION THREE =================
-            if (divThreeAsync != null)
-              divThreeAsync.when(
-                data: (divs) {
-                  DivisionThreeLookup? selected;
-
-                  for (final d in divs) {
-                    if (d.id == form.divThreeId) {
-                      selected = d;
-                      break;
-                    }
-                  }
-
-                  return SearchableDropdown<DivisionThreeLookup>(
-                    label: div3Label,
-                    value: selected,
-                    items: divs,
-                    itemLabel: (d) => d.name,
-                    itemId: (d) => d.id,
-                    onChanged: (d) {
-                      if (d != null) {
-                        notifier.setDivThree(d.id);
-                      }
-                    },
-                  );
-                },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Failed to load division'),
-              ),
-
-            const SizedBox(height: 24),
-
-            // ================= AVAILABLE POST OFFICES =================
             const _FormLabel('Available Post Offices'),
             const SizedBox(height: 12),
 
-            // Search Field
+            /// 🔎 API SEARCH
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search post offices or zip codes...',
+                hintText: 'Search post offices...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -349,6 +119,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
+                            _currentPage = 1;
                           });
                         },
                       )
@@ -357,80 +128,52 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {}); // rebuild for filtering
+              onChanged: (_) {
+                setState(() {
+                  _currentPage = 1;
+                });
               },
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
 
-            // Scrollable Post Office List
+            /// 📦 POST OFFICE LIST
             postOfficesAsync.when(
-              data: (offices) {
+              data: (response) {
+                final offices = response.items;
+
                 if (!filter.isReady) {
                   return const SizedBox();
                 }
 
                 if (offices.isEmpty) {
-                  return const Text('No zipcodes found for selected hierarchy');
-                }
-
-                // Filter offices based on search query
-
-                final searchQuery = _searchController.text.toLowerCase().trim();
-
-                final filteredOffices = searchQuery.isEmpty
-                    ? offices
-                    : offices
-                          .map((office) {
-                            final officeMatches = office.postOfficeName
-                                .toLowerCase()
-                                .contains(searchQuery);
-
-                            final matchingZips = office.zipCodes
-                                .where(
-                                  (zip) => zip.zipCode.toLowerCase().contains(
-                                    searchQuery,
-                                  ),
-                                )
-                                .toList();
-
-                            if (officeMatches) {
-                              // If office name matches, show all zips
-                              return office;
-                            } else if (matchingZips.isNotEmpty) {
-                              // If only zip matches, return office with filtered zips
-                              return PostOfficeLookup(
-                                postOfficeId: office.postOfficeId,
-                                postOfficeName: office.postOfficeName,
-                                zipCodes: matchingZips,
-                              );
-                            }
-
-                            return null;
-                          })
-                          .whereType<PostOfficeLookup>()
-                          .toList();
-                if (filteredOffices.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    child: const Text(
-                      'No post offices match your search',
-                      style: TextStyle(fontStyle: FontStyle.italic),
-                    ),
+                  return const Text(
+                    'No post offices found for selected hierarchy',
                   );
                 }
 
                 return Container(
-                  height: 400, // Fixed height for scrollable area
+                  height: 450,
                   decoration: BoxDecoration(
                     border: Border.all(color: theme.dividerColor),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: ListView.builder(
-                    itemCount: filteredOffices.length,
+                    controller: _scrollController,
+                    // itemCount: offices.length,
+                    itemCount:
+                        offices.length +
+                        (response.currentPage < response.totalPages ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final office = filteredOffices[index];
+                      if (index >= offices.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      final office = offices[index];
+
                       return Card(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -438,47 +181,60 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                         ),
                         child: ExpansionTile(
                           title: Text(office.postOfficeName),
-                          subtitle: Text('${office.zipCodes.length} zip codes'),
-                          children: office.zipCodes.map<Widget>((zip) {
-                            // final alreadyAdded = form.selectedZipIds.contains(
-                            //   zip.zipCodeLinkId,
-                            // );
-                            final existing = form.zipCodeItems.firstWhere(
-                              (z) => z.zipCodeLinkId == zip.zipCodeLinkId,
-                              orElse: () => EditZipCodeItem(
-                                postOfficeId: office.postOfficeId,
-                                zipCodeLinkId: zip.zipCodeLinkId,
-                                zipCode: zip.zipCode,
-                                postOfficeName: office.postOfficeName,
-                                isNew: false,
-                                isActive: zip.active,
-                              ),
-                            );
+                          children: [
+                            Consumer(
+                              builder: (context, ref, _) {
+                                final zipAsync = ref.watch(
+                                  unlinkedZipCodesProvider((
+                                    postOfficeId: office.postOfficeId,
+                                    placeId: widget.placeId,
+                                  )),
+                                );
 
-                            final isChecked = existing.isActive;
+                                return zipAsync.when(
+                                  loading: () => const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: LinearProgressIndicator(),
+                                  ),
+                                  error: (_, __) => const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: Text("Failed to load zip codes"),
+                                  ),
+                                  data: (zips) {
+                                    return Column(
+                                      children: zips.map((zip) {
+                                        final existing = form.zipCodeItems
+                                            .firstWhere(
+                                              (z) =>
+                                                  z.zipCodeLinkId ==
+                                                  zip.zipCodeLinkId,
+                                              orElse: () => EditZipCodeItem(
+                                                postOfficeId:
+                                                    office.postOfficeId,
+                                                zipCodeLinkId:
+                                                    zip.zipCodeLinkId,
+                                                zipCode: zip.zipCode,
+                                                postOfficeName:
+                                                    office.postOfficeName,
+                                                isNew: false,
+                                                isActive: false,
+                                              ),
+                                            );
 
-                            // return CheckboxListTile(
-                            //   value: alreadyAdded,
-                            //   title: Text(zip.zipCode),
-                            //   onChanged: alreadyAdded
-                            //       ? null
-                            //       : (_) {
-                            //           notifier.addNewZip(
-                            //             postOfficeId: office.postOfficeId,
-                            //             zipCodeLinkId: zip.zipCodeLinkId,
-                            //             zipCode: zip.zipCode,
-                            //             postOfficeName: office.postOfficeName,
-                            //           );
-                            //         },
-                            // );
-                            return CheckboxListTile(
-                              value: isChecked,
-                              title: Text(zip.zipCode),
-                              onChanged: (_) {
-                                notifier.toggleZip(zip.zipCodeLinkId);
+                                        return CheckboxListTile(
+                                          value: existing.isActive,
+                                          title: Text(zip.zipCode),
+                                          onChanged: (_) => notifier.toggleZip(
+                                            zip.zipCodeLinkId,
+                                          ),
+                                        );
+                                      }).toList(),
+                                    );
+                                  },
+                                );
                               },
-                            );
-                          }).toList(),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -486,7 +242,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                 );
               },
               loading: () => const LinearProgressIndicator(),
-              error: (_, _) => const Text('Failed to load zipcodes'),
+              error: (_, __) => const Text('Failed to load post offices'),
             ),
 
             const SizedBox(height: 24),

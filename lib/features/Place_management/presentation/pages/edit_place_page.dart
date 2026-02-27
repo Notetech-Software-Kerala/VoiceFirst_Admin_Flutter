@@ -314,7 +314,8 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
     );
 
     final postOfficesAsync = filter.isReady
-        ? ref.watch(postOfficeLookupProvider(filter))
+        ? ref.watch(postOfficeLookupProvider((filter, 1, "")))
+        // ? ref.watch(postOfficeLookupProvider(filter))
         : const AsyncValue<List<PostOfficeLookup>>.data(<PostOfficeLookup>[]);
 
     return Scaffold(
@@ -359,60 +360,7 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
                     // and unlinked zip codes for each office.
                     ..._buildGroupedZipCodeTiles(theme),
 
-                    // postOfficesAsync.when(
-                    //   data: (offices) {
-                    //     return Column(
-                    //       children: offices.map((office) {
-                    //         final zipCodes = office.zipCodes;
-
-                    //         return Container(
-                    //           margin: const EdgeInsets.symmetric(vertical: 6),
-                    //           decoration: BoxDecoration(
-                    //             color: theme.cardColor,
-                    //             borderRadius: BorderRadius.circular(12),
-                    //             border: Border.all(color: theme.dividerColor),
-                    //           ),
-                    //           child: ExpansionTile(
-                    //             title: Text(
-                    //               office.postOfficeName,
-                    //               style: const TextStyle(
-                    //                 fontWeight: FontWeight.w600,
-                    //               ),
-                    //             ),
-                    //             subtitle: Text('${zipCodes.length} zip codes'),
-                    //             children: zipCodes.map((zip) {
-                    //               final existing = form.zipCodeItems.firstWhere(
-                    //                 (z) => z.zipCodeLinkId == zip.zipCodeLinkId,
-                    //                 orElse: () => EditZipCodeItem(
-                    //                   postOfficeId: office.postOfficeId,
-                    //                   zipCodeLinkId: zip.zipCodeLinkId,
-                    //                   zipCode: zip.zipCode,
-                    //                   postOfficeName: office.postOfficeName,
-                    //                   isNew: false,
-                    //                   isActive: zip.active,
-                    //                 ),
-                    //               );
-
-                    //               final isChecked = existing.isActive;
-
-                    //               return CheckboxListTile(
-                    //                 value: isChecked,
-                    //                 title: Text(zip.zipCode),
-                    //                 onChanged: (_) {
-                    //                   ref
-                    //                       .read(editPlaceFormProvider.notifier)
-                    //                       .toggleZip(zip.zipCodeLinkId);
-                    //                 },
-                    //               );
-                    //             }).toList(),
-                    //           ),
-                    //         );
-                    //       }).toList(),
-                    //     );
-                    //   },
-                    //   loading: () => const LinearProgressIndicator(),
-                    //   error: (_, __) => const Text('Failed to load zipcodes'),
-                    // ),
+                  
                   ],
                 ),
               ),

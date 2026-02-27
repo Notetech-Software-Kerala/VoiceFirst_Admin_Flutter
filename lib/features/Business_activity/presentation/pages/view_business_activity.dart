@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
-import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -11,13 +10,12 @@ import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart
 import '../providers/business_activity_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/add_activity_dialog.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
-import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
 
 class ViewBusinessActivityPage extends ConsumerStatefulWidget {
   const ViewBusinessActivityPage({super.key});
-  
+
   @override
   ConsumerState<ViewBusinessActivityPage> createState() =>
       _ViewBusinessActivityPageState();
@@ -30,22 +28,29 @@ class _ViewBusinessActivityPageState
   final TextEditingController _searchController = TextEditingController();
 
   void _openFilterSheet() {
+    final state = ref.read(businessActivityProvider);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => GlobalFilterBottomSheet(
-        currentFilter: const BaseFilterModel(),
-        onApply: (filter) {
-          // Apply filter logic here
-          Navigator.pop(context);
+        currentFilter: state.filter,
+        searchOptions: const {
+          'ActivityName': 'Activity Name',
+          'CreatedUser': 'Created User',
+          'ModifiedUser': 'Modified User',
+          'DeletedUser': 'Deleted User',
         },
-        searchOptions: const {'name': 'Activity Name', 'status': 'Status'},
         sortOptions: const {
-          'newest': 'Newest',
-          'oldest': 'Oldest',
-          'name_asc': 'Name (A-Z)',
-          'name_desc': 'Name (Z-A)',
+          'activityName': 'Activity Name',
+          'createdDate': 'Created Date',
+          'modifiedDate': 'Updated Date',
+        },
+        onApply: (filter) {
+          ref
+              .read(businessActivityProvider.notifier)
+              .load(filter: filter, page: 1);
         },
       ),
     );
@@ -77,11 +82,7 @@ class _ViewBusinessActivityPageState
     final totalPages = (state.totalCount / _pageSize).ceil();
     final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
-    // Keep search controller in sync with current query
-    final currentSearchText = state.query.searchText ?? '';
-    if (_searchController.text != currentSearchText) {
-      _searchController.text = currentSearchText;
-    }
+    
 
     return StandardPageLayout(
       title: state.isMultiSelect
@@ -90,10 +91,16 @@ class _ViewBusinessActivityPageState
       bottom: AdvancedSearchHeader(
         searchController: _searchController,
         hintText: 'Search activities...',
-        onSearchChanged: (value) => notifier.search(
-          searchBy: ActivitySearchBy.activityName,
-          text: value,
-        ),
+        onSearchChanged: (value) {
+          final currentFilter = state.filter;
+
+          final newFilter = currentFilter.copyWith(
+            searchText: value.isEmpty ? null : value,
+            searchBy: value.isEmpty ? null : 'ActivityName',
+          );
+
+          notifier.load(filter: newFilter, page: 1);
+        },
         onFilterTap: _openFilterSheet,
         onRefresh: () => notifier.load(),
       ),
@@ -145,7 +152,9 @@ class _ViewBusinessActivityPageState
               currentPage: state.currentPage,
               totalPages: safeTotalPages,
               onPageChanged: (page) =>
-                  ref.read(businessActivityProvider.notifier).goToPage(page),
+                  ref.read(businessActivityProvider.notifier).load(page: page),
+              // onPageChanged: (page) =>
+              //     ref.read(businessActivityProvider.notifier).goToPage(page),
             ),
       slivers: [
         if (state.isLoading)
@@ -208,11 +217,6 @@ class _ViewBusinessActivityPageState
                   ),
                 );
                 actions.add(
-                  // StandardActionButton(
-                  //   icon: Icons.edit,
-                  //   color: a.isDeleted ? Colors.grey.withAlpha((0.4 * 255).toInt()) : Colors.grey,
-                  //   onTap: a.isDeleted ? null : () => EditActivityDialog.show(context, ref, a),
-                  // ),
                   StandardActionButton(
                     icon: Icons.edit,
                     color: a.isDeleted
@@ -226,40 +230,6 @@ class _ViewBusinessActivityPageState
                   ),
                 );
                 actions.add(
-                  // StandardActionButton(
-                  //   icon: Icons.delete,
-                  //   color: a.isDeleted
-                  //       ? Colors.red.withAlpha((0.4 * 255).toInt())
-                  //       : Colors.red,
-                  //   onTap: a.isDeleted
-                  //       ? null
-                  //       : () {
-                  //           showDeleteBottomSheet(
-                  //             context: context,
-                  //             itemName: a.activityName,
-                  //             onDelete: () async {
-                  //               final error = await notifier.delete(
-                  //                 a.activityId,
-                  //               );
-                  //               if (context.mounted) {
-                  //                 if (error != null) {
-                  //                   CustomSnackbar.show(
-                  //                     context,
-                  //                     message: error,
-                  //                     type: SnackBarType.error,
-                  //                   );
-                  //                 } else {
-                  //                   CustomSnackbar.show(
-                  //                     context,
-                  //                     message: 'Activity deleted successfully',
-                  //                     type: SnackBarType.success,
-                  //                   );
-                  //                 }
-                  //               }
-                  //             },
-                  //           );
-                  //         },
-                  // ),
                   StandardActionButton(
                     icon: Icons.delete,
                     color: a.isDeleted
@@ -344,6 +314,3 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-
-
-

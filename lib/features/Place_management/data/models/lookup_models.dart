@@ -67,24 +67,20 @@ class DivisionThreeLookup {
   }
 }
 
+
 class PostOfficeLookup {
   final int postOfficeId;
   final String postOfficeName;
-  final List<ZipCodeLookup> zipCodes;
 
   PostOfficeLookup({
     required this.postOfficeId,
     required this.postOfficeName,
-    required this.zipCodes,
   });
 
   factory PostOfficeLookup.fromJson(Map<String, dynamic> json) {
     return PostOfficeLookup(
       postOfficeId: (json['postOfficeId'] as num).toInt(),
       postOfficeName: json['postOfficeName'] ?? '',
-      zipCodes: (json['zipCodes'] as List? ?? [])
-          .map((e) => ZipCodeLookup.fromJson(e))
-          .toList(),
     );
   }
 }
@@ -92,15 +88,17 @@ class PostOfficeLookup {
 class ZipCodeLookup {
   final int zipCodeLinkId;
   final String zipCode;
-  final bool active;
+  // final bool active;
 
-  ZipCodeLookup({required this.zipCodeLinkId, required this.zipCode, required this.active});
+  ZipCodeLookup({required this.zipCodeLinkId, required this.zipCode,
+  //  required this.active
+   });
 
   factory ZipCodeLookup.fromJson(Map<String, dynamic> json) {
     return ZipCodeLookup(
       zipCodeLinkId: (json['zipCodeLinkId'] as num).toInt(),
       zipCode: json['zipCode'] ?? '',
-      active: json['active'] ?? false,
+      // active: json['active'] ?? false,
     );
   }
 }

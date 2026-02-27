@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
-import '../providers/program_action_link_lookup_provider.dart';
+import 'package:voice_first_admin/features/Plan%20management/presentation/providers/program_action_link_lookup_provider.dart';
 import '../../models/program_action_link_lookup.dart';
 import '../providers/add_plan_provider.dart';
 
@@ -16,19 +17,35 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
   final TextEditingController _nameController = TextEditingController();
 
   bool _isDropdownOpen = false;
-  final Set<int> _expandedProgramIds = {};
+  // final Set<int> _expandedProgramIds = {};
   bool _isSelectedExpanded = true;
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-
+  // String _searchQuery = '';
+  Timer? _debounce;
   // ScrollController for dropdown Scrollbar
   final ScrollController _dropdownScrollController = ScrollController();
+  @override
+  void initState() {
+    super.initState();
+
+    _dropdownScrollController.addListener(() {
+      final notifier = ref.read(programLookupProvider.notifier);
+      final state = ref.read(programLookupProvider);
+
+      if (_dropdownScrollController.position.extentAfter < 200 &&
+          !state.isLoading &&
+          state.hasMore) {
+        notifier.loadNextPage();
+      }
+    });
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _searchController.dispose();
     _dropdownScrollController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -59,6 +76,34 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
       bottomNavigationBar: _buildBottomBar(theme, state, notifier),
     );
   }
+
+  // Skeleton Widget for loading
+
+  // Widget _buildSkeletonTile() {
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(vertical: 6),
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(12),
+  //       color: Colors.grey.shade300,
+  //     ),
+  //     height: 60,
+  //   );
+  // }
+  // Widget _buildSkeletonTile() {
+  //   return Shimmer.fromColors(
+  //     baseColor: Colors.grey.shade300,
+  //     highlightColor: Colors.grey.shade100,
+  //     child: Container(
+  //       margin: const EdgeInsets.symmetric(vertical: 6),
+  //       height: 60,
+  //       decoration: BoxDecoration(
+  //         borderRadius: BorderRadius.circular(12),
+  //         color: Colors.white,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   ////////////////////////////////////////////////////////////
   /// BASIC INFO
@@ -100,12 +145,41 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
   ////////////////////////////////////////////////////////////
   /// DROPDOWN WITH EXPANSION LIST
   ////////////////////////////////////////////////////////////
-
   Widget _buildDropdownSection(
     ThemeData theme,
     AddPlanState state,
     AddPlanNotifier notifier,
   ) {
+    final lookupState = ref.watch(programLookupProvider);
+    // final lookupNotifier = ref.read(programLookupProvider.notifier);
+
+    // if (lookupState.programs.isEmpty && lookupState.isLoading) {
+    //   return const Padding(
+    //     padding: EdgeInsets.all(24),
+    //     child: Center(child: CircularProgressIndicator()),
+    //   );
+    // }
+    // if (lookupState.programs.isEmpty && lookupState.isLoading) {
+    //   return Column(children: List.generate(6, (_) => _buildSkeletonTile()));
+    // }
+
+    final programs = lookupState.programs;
+
+    /// GROUP SELECTED BY PROGRAM
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+
+    for (final program in programs) {
+      for (final action in program.actions) {
+        if (state.actionIds.contains(action.actionLinkId)) {
+          grouped.putIfAbsent(program.programName, () => []);
+          grouped[program.programName]!.add({
+            "id": action.actionLinkId,
+            "name": action.actionName,
+          });
+        }
+      }
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -113,236 +187,289 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.dividerColor),
       ),
-      child: Consumer(
-        builder: (context, ref, _) {
-          final lookupAsync = ref.watch(programActionLinkLookupProvider);
-
-          return lookupAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-            error: (e, st) => Text(
-              'Failed to load programs',
-              style: TextStyle(color: theme.colorScheme.error),
-            ),
-            data: (programs) {
-              /// GROUP SELECTED BY PROGRAM
-              final Map<String, List<Map<String, dynamic>>> grouped = {};
-
-              for (final program in programs) {
-                for (final action in program.actions) {
-                  if (state.actionIds.contains(action.actionLinkId)) {
-                    grouped.putIfAbsent(program.programName, () => []);
-                    grouped[program.programName]!.add({
-                      "id": action.actionLinkId,
-                      "name": action.actionName,
-                    });
-                  }
-                }
-              }
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          //////////////////////////////////////////////////////
+          /// SELECTED SECTION
+          //////////////////////////////////////////////////////
+          if (grouped.isNotEmpty) ...[
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _isSelectedExpanded = !_isSelectedExpanded;
+                });
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  //////////////////////////////////////////////////////
-                  /// 🔥 COLLAPSIBLE SELECTED SECTION
-                  //////////////////////////////////////////////////////
-                  if (grouped.isNotEmpty) ...[
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          _isSelectedExpanded = !_isSelectedExpanded;
-                        });
-                      },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Selected (${state.actionIds.length})',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Icon(
-                            _isSelectedExpanded
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    AnimatedCrossFade(
-                      duration: const Duration(milliseconds: 250),
-                      crossFadeState: _isSelectedExpanded
-                          ? CrossFadeState.showFirst
-                          : CrossFadeState.showSecond,
-                      firstChild: Column(
-                        children: grouped.entries.map((entry) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 14),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  entry.key,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-
-                                ...entry.value.map(
-                                  (action) => CheckboxListTile(
-                                    dense: true,
-                                    value: true,
-                                    onChanged: (v) {
-                                      notifier.removeActionId(action["id"]);
-                                    },
-                                    title: Text(action["name"]),
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      secondChild: const SizedBox(),
-                    ),
-
-                    const Divider(height: 30),
-                  ],
-
-                  //////////////////////////////////////////////////////
-                  /// 🔥 ANIMATED DROPDOWN HEADER
-                  //////////////////////////////////////////////////////
-                  InkWell(
-                    onTap: () {
-                      setState(() {
-                        _isDropdownOpen = !_isDropdownOpen;
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.dividerColor),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Choose Programs and Actions'),
-                          Icon(
-                            _isDropdownOpen
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                          ),
-                        ],
-                      ),
+                  Text(
+                    'Selected (${state.actionIds.length})',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  Icon(
+                    _isSelectedExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 250),
+              crossFadeState: _isSelectedExpanded
+                  ? CrossFadeState.showFirst
+                  : CrossFadeState.showSecond,
+              firstChild: Column(
+                children: grouped.entries.map((entry) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          entry.key,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        ...entry.value.map(
+                          (action) => CheckboxListTile(
+                            dense: true,
+                            value: true,
+                            onChanged: (_) =>
+                                notifier.removeActionId(action["id"]),
+                            title: Text(action["name"]),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+              secondChild: const SizedBox(),
+            ),
+            const Divider(height: 30),
+          ],
 
-                  //////////////////////////////////////////////////////
-                  /// 🔥 ANIMATED DROPDOWN BODY
-                  //////////////////////////////////////////////////////
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: _isDropdownOpen
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Container(
-                              constraints: const BoxConstraints(maxHeight: 400),
-                              child: Column(
+          //////////////////////////////////////////////////////
+          /// DROPDOWN HEADER
+          //////////////////////////////////////////////////////
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isDropdownOpen = !_isDropdownOpen;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: theme.dividerColor),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Choose Programs'),
+                  Icon(
+                    _isDropdownOpen
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          //////////////////////////////////////////////////////
+          /// DROPDOWN BODY
+          //////////////////////////////////////////////////////
+          AnimatedSize(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+            child: _isDropdownOpen
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Container(
+                      constraints: const BoxConstraints(maxHeight: 400),
+                      child: Column(
+                        children: [
+                          /// SEARCH
+                          TextField(
+                            controller: _searchController,
+                            onChanged: (val) {
+                              final trimmed = val.trim();
+                              _debounce?.cancel();
+
+                              _debounce = Timer(
+                                const Duration(milliseconds: 300),
+                                () {
+                                  ref
+                                      .read(programLookupProvider.notifier)
+                                      .reset(searchText: trimmed);
+                                },
+                              );
+                            },
+                            // onChanged: (val) {
+                            //   setState(() {
+                            //     _searchQuery = val.toLowerCase();
+                            //   });
+                            // },
+                            decoration: InputDecoration(
+                              hintText: 'Search program or action...',
+                              prefixIcon: const Icon(Icons.search),
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          /// LIST
+                          // Expanded(
+                          //   child: Scrollbar(
+                          //     thumbVisibility: true,
+                          //     controller: _dropdownScrollController,
+                          //     child:
+                          //         lookupState.programs.isEmpty &&
+                          //             lookupState.isLoading
+                          //         ? const Center(
+                          //             child: CircularProgressIndicator(),
+                          //           )
+                          //         : ListView.builder(
+                          //             controller: _dropdownScrollController,
+                          //             itemCount:
+                          //                 programs.length +
+                          //                 (lookupState.isLoading ? 1 : 0),
+                          //             itemBuilder: (context, index) {
+                          //               if (index >= programs.length) {
+                          //                 return const Padding(
+                          //                   padding: EdgeInsets.all(16),
+                          //                   child: Center(
+                          //                     child:
+                          //                         CircularProgressIndicator(),
+                          //                   ),
+                          //                 );
+                          //               }
+
+                          //               final program = programs[index];
+
+                          //               return _buildExpandableTile(
+                          //                 theme,
+                          //                 program,
+                          //                 state,
+                          //                 notifier,
+                          //               );
+                          //             },
+                          //           ),
+                          //   ),
+                          // ),
+                          Expanded(
+                            child: Scrollbar(
+                              thumbVisibility: true,
+                              controller: _dropdownScrollController,
+                              child: Stack(
                                 children: [
-                                  /// 🔍 SEARCH FIELD
-                                  TextField(
-                                    controller: _searchController,
-                                    onChanged: (val) {
-                                      setState(() {
-                                        _searchQuery = val.toLowerCase();
-                                      });
+                                  /// Actual list (always mounted)
+                                  ListView.builder(
+                                    controller: _dropdownScrollController,
+                                    itemCount: programs.length,
+                                    itemBuilder: (context, index) {
+                                      final program = programs[index];
+                                      return _buildExpandableTile(
+                                        theme,
+                                        program,
+                                        state,
+                                        notifier,
+                                      );
                                     },
-                                    decoration: InputDecoration(
-                                      hintText: 'Search program or action...',
-                                      prefixIcon: const Icon(Icons.search),
-                                      isDense: true,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
                                   ),
 
-                                  const SizedBox(height: 12),
-
-                                  /// 🔥 FILTERED LIST WITH SCROLLBAR
-                                  Expanded(
-                                    child: Scrollbar(
-                                      thumbVisibility: true,
-                                      controller: _dropdownScrollController,
-                                      child: SingleChildScrollView(
-                                        controller: _dropdownScrollController,
-                                        child: Column(
-                                          children: programs
-                                              .where((program) {
-                                                if (_searchQuery.isEmpty) {
-                                                  return true;
-                                                }
-
-                                                final programMatch = program
-                                                    .programName
-                                                    .toLowerCase()
-                                                    .contains(_searchQuery);
-
-                                                final actionMatch = program
-                                                    .actions
-                                                    .any(
-                                                      (a) => a.actionName
-                                                          .toLowerCase()
-                                                          .contains(
-                                                            _searchQuery,
-                                                          ),
-                                                    );
-
-                                                return programMatch ||
-                                                    actionMatch;
-                                              })
-                                              .map(
-                                                (program) =>
-                                                    _buildExpandableTile(
-                                                      theme,
-                                                      program,
-                                                      state,
-                                                      notifier,
-                                                    ),
-                                              )
-                                              .toList(),
-                                        ),
+                                  /// Loading overlay (does NOT rebuild TextField)
+                                  if (lookupState.isLoading)
+                                    // Positioned.fill(
+                                    //   child: IgnorePointer(
+                                    //     child: Column(
+                                    //       children: List.generate(
+                                    //         6,
+                                    //         (_) => _buildSkeletonTile(),
+                                    //       ),
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    // Positioned.fill(
+                                    //   child: IgnorePointer(
+                                    //     child: ListView.builder(
+                                    //       padding: EdgeInsets.zero,
+                                    //       itemCount: 6,
+                                    //       itemBuilder: (_, __) =>
+                                    //           _buildSkeletonTile(),
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                    Positioned(
+                                      top: 0,
+                                      left: 0,
+                                      right: 0,
+                                      child: LinearProgressIndicator(
+                                        minHeight: 2,
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
-                          )
-                        : const SizedBox(),
-                  ),
-                ],
-              );
-            },
-          );
-        },
+                          ),
+                          // Expanded(
+                          // child: Scrollbar(
+                          //   thumbVisibility: true,
+                          //   controller: _dropdownScrollController,
+                          //   child: ListView.builder(
+                          //     controller: _dropdownScrollController,
+                          //     itemCount:
+                          //         programs.length +
+                          //         (lookupState.isLoading ? 1 : 0),
+                          //     itemBuilder: (context, index) {
+                          //       if (index >= programs.length) {
+                          //         return const Padding(
+                          //           padding: EdgeInsets.all(16),
+                          //           child: Center(
+                          //             child: CircularProgressIndicator(),
+                          //           ),
+                          //         );
+                          //       }
+
+                          //       final program = programs[index];
+
+                          //       /// FILTER
+
+                          //       return _buildExpandableTile(
+                          //         theme,
+                          //         program,
+                          //         state,
+                          //         notifier,
+                          //       );
+                          //     },
+                          //   ),
+                          // ),
+                          // ),
+                        ],
+                      ),
+                    ),
+                  )
+                : const SizedBox(),
+          ),
+        ],
       ),
     );
   }
+
   ////////////////////////////////////////////////////////////
   /// EXPANSION TILE
   ////////////////////////////////////////////////////////////
