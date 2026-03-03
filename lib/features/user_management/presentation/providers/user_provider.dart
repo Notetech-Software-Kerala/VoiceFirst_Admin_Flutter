@@ -138,10 +138,34 @@ class UserNotifier extends Notifier<UserState> {
       }
 
       // Refresh list after successful save
-      await fetchUsers(page: 1);
+      await fetchUsers(page: state.filter.pageNumber);
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
       rethrow; // Re-throw so the UI can show a specific error SnackBar
+    }
+  }
+
+  Future<void> deleteUser(int id) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.deleteUser(id);
+      // Refresh list after successful delete
+      await fetchUsers(page: state.filter.pageNumber);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> recoverUser(int id) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+    try {
+      await _repository.recoverUser(id);
+      // Refresh list after successful recovery
+      await fetchUsers(page: state.filter.pageNumber);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      rethrow;
     }
   }
 }

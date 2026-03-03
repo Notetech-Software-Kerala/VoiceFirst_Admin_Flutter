@@ -53,20 +53,40 @@ final dialCodeLookupProvider = FutureProvider.autoDispose<List<LookupItem>>((
   ref,
 ) async {
   try {
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}/dialCode/lookup');
+    final uri = Uri.parse('${ApiEndpoints.baseUrl}/dialCode/lookup').replace(
+      queryParameters: {
+        'PageNumber': '1',
+        'Limit': '500', // Fetch enough for the dropdown
+        // 'SearchText': '' // Can add search functionality later if needed
+      },
+    );
     debugPrint("Fetching Dial Code Lookup: $uri");
 
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       final decoded = jsonDecode(response.body);
-      final List<dynamic> data = decoded is Map
-          ? (decoded['data'] ?? [])
-          : decoded;
+
+      // Robust extraction to handle both flat arrays and paginated objects
+      List<dynamic> dataList = [];
+      if (decoded is Map) {
+        if (decoded.containsKey('data')) {
+          final dataObj = decoded['data'];
+          if (dataObj is Map && dataObj.containsKey('items')) {
+            dataList = dataObj['items'] ?? [];
+          } else if (dataObj is List) {
+            dataList = dataObj;
+          }
+        } else if (decoded.containsKey('items')) {
+          dataList = decoded['items'] ?? [];
+        }
+      } else if (decoded is List) {
+        dataList = decoded;
+      }
 
       // Dial codes often need a "+" prefix if not present, but let's assume API is clean
       // or we handle format in the UI.
-      return data.map((e) {
+      return dataList.map((e) {
         final item = LookupItem.fromJson(e);
         // Ensure dial codes have the plus symbol for explicit UI
         final name = item.name.startsWith('+') ? item.name : '+${item.name}';

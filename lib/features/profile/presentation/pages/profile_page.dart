@@ -40,12 +40,14 @@ class ProfilePage extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    Scaffold.of(context).openDrawer();
+                  },
                   borderRadius: BorderRadius.circular(20),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Icon(
-                      Icons.arrow_back,
+                      Icons.menu,
                       color: theme.textTheme.bodyLarge?.color,
                     ),
                   ),
