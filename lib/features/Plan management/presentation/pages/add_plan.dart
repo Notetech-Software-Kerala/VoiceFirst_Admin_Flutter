@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/paginated_search_dropdown.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/features/Plan%20management/presentation/providers/program_action_link_lookup_provider.dart';
 import '../../models/program_action_link_lookup.dart';
@@ -151,18 +152,6 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
     AddPlanNotifier notifier,
   ) {
     final lookupState = ref.watch(programLookupProvider);
-    // final lookupNotifier = ref.read(programLookupProvider.notifier);
-
-    // if (lookupState.programs.isEmpty && lookupState.isLoading) {
-    //   return const Padding(
-    //     padding: EdgeInsets.all(24),
-    //     child: Center(child: CircularProgressIndicator()),
-    //   );
-    // }
-    // if (lookupState.programs.isEmpty && lookupState.isLoading) {
-    //   return Column(children: List.generate(6, (_) => _buildSkeletonTile()));
-    // }
-
     final programs = lookupState.programs;
 
     /// GROUP SELECTED BY PROGRAM
@@ -260,210 +249,30 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
           //////////////////////////////////////////////////////
           /// DROPDOWN HEADER
           //////////////////////////////////////////////////////
-          InkWell(
-            onTap: () {
-              setState(() {
-                _isDropdownOpen = !_isDropdownOpen;
-              });
+          PaginatedSearchDropdown<ProgramActionLinkProgram>(
+            id: 'add_plan_programs',
+            openGroup: null,
+            label: 'Choose Programs',
+            hintText: 'Search program or action...',
+            asyncItems: lookupState.isLoading && programs.isEmpty
+                ? const AsyncValue<List<ProgramActionLinkProgram>>.loading()
+                : AsyncValue<List<ProgramActionLinkProgram>>.data(programs),
+            selectedItem: null,
+            displayText: (p) => p.programName,
+            itemId: (p) => p.programId,
+            onItemSelected: (_) {},
+            onSearch: (value) {
+              ref
+                  .read(programLookupProvider.notifier)
+                  .reset(searchText: value.trim());
             },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.dividerColor),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Choose Programs'),
-                  Icon(
-                    _isDropdownOpen
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          //////////////////////////////////////////////////////
-          /// DROPDOWN BODY
-          //////////////////////////////////////////////////////
-          AnimatedSize(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-            child: _isDropdownOpen
-                ? Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Container(
-                      constraints: const BoxConstraints(maxHeight: 400),
-                      child: Column(
-                        children: [
-                          /// SEARCH
-                          TextField(
-                            controller: _searchController,
-                            onChanged: (val) {
-                              final trimmed = val.trim();
-                              _debounce?.cancel();
-
-                              _debounce = Timer(
-                                const Duration(milliseconds: 300),
-                                () {
-                                  ref
-                                      .read(programLookupProvider.notifier)
-                                      .reset(searchText: trimmed);
-                                },
-                              );
-                            },
-                            // onChanged: (val) {
-                            //   setState(() {
-                            //     _searchQuery = val.toLowerCase();
-                            //   });
-                            // },
-                            decoration: InputDecoration(
-                              hintText: 'Search program or action...',
-                              prefixIcon: const Icon(Icons.search),
-                              isDense: true,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          /// LIST
-                          // Expanded(
-                          //   child: Scrollbar(
-                          //     thumbVisibility: true,
-                          //     controller: _dropdownScrollController,
-                          //     child:
-                          //         lookupState.programs.isEmpty &&
-                          //             lookupState.isLoading
-                          //         ? const Center(
-                          //             child: CircularProgressIndicator(),
-                          //           )
-                          //         : ListView.builder(
-                          //             controller: _dropdownScrollController,
-                          //             itemCount:
-                          //                 programs.length +
-                          //                 (lookupState.isLoading ? 1 : 0),
-                          //             itemBuilder: (context, index) {
-                          //               if (index >= programs.length) {
-                          //                 return const Padding(
-                          //                   padding: EdgeInsets.all(16),
-                          //                   child: Center(
-                          //                     child:
-                          //                         CircularProgressIndicator(),
-                          //                   ),
-                          //                 );
-                          //               }
-
-                          //               final program = programs[index];
-
-                          //               return _buildExpandableTile(
-                          //                 theme,
-                          //                 program,
-                          //                 state,
-                          //                 notifier,
-                          //               );
-                          //             },
-                          //           ),
-                          //   ),
-                          // ),
-                          Expanded(
-                            child: Scrollbar(
-                              thumbVisibility: true,
-                              controller: _dropdownScrollController,
-                              child: Stack(
-                                children: [
-                                  /// Actual list (always mounted)
-                                  ListView.builder(
-                                    controller: _dropdownScrollController,
-                                    itemCount: programs.length,
-                                    itemBuilder: (context, index) {
-                                      final program = programs[index];
-                                      return _buildExpandableTile(
-                                        theme,
-                                        program,
-                                        state,
-                                        notifier,
-                                      );
-                                    },
-                                  ),
-
-                                  /// Loading overlay (does NOT rebuild TextField)
-                                  if (lookupState.isLoading)
-                                    // Positioned.fill(
-                                    //   child: IgnorePointer(
-                                    //     child: Column(
-                                    //       children: List.generate(
-                                    //         6,
-                                    //         (_) => _buildSkeletonTile(),
-                                    //       ),
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    // Positioned.fill(
-                                    //   child: IgnorePointer(
-                                    //     child: ListView.builder(
-                                    //       padding: EdgeInsets.zero,
-                                    //       itemCount: 6,
-                                    //       itemBuilder: (_, __) =>
-                                    //           _buildSkeletonTile(),
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                    Positioned(
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      child: LinearProgressIndicator(
-                                        minHeight: 2,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Expanded(
-                          // child: Scrollbar(
-                          //   thumbVisibility: true,
-                          //   controller: _dropdownScrollController,
-                          //   child: ListView.builder(
-                          //     controller: _dropdownScrollController,
-                          //     itemCount:
-                          //         programs.length +
-                          //         (lookupState.isLoading ? 1 : 0),
-                          //     itemBuilder: (context, index) {
-                          //       if (index >= programs.length) {
-                          //         return const Padding(
-                          //           padding: EdgeInsets.all(16),
-                          //           child: Center(
-                          //             child: CircularProgressIndicator(),
-                          //           ),
-                          //         );
-                          //       }
-
-                          //       final program = programs[index];
-
-                          //       /// FILTER
-
-                          //       return _buildExpandableTile(
-                          //         theme,
-                          //         program,
-                          //         state,
-                          //         notifier,
-                          //       );
-                          //     },
-                          //   ),
-                          // ),
-                          // ),
-                        ],
-                      ),
-                    ),
-                  )
-                : const SizedBox(),
+            onLoadMore: () {
+              ref.read(programLookupProvider.notifier).loadNextPage();
+            },
+            itemBuilder: (context, itemTheme, program, isSelected) {
+              // Reuse existing expansion-tile UI for each program.
+              return _buildExpandableTile(itemTheme, program, state, notifier);
+            },
           ),
         ],
       ),

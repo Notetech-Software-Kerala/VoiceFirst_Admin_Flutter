@@ -4,6 +4,8 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
+import 'package:voice_first_admin/features/Place_management/widgets/place_detail_widgets.dart';
+import 'package:voice_first_admin/features/Place_management/widgets/place_post_office_tile.dart';
 import '../../data/models/place_model.dart';
 import '../providers/place_provider.dart';
 import '../providers/place_state.dart';
@@ -76,7 +78,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                   children: [
                     Row(
                       children: [
-                        const Expanded(child: _Label('PLACE NAME')),
+                        const Expanded(child: PlaceSectionLabel('PLACE NAME')),
                         const SizedBox(width: 12),
                         Text(
                           place.placeName,
@@ -91,7 +93,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        const Expanded(child: _Label('STATUS')),
+                        const Expanded(child: PlaceSectionLabel('STATUS')),
                         const SizedBox(width: 12),
                         Text(
                           isDeleted
@@ -152,7 +154,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                           )
                         else
                           ...visibleOffices.map(
-                            (office) => _PostOfficeTile(
+                            (office) => PlacePostOfficeTile(
                               office: office,
                               expanded: _expandedOffices.contains(
                                 office.postOfficeId,
@@ -208,7 +210,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                       style: theme.textTheme.bodySmall,
                     ),
                     children: [
-                      _PlaceHistorySection(place: place, formatDate: _fmtDate),
+                      PlaceHistorySection(place: place, formatDate: _fmtDate),
                     ],
                   ),
                 ),
@@ -356,22 +358,22 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoRow(
+                PlaceInfoRow(
                   label: 'Country Name',
                   value: office.countryName ?? 'Unknown',
                 ),
                 const SizedBox(height: 8),
-                _InfoRow(
+                PlaceInfoRow(
                   label: fallbackLabel(office.divisionOneLabel, 'Division One'),
                   value: office.divisionOneName ?? 'N/A',
                 ),
                 const SizedBox(height: 4),
-                _InfoRow(
+                PlaceInfoRow(
                   label: fallbackLabel(office.divisionTwoLabel, 'Division Two'),
                   value: office.divisionTwoName ?? 'N/A',
                 ),
                 const SizedBox(height: 4),
-                _InfoRow(
+                PlaceInfoRow(
                   label: fallbackLabel(
                     office.divisionThreeLabel,
                     'Division Three',
@@ -401,20 +403,26 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
       context: context,
       builder: (dialogContext) {
         final rows = <Widget>[
-          _InfoRow(label: 'Created By', value: zip.createdUser ?? 'Unknown'),
-          _InfoRow(label: 'Created Date', value: formatDate(zip.createdDate)),
+          PlaceInfoRow(
+            label: 'Created By',
+            value: zip.createdUser ?? 'Unknown',
+          ),
+          PlaceInfoRow(
+            label: 'Created Date',
+            value: formatDate(zip.createdDate),
+          ),
         ];
 
         if (zip.modifiedUser != null || zip.modifiedDate != null) {
           rows.add(const SizedBox(height: 8));
           rows.add(
-            _InfoRow(
+            PlaceInfoRow(
               label: 'Modified By',
               value: zip.modifiedUser ?? 'Unknown',
             ),
           );
           rows.add(
-            _InfoRow(
+            PlaceInfoRow(
               label: 'Modified Date',
               value: formatDate(zip.modifiedDate),
             ),
@@ -438,315 +446,6 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
           ],
         );
       },
-    );
-  }
-}
-
-class _PostOfficeTile extends StatelessWidget {
-  final PlacePostOffice office;
-  final bool expanded;
-  final void Function(bool expanded) onExpansionChanged;
-  final void Function(PlacePostOffice office) onPostOfficeInfo;
-  final void Function(PlaceZipCodeLink zip) onZipInfo;
-
-  const _PostOfficeTile({
-    required this.office,
-    required this.expanded,
-    required this.onExpansionChanged,
-    required this.onPostOfficeInfo,
-    required this.onZipInfo,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: expanded,
-        onExpansionChanged: onExpansionChanged,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        title: Text(
-          office.postOfficeName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(
-                Icons.info_outline,
-                size: 20,
-                color: Colors.blue,
-              ),
-              tooltip: 'Post office info',
-              onPressed: () => onPostOfficeInfo(office),
-            ),
-            const Icon(Icons.expand_more),
-          ],
-        ),
-        subtitle: Text(
-          '${office.zipCodes.where((z) => z.active).length} zip codes',
-        ),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        children: [
-          // Only show active zip codes for this post office
-          if (office.zipCodes.where((z) => z.active).isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: Text('No active zip codes'),
-            )
-          else
-            ...office.zipCodes
-                .where((zip) => zip.active)
-                .map(
-                  (zip) => Container(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: theme.dividerColor),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                zip.zipCode,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.info_outline,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              tooltip: 'Zip code info',
-                              onPressed: () => onZipInfo(zip),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _InfoRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PlaceHistorySection extends StatelessWidget {
-  final PlaceModel place;
-  final String Function(DateTime?) formatDate;
-
-  const _PlaceHistorySection({required this.place, required this.formatDate});
-
-  @override
-  Widget build(BuildContext context) {
-    final tiles = <Widget>[
-      _HistoryExpansionTile(
-        icon: Icons.flag_circle_outlined,
-        title: 'Created Info',
-        subtitle: 'Created by ${_formatUser(place.createdUser)}',
-        initiallyExpanded: true,
-        entries: [
-          _HistoryEntry(
-            label: 'Created By',
-            value: _formatUser(place.createdUser),
-          ),
-          _HistoryEntry(
-            label: 'Created Date',
-            value: formatDate(place.createdDate),
-          ),
-        ],
-      ),
-    ];
-
-    final hasModifiedUser =
-        place.modifiedUser != null && place.modifiedUser!.trim().isNotEmpty;
-    final hasModified = hasModifiedUser || place.modifiedDate != null;
-    final hasDeleted = place.deletedUser != null || place.deletedDate != null;
-
-    if (hasModified) {
-      tiles.add(
-        _HistoryExpansionTile(
-          icon: Icons.update,
-          title: 'Modified Info',
-          subtitle: 'Modified by ${_formatUser(place.modifiedUser)}',
-          entries: [
-            _HistoryEntry(
-              label: 'Modified By',
-              value: _formatUser(place.modifiedUser),
-            ),
-            _HistoryEntry(
-              label: 'Modified Date',
-              value: formatDate(place.modifiedDate),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (hasDeleted) {
-      tiles.add(
-        _HistoryExpansionTile(
-          icon: Icons.delete_sweep_outlined,
-          title: 'Deleted Info',
-          subtitle: 'Deleted by ${_formatUser(place.deletedUser)}',
-          entries: [
-            _HistoryEntry(
-              label: 'Deleted By',
-              value: _formatUser(place.deletedUser),
-            ),
-            _HistoryEntry(
-              label: 'Deleted Date',
-              value: formatDate(place.deletedDate),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(children: tiles);
-  }
-
-  String _formatUser(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Unknown';
-    return value;
-  }
-}
-
-class _HistoryExpansionTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final List<_HistoryEntry> entries;
-  final bool initiallyExpanded;
-
-  const _HistoryExpansionTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.entries,
-    this.initiallyExpanded = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        leading: Icon(icon),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        children: entries.map((entry) => entry).toList(),
-      ),
-    );
-  }
-}
-
-class _HistoryEntry extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _HistoryEntry({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
