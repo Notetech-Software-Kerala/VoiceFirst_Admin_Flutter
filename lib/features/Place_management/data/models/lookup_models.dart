@@ -1,4 +1,6 @@
-class CountryLookup {
+import 'package:equatable/equatable.dart';
+
+class CountryLookup extends Equatable {
   final int id;
   final String name;
   final String? divisionOneLabel;
@@ -22,9 +24,18 @@ class CountryLookup {
       divisionThreeLabel: json['divisionThree'] as String?,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    id,
+    name,
+    divisionOneLabel,
+    divisionTwoLabel,
+    divisionThreeLabel,
+  ];
 }
 
-class DivisionOneLookup {
+class DivisionOneLookup extends Equatable {
   final int id;
   final String name;
 
@@ -37,9 +48,12 @@ class DivisionOneLookup {
       name: json['divOneName'] ?? '',
     );
   }
+
+  @override
+  List<Object?> get props => [id, name];
 }
 
-class DivisionTwoLookup {
+class DivisionTwoLookup extends Equatable {
   final int id;
   final String name;
 
@@ -51,9 +65,12 @@ class DivisionTwoLookup {
       name: json['divTwoName'] ?? '',
     );
   }
+
+  @override
+  List<Object?> get props => [id, name];
 }
 
-class DivisionThreeLookup {
+class DivisionThreeLookup extends Equatable {
   final int id;
   final String name;
 
@@ -65,9 +82,12 @@ class DivisionThreeLookup {
       name: json['divThreeName'] ?? '',
     );
   }
+
+  @override
+  List<Object?> get props => [id, name];
 }
 
-class PostOfficeLookup {
+class PostOfficeLookup extends Equatable {
   final int postOfficeId;
   final String postOfficeName;
   final List<ZipCodeLookup> zipCodes;
@@ -87,14 +107,21 @@ class PostOfficeLookup {
           .toList(),
     );
   }
+
+  @override
+  List<Object?> get props => [postOfficeId, postOfficeName, zipCodes];
 }
 
-class ZipCodeLookup {
+class ZipCodeLookup extends Equatable {
   final int zipCodeLinkId;
   final String zipCode;
   final bool active;
 
-  ZipCodeLookup({required this.zipCodeLinkId, required this.zipCode, required this.active});
+  ZipCodeLookup({
+    required this.zipCodeLinkId,
+    required this.zipCode,
+    required this.active,
+  });
 
   factory ZipCodeLookup.fromJson(Map<String, dynamic> json) {
     return ZipCodeLookup(
@@ -103,4 +130,7 @@ class ZipCodeLookup {
       active: json['active'] ?? false,
     );
   }
+
+  @override
+  List<Object?> get props => [zipCodeLinkId, zipCode, active];
 }

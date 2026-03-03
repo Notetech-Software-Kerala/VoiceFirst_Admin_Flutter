@@ -1,10 +1,7 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/models/activity_filter_option.dart';
-import 'package:voice_first_admin/features/Business_activity/models/activity_searchby.dart';
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
+import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import '../../business_activity_service/business_activity_service.dart';
-import '../../models/business_activity_model.dart';
-import 'business_activity_query.dart';
 import 'business_activity_state.dart';
 
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
@@ -16,110 +13,58 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
     return BusinessActivityState.initial();
   }
 
+  BusinessActivityFilter _mapToApiFilter(
+    BaseFilterModel filter,
+    int pageNumber,
+    int pageSize,
+  ) {
+    return BusinessActivityFilter(
+      searchBy: filter.searchBy,
+      searchText: filter.searchText,
+      sortBy: filter.sortBy,
+      sortOrder: filter.sortOrder,
+      active: filter.active,
+      deleted: filter.deleted,
+      pageNumber: pageNumber,
+      limit: pageSize,
+      createdFromDate: filter.createdFromDate,
+      createdToDate: filter.createdToDate,
+      updatedFromDate: filter.updatedFromDate,
+      updatedToDate: filter.updatedToDate,
+      deletedFromDate: filter.deletedFromDate,
+      deletedToDate: filter.deletedToDate,
+    );
+  }
   // ───────────────── LOAD ─────────────────
 
-  Future<void> load({BusinessActivityQuery? query}) async {
+  Future<void> load({BaseFilterModel? filter, int? page}) async {
     if (state.isLoading) return;
 
-    final nextQuery = query ?? state.query;
+    final currentFilter = filter ?? state.filter;
+    final currentPage = page ?? state.currentPage;
 
-    state = state.copyWith(isLoading: true, query: nextQuery);
+    state = state.copyWith(
+      isLoading: true,
+      filter: currentFilter,
+      currentPage: currentPage,
+    );
 
     try {
-      final response = await _service.getAllActivities(nextQuery.toApiFilter());
+      final apiFilter = _mapToApiFilter(currentFilter, currentPage, 10);
+
+      final response = await _service.getAllActivities(apiFilter);
 
       state = state.copyWith(
         items: response.items,
         totalCount: response.totalCount,
         currentPage: response.currentPage,
-        hasMoreData: response.hasNextPage,
         isLoading: false,
       );
     } catch (e) {
-      debugPrint('❌ Load failed: $e');
       state = state.copyWith(isLoading: false);
     }
   }
-
-  // ───────────────── SEARCH / FILTER / SORT ─────────────────
-
-  void search({required ActivitySearchBy searchBy, required String text}) {
-    load(
-      query: state.query.copyWith(
-        searchBy: text.isEmpty ? null : searchBy,
-        searchText: text.isEmpty ? null : text,
-        pageNumber: 1,
-      ),
-    );
-  }
-
-  void sort({String? sortBy, String? sortOrder}) {
-    load(
-      query: state.query.copyWith(
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        pageNumber: 1,
-      ),
-    );
-  }
-
-  void setFilter(ActivityFilterOption option) {
-    BusinessActivityQuery query;
-
-    switch (option) {
-      case ActivityFilterOption.all:
-        query = BusinessActivityQuery.initial();
-        break;
-
-      case ActivityFilterOption.active:
-        query = const BusinessActivityQuery(active: true, deleted: false);
-        break;
-
-      case ActivityFilterOption.inactive:
-        query = const BusinessActivityQuery(active: false, deleted: false);
-        break;
-
-      case ActivityFilterOption.available:
-        query = const BusinessActivityQuery(deleted: false);
-        break;
-
-      case ActivityFilterOption.deleted:
-        query = const BusinessActivityQuery(deleted: true);
-        break;
-    }
-
-    load(query: query);
-  }
-
-  void filterByDates({
-    DateTime? createdFromDate,
-    DateTime? createdToDate,
-    DateTime? updatedFromDate,
-    DateTime? updatedToDate,
-    DateTime? deletedFromDate,
-    DateTime? deletedToDate,
-  }) {
-    load(
-      query: state.query.copyWith(
-        createdFromDate: createdFromDate,
-        createdToDate: createdToDate,
-        updatedFromDate: updatedFromDate,
-        updatedToDate: updatedToDate,
-        deletedFromDate: deletedFromDate,
-        deletedToDate: deletedToDate,
-        pageNumber: 1,
-      ),
-    );
-  }
-
-  // ───────────────── CLEAR ALL FILTERS ─────────────────
-  void clearAllFilters() {
-    load(query: BusinessActivityQuery.initial());
-  }
-
-  void goToPage(int page) {
-    load(query: state.query.copyWith(pageNumber: page));
-  }
+ 
 
   // ───────────────── CRUD ─────────────────
 

@@ -1,12 +1,13 @@
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
-import 'business_activity_query.dart';
 
 class BusinessActivityState {
   /// Data returned from API
   final List<BusinessActivity> items;
 
   /// Current API query (filters + pagination)
-  final BusinessActivityQuery query;
+  // final BusinessActivityQuery query;
+  final BaseFilterModel filter;
 
   /// Pagination
   final int totalCount;
@@ -20,7 +21,8 @@ class BusinessActivityState {
 
   BusinessActivityState({
     required this.items,
-    required this.query,
+    // required this.query,
+    required this.filter,
     required this.totalCount,
     required this.currentPage,
     required this.hasMoreData,
@@ -33,7 +35,8 @@ class BusinessActivityState {
   factory BusinessActivityState.initial() {
     return BusinessActivityState(
       items: const [],
-      query: BusinessActivityQuery.initial(),
+      // query: BusinessActivityQuery.initial(),
+      filter: const BaseFilterModel(),
       totalCount: 0,
       currentPage: 1,
       hasMoreData: true,
@@ -45,7 +48,8 @@ class BusinessActivityState {
 
   BusinessActivityState copyWith({
     List<BusinessActivity>? items,
-    BusinessActivityQuery? query,
+    // BusinessActivityQuery? query,
+    BaseFilterModel? filter,
     int? totalCount,
     int? currentPage,
     bool? hasMoreData,
@@ -55,7 +59,8 @@ class BusinessActivityState {
   }) {
     return BusinessActivityState(
       items: items ?? this.items,
-      query: query ?? this.query,
+      // query: query ?? this.query,
+      filter: filter ?? this.filter,
       totalCount: totalCount ?? this.totalCount,
       currentPage: currentPage ?? this.currentPage,
       hasMoreData: hasMoreData ?? this.hasMoreData,
