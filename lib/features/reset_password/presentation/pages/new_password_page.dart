@@ -3,26 +3,31 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/reset_password/presentation/pages/new_password_page.dart';
+import 'package:voice_first_admin/features/auth/presentation/pages/login_screen.dart';
+import 'package:voice_first_admin/features/reset_password/presentation/providers/password_provider.dart';
 
-class VerifyOtpPage extends ConsumerStatefulWidget {
+class NewPasswordPage extends ConsumerStatefulWidget {
   final String email;
+  final String otp;
 
-  const VerifyOtpPage({super.key, required this.email});
+  const NewPasswordPage({super.key, required this.email, required this.otp});
 
   @override
-  ConsumerState<VerifyOtpPage> createState() => _VerifyOtpPageState();
+  ConsumerState<NewPasswordPage> createState() => _NewPasswordPageState();
 }
 
-class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
+class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _otpController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   final Color brandColor = const Color(0xFF0D7FF2);
 
   @override
   void dispose() {
-    _otpController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -34,6 +39,26 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
 
   @override
   Widget build(BuildContext context) {
+    final passwordState = ref.watch(passwordProvider);
+    final passwordNotifier = ref.read(passwordProvider.notifier);
+
+    ref.listen(passwordProvider, (prev, next) {
+      if (prev?.isLoading == true && next.isLoading == false) {
+        if (next.success) {
+          passwordNotifier.clearSuccess();
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        } else if (next.errorMessage != null) {
+          _showError(
+            next.errorMessage ?? 'Failed to reset password. Try again.',
+          );
+          passwordNotifier.clearError();
+        }
+      }
+    });
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
@@ -63,7 +88,7 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                         ),
                         const SizedBox(width: 4),
                         const Text(
-                          'Verify OTP',
+                          'Set New Password',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -94,7 +119,7 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 const Text(
-                                  'Enter the OTP sent to your email.',
+                                  'Create a new password for your account.',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF9CA3AF),
@@ -102,52 +127,31 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                _buildInputLabel('ONE-TIME PASSWORD'),
+                                _buildInputLabel('NEW PASSWORD'),
                                 const SizedBox(height: 6),
-                                TextFormField(
-                                  controller: _otpController,
-                                  keyboardType: TextInputType.number,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.white,
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Enter OTP',
-                                    hintStyle: const TextStyle(
-                                      color: Color(0xFF4B5563),
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.white.withOpacity(0.05),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 16,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                        color: Colors.white.withOpacity(0.1),
-                                      ),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                        color: Colors.white.withOpacity(0.1),
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(color: brandColor),
-                                    ),
-                                  ),
+                                _buildPasswordField(
+                                  controller: _newPasswordController,
+                                  hint: 'Enter new password',
+                                ),
+                                const SizedBox(height: 16),
+                                _buildInputLabel('CONFIRM PASSWORD'),
+                                const SizedBox(height: 6),
+                                _buildPasswordField(
+                                  controller: _confirmPasswordController,
+                                  hint: 'Re-enter new password',
                                   validator: (value) {
-                                    if ((value ?? '').trim().isEmpty) {
-                                      return 'OTP is required';
+                                    final text = value ?? '';
+                                    if (text.isEmpty) {
+                                      return 'Confirm password is required';
+                                    }
+                                    if (text != _newPasswordController.text) {
+                                      return 'Passwords do not match';
                                     }
                                     return null;
                                   },
                                 ),
                                 const SizedBox(height: 32),
-                                _buildContinueButton(),
+                                _buildSaveButton(passwordState.isLoading),
                               ],
                             ),
                           ),
@@ -179,7 +183,59 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
     );
   }
 
-  Widget _buildContinueButton() {
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String hint,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: true,
+      style: const TextStyle(fontSize: 14, color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFF4B5563)),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: brandColor),
+        ),
+      ),
+      validator: validator ?? _defaultPasswordValidator,
+    );
+  }
+
+  String? _defaultPasswordValidator(String? value) {
+    final text = value ?? '';
+    if (text.isEmpty) {
+      return 'New password is required';
+    }
+    if (text.length < 8) {
+      return 'Minimum 8 characters';
+    }
+    if (!RegExp(r'[A-Z]').hasMatch(text)) {
+      return 'Include at least one uppercase letter';
+    }
+    if (!RegExp(r'[0-9]').hasMatch(text)) {
+      return 'Include at least one number';
+    }
+    return null;
+  }
+
+  Widget _buildSaveButton(bool isLoading) {
     return Container(
       height: 52,
       decoration: BoxDecoration(
@@ -193,20 +249,19 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {
-          final isValid = _formKey.currentState?.validate();
-          if (isValid != true) return;
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => NewPasswordPage(
-                email: widget.email,
-                otp: _otpController.text.trim(),
-              ),
-            ),
-          );
-        },
+        onPressed: isLoading
+            ? null
+            : () async {
+                final isValid = _formKey.currentState?.validate();
+                if (isValid != true) return;
+                await ref
+                    .read(passwordProvider.notifier)
+                    .resetPassword(
+                      email: widget.email,
+                      otp: widget.otp,
+                      newPassword: _newPasswordController.text,
+                    );
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,
           disabledBackgroundColor: brandColor.withOpacity(0.5),
@@ -215,7 +270,16 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           elevation: 0,
         ),
-        child: const Text('CONTINUE'),
+        child: isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : const Text('SAVE PASSWORD'),
       ),
     );
   }
