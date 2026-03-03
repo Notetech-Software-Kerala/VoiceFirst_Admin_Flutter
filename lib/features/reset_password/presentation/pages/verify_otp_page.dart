@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/pages/new_password_page.dart';
@@ -26,11 +25,11 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
     super.dispose();
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
-    );
-  }
+  // void _showError(String message) {
+  //   ScaffoldMessenger.of(context).showSnackBar(
+  //     SnackBar(content: Text(message), backgroundColor: Colors.red),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -82,10 +81,10 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                           constraints: const BoxConstraints(maxWidth: 384),
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.03),
+                            color: Colors.white.withAlpha(8),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withAlpha(20),
                             ),
                           ),
                           child: Form(
@@ -117,7 +116,7 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                                       color: Color(0xFF4B5563),
                                     ),
                                     filled: true,
-                                    fillColor: Colors.white.withOpacity(0.05),
+                                    fillColor: Colors.white.withAlpha(13),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 16,
@@ -125,13 +124,13 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
-                                        color: Colors.white.withOpacity(0.1),
+                                        color: Colors.white.withAlpha(20),
                                       ),
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(8),
                                       borderSide: BorderSide(
-                                        color: Colors.white.withOpacity(0.1),
+                                        color: Colors.white.withAlpha(26),
                                       ),
                                     ),
                                     focusedBorder: OutlineInputBorder(
@@ -186,7 +185,7 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: brandColor.withOpacity(0.4),
+            color: brandColor.withAlpha(102),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -209,7 +208,7 @@ class _VerifyOtpPageState extends ConsumerState<VerifyOtpPage> {
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,
-          disabledBackgroundColor: brandColor.withOpacity(0.5),
+          disabledBackgroundColor: brandColor.withAlpha(128),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -240,7 +239,7 @@ class _BackgroundLayer extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF0D7FF2).withOpacity(0.15),
+                  const Color(0xFF0D7FF2).withAlpha(38),
                   Colors.transparent,
                 ],
                 stops: const [0.0, 1.0],
@@ -258,7 +257,7 @@ class _BackgroundLayer extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF0D7FF2).withOpacity(0.1),
+                  const Color(0xFF0D7FF2).withAlpha(26),
                   Colors.transparent,
                 ],
                 stops: const [0.0, 1.0],
@@ -272,6 +271,7 @@ class _BackgroundLayer extends StatelessWidget {
   }
 }
 
+
 class _WavePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -281,7 +281,7 @@ class _WavePainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     final paint2 = Paint()
-      ..color = const Color(0xFF0D7FF2).withOpacity(0.5)
+      ..color = const Color(0xFF0D7FF2).withAlpha(128)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

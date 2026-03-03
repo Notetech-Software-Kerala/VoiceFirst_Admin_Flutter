@@ -107,10 +107,10 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
                           constraints: const BoxConstraints(maxWidth: 384),
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.03),
+                            color: Colors.white.withAlpha(8),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.08),
+                              color: Colors.white.withAlpha(20),
                             ),
                           ),
                           child: Form(
@@ -196,18 +196,18 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0xFF4B5563)),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: Colors.white.withAlpha(13),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Colors.white.withAlpha(26)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: Colors.white.withAlpha(26)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -242,7 +242,7 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: brandColor.withOpacity(0.4),
+            color: brandColor.withAlpha(102),
             blurRadius: 20,
             spreadRadius: 2,
           ),
@@ -264,7 +264,7 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,
-          disabledBackgroundColor: brandColor.withOpacity(0.5),
+          disabledBackgroundColor: brandColor.withAlpha(128),
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
@@ -304,7 +304,7 @@ class _BackgroundLayer extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF0D7FF2).withOpacity(0.15),
+                  const Color(0xFF0D7FF2).withAlpha(38),
                   Colors.transparent,
                 ],
                 stops: const [0.0, 1.0],
@@ -322,7 +322,7 @@ class _BackgroundLayer extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  const Color(0xFF0D7FF2).withOpacity(0.1),
+                  const Color(0xFF0D7FF2).withAlpha(26),
                   Colors.transparent,
                 ],
                 stops: const [0.0, 1.0],
@@ -345,7 +345,7 @@ class _WavePainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     final paint2 = Paint()
-      ..color = const Color(0xFF0D7FF2).withOpacity(0.5)
+      ..color = const Color(0xFF0D7FF2).withAlpha(128)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
