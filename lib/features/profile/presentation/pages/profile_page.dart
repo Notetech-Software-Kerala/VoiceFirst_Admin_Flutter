@@ -398,53 +398,6 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  // Widget _buildTile(
-  //   BuildContext context, {
-  //   required IconData icon,
-  //   required Color iconColor,
-  //   required String title,
-  //   Widget? trailing,
-  //   bool isLast = false,
-  // }) {
-  //   final theme = Theme.of(context);
-  //   return Container(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-  //     constraints: const BoxConstraints(minHeight: 56),
-  //     decoration: BoxDecoration(
-  //       border: isLast
-  //           ? null
-  //           : Border(
-  //               bottom: BorderSide(
-  //                 color: theme.dividerColor.withValues(alpha: 0.5),
-  //               ),
-  //             ),
-  //     ),
-  //     child: Row(
-  //       children: [
-  //         Container(
-  //           width: 32,
-  //           height: 32,
-  //           decoration: BoxDecoration(
-  //             color: iconColor.withValues(alpha: 0.1),
-  //             shape: BoxShape.circle,
-  //           ),
-  //           child: Icon(icon, size: 18, color: iconColor),
-  //         ),
-  //         const SizedBox(width: 12),
-  //         Expanded(
-  //           child: Text(
-  //             title,
-  //             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-  //           ),
-  //         ),
-  //         if (trailing != null)
-  //           trailing
-  //         else
-  //           Icon(Icons.chevron_right, color: theme.iconTheme.color),
-  //       ],
-  //     ),
-  //   );
-  // }
   Widget _buildTile(
     BuildContext context, {
     required IconData icon,

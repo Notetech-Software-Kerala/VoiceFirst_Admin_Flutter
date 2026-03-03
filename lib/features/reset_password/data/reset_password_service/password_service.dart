@@ -9,7 +9,7 @@ import 'package:voice_first_admin/features/reset_password/data/models/reset_pass
 
 class PasswordService {
   Future<void> forgotPassword(ForgotPasswordRequest request) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/auth/forgot-password');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/password/forgot');
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: ${jsonEncode(request.toJson())}');
@@ -30,7 +30,7 @@ class PasswordService {
   }
 
   Future<void> resetPassword(ResetPasswordRequest request) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/auth/reset-password');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/password/reset');
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: ${jsonEncode(request.toJson())}');
@@ -51,7 +51,7 @@ class PasswordService {
   }
 
   Future<void> changePassword(ChangePasswordRequest request) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/auth/change-password');
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/password/change');
 
     debugPrint('API REQUEST: POST $url');
     debugPrint('Request Body: ${jsonEncode(request.toJson())}');

@@ -10,6 +10,7 @@ import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/pages/edit_place_page.dart';
+import 'package:voice_first_admin/features/Place_management/widgets/place_empty_places.dart';
 import '../../data/models/place_requests.dart';
 import '../providers/place_provider.dart';
 import 'add_place_page.dart';
@@ -132,9 +133,7 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
             child: Center(child: CircularProgressIndicator()),
           )
         else if (state.places.isEmpty)
-          const SliverFillRemaining(
-            child: Center(child: Text('No places found')),
-          )
+          SliverFillRemaining(child: PlaceEmptyPlaces(theme: theme))
         else
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -247,37 +246,6 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _EmptyPlaces extends StatelessWidget {
-  final ThemeData theme;
-  const _EmptyPlaces({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: theme.primaryColor.withAlpha(25),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.inbox,
-              size: 40,
-              color: theme.primaryColor.withAlpha(128),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text('No places found'),
-        ],
-      ),
     );
   }
 }

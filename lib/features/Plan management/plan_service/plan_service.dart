@@ -176,22 +176,68 @@ class PlanService {
   /// PROGRAM ACTION LOOKUP
   ////////////////////////////////////////////////////////////
 
-  Future<List<ProgramActionLinkProgram>> getProgramActionLinkLookup() async {
-    final uri = Uri.parse('$baseUrl/program/for-plan');
-    debugPrint('[GET PROGRAM ACTION LINK LOOKUP] URI: $uri');
-    debugPrint('[GET PROGRAM ACTION LINK LOOKUP] HEADERS: $defaultHeaders');
-    final response = await http.get(uri, headers: defaultHeaders);
-    debugPrint(
-      '[GET PROGRAM ACTION LINK LOOKUP] STATUS: ${response.statusCode}',
+  // Future<List<ProgramActionLinkProgram>> getProgramActionLinkLookup() async {
+  //   final uri = Uri.parse('$baseUrl/program/for-plan');
+  //   debugPrint('[GET PROGRAM ACTION LINK LOOKUP] URI: $uri');
+  //   debugPrint('[GET PROGRAM ACTION LINK LOOKUP] HEADERS: $defaultHeaders');
+  //   final response = await http.get(uri, headers: defaultHeaders);
+  //   debugPrint(
+  //     '[GET PROGRAM ACTION LINK LOOKUP] STATUS: ${response.statusCode}',
+  //   );
+  //   debugPrint('[GET PROGRAM ACTION LINK LOOKUP] BODY: ${response.body}');
+  //   if (response.statusCode != 200 && response.statusCode != 201) {
+  //     throw Exception(
+  //       'Failed to load program/action links: ${response.statusCode}',
+  //     );
+  //   }
+  //   final jsonBody = jsonDecode(response.body);
+  //   final list = (jsonBody['data'] as List? ?? []);
+  //   return list.map((e) => ProgramActionLinkProgram.fromJson(e)).toList();
+  // }
+
+  Future<PaginatedResponse<ProgramActionLinkProgram>>
+  getProgramActionLinkLookupPaginated({
+    required int page,
+    required int pageSize,
+    String? search,
+  }) async {
+    final uri = Uri.parse('$baseUrl/program/for-plan').replace(
+      queryParameters: {
+        'PageNumber': page.toString(),
+        'Limit': pageSize.toString(),
+        if (search != null && search.isNotEmpty) 'SearchText': search,
+      },
     );
-    debugPrint('[GET PROGRAM ACTION LINK LOOKUP] BODY: ${response.body}');
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception(
-        'Failed to load program/action links: ${response.statusCode}',
-      );
+
+    debugPrint('[PROGRAM ACTION PAGINATED] URI: $uri');
+    debugPrint('[PROGRAM ACTION PAGINATED] HEADERS: $defaultHeaders');
+    debugPrint(
+      '[PROGRAM ACTION PAGINATED] PAGE: $page, PAGE SIZE: $pageSize, SEARCH: $search',
+    );
+
+    final response = await http.get(uri, headers: defaultHeaders);
+
+    debugPrint('[PROGRAM ACTION PAGINATED] STATUS: ${response.statusCode}');
+    debugPrint('[PROGRAM ACTION PAGINATED] RESPONSE BODY: ${response.body}');
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load program/action links');
     }
+
     final jsonBody = jsonDecode(response.body);
-    final list = (jsonBody['data'] as List? ?? []);
-    return list.map((e) => ProgramActionLinkProgram.fromJson(e)).toList();
+
+    final paginated = PaginatedResponse<ProgramActionLinkProgram>.fromJson(
+      jsonBody['data'],
+      (e) => ProgramActionLinkProgram.fromJson(e),
+    );
+
+    debugPrint(
+      '[PROGRAM ACTION PAGINATED] ITEMS LOADED: ${paginated.items.length}',
+    );
+    debugPrint(
+      '[PROGRAM ACTION PAGINATED] PAGE: ${paginated.currentPage} / ${paginated.totalPages}, TOTAL COUNT: ${paginated.totalCount}',
+    );
+
+    return paginated;
   }
 }

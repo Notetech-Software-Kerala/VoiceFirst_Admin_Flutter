@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/editPlaceFormProvider.dart';
 import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/searchable_dropdown.dart';
+import 'package:voice_first_admin/core/widgets/paginated_search_dropdown.dart';
+import 'package:voice_first_admin/features/Place_management/widgets/place_form_label.dart';
 
 class AddMoreZipCodesPage extends ConsumerStatefulWidget {
   final int placeId;
@@ -18,21 +19,384 @@ class AddMoreZipCodesPage extends ConsumerStatefulWidget {
 class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
   late TextEditingController _searchController;
 
+  // Ensure only one hierarchy dropdown is open at a time
+  final ValueNotifier<String?> _openDropdownId = ValueNotifier<String?>(null);
+
+  // COUNTRY
+  List<CountryLookup> _countries = [];
+  bool _isLoadingCountries = false;
+  bool _hasMoreCountries = true;
+  int _countryPage = 1;
+  String _countrySearchText = '';
+
+  // DIVISION 1
+  List<DivisionOneLookup> _divOneItems = [];
+  bool _isLoadingDivOne = false;
+  bool _hasMoreDivOne = true;
+  int _divOnePage = 1;
+  String _divOneSearchText = '';
+  int? _divOneCountryId;
+
+  // DIVISION 2
+  List<DivisionTwoLookup> _divTwoItems = [];
+  bool _isLoadingDivTwo = false;
+  bool _hasMoreDivTwo = true;
+  int _divTwoPage = 1;
+  String _divTwoSearchText = '';
+  int? _divTwoDivOneId;
+
+  // DIVISION 3
+  List<DivisionThreeLookup> _divThreeItems = [];
+  bool _isLoadingDivThree = false;
+  bool _hasMoreDivThree = true;
+  int _divThreePage = 1;
+  String _divThreeSearchText = '';
+  int? _divThreeDivTwoId;
+
+  // POST OFFICES (for Add More Zip Codes section)
+  final ScrollController _postOfficeScrollController = ScrollController();
+  List<PostOfficeLookup> _postOffices = [];
+  bool _isLoadingPostOffices = false;
+  bool _hasMorePostOffices = true;
+  int _postOfficePage = 1;
+  String _postOfficeSearchText = '';
+  int? _filterCountryId;
+  int? _filterDivOneId;
+  int? _filterDivTwoId;
+  int? _filterDivThreeId;
+  int? _filterPlaceId;
+
+  // ZIP CODES PER POST OFFICE (lazy-loaded)
+  final Map<int, List<ZipCodeLookup>> _zipCodesByOffice = {};
+  final Map<int, bool> _isLoadingZipByOffice = {};
+
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
 
-    // 🔥 Clear only hierarchy when entering page
+    // Ensure a fresh edit form hierarchy each time this page is created
     Future.microtask(() {
       ref.read(editPlaceFormProvider.notifier).clearHierarchy();
     });
+
+    // Reset local paging/search state
+    _countries = [];
+    _isLoadingCountries = false;
+    _hasMoreCountries = true;
+    _countryPage = 1;
+    _countrySearchText = '';
+
+    _divOneItems = [];
+    _isLoadingDivOne = false;
+    _hasMoreDivOne = true;
+    _divOnePage = 1;
+    _divOneSearchText = '';
+    _divOneCountryId = null;
+
+    _divTwoItems = [];
+    _isLoadingDivTwo = false;
+    _hasMoreDivTwo = true;
+    _divTwoPage = 1;
+    _divTwoSearchText = '';
+    _divTwoDivOneId = null;
+
+    _divThreeItems = [];
+    _isLoadingDivThree = false;
+    _hasMoreDivThree = true;
+    _divThreePage = 1;
+    _divThreeSearchText = '';
+    _divThreeDivTwoId = null;
+
+    _postOffices = [];
+    _isLoadingPostOffices = false;
+    _hasMorePostOffices = true;
+    _postOfficePage = 1;
+    _postOfficeSearchText = '';
+    _filterCountryId = null;
+    _filterDivOneId = null;
+    _filterDivTwoId = null;
+    _filterDivThreeId = null;
+    _filterPlaceId = null;
+    _zipCodesByOffice.clear();
+    _isLoadingZipByOffice.clear();
+
+    _searchController.clear();
+
+    _loadCountries();
+    _postOfficeScrollController.addListener(_onPostOfficeScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _postOfficeScrollController.dispose();
+    _openDropdownId.dispose();
     super.dispose();
+  }
+
+  // ================= COUNTRY (Paginated) =================
+  Future<void> _loadCountries() async {
+    if (_isLoadingCountries || !_hasMoreCountries) return;
+
+    setState(() {
+      _isLoadingCountries = true;
+    });
+
+    final service = ref.read(placeLookupServiceProvider);
+
+    try {
+      final response = await service.getCountriesPaginated(
+        pageNumber: _countryPage,
+        searchText: _countrySearchText.isEmpty ? null : _countrySearchText,
+      );
+
+      setState(() {
+        _countries.addAll(response.items);
+        _hasMoreCountries = response.currentPage < response.totalPages;
+        _countryPage = response.currentPage + 1;
+        _isLoadingCountries = false;
+      });
+    } catch (e) {
+      debugPrint('[AddMoreZipCodes] Error loading countries: $e');
+      setState(() {
+        _isLoadingCountries = false;
+      });
+    }
+  }
+
+  // ================= DIVISION 1 (Paginated) =================
+  Future<void> _loadDivisionOne() async {
+    final form = ref.read(editPlaceFormProvider);
+    final countryId = form.countryId;
+    if (countryId == null) return;
+
+    if (_divOneCountryId != countryId) {
+      _divOneCountryId = countryId;
+      _divOneItems = [];
+      _divOnePage = 1;
+      _hasMoreDivOne = true;
+      _divOneSearchText = '';
+    }
+
+    if (_isLoadingDivOne || !_hasMoreDivOne) return;
+
+    setState(() {
+      _isLoadingDivOne = true;
+    });
+
+    final service = ref.read(placeLookupServiceProvider);
+
+    try {
+      final response = await service.getDivisionOnePaginated(
+        countryId: countryId,
+        pageNumber: _divOnePage,
+        searchText: _divOneSearchText.isEmpty ? null : _divOneSearchText,
+      );
+
+      setState(() {
+        _divOneItems.addAll(response.items);
+        _hasMoreDivOne = response.currentPage < response.totalPages;
+        _divOnePage = response.currentPage + 1;
+        _isLoadingDivOne = false;
+      });
+    } catch (e) {
+      debugPrint('[AddMoreZipCodes] Error loading division 1: $e');
+      setState(() {
+        _isLoadingDivOne = false;
+      });
+    }
+  }
+
+  // ================= DIVISION 2 (Paginated) =================
+  Future<void> _loadDivisionTwo() async {
+    final form = ref.read(editPlaceFormProvider);
+    final divOneId = form.divOneId;
+    if (divOneId == null) return;
+
+    if (_divTwoDivOneId != divOneId) {
+      _divTwoDivOneId = divOneId;
+      _divTwoItems = [];
+      _divTwoPage = 1;
+      _hasMoreDivTwo = true;
+      _divTwoSearchText = '';
+    }
+
+    if (_isLoadingDivTwo || !_hasMoreDivTwo) return;
+
+    setState(() {
+      _isLoadingDivTwo = true;
+    });
+
+    final service = ref.read(placeLookupServiceProvider);
+
+    try {
+      final response = await service.getDivisionTwoPaginated(
+        divOneId: divOneId,
+        pageNumber: _divTwoPage,
+        searchText: _divTwoSearchText.isEmpty ? null : _divTwoSearchText,
+      );
+
+      setState(() {
+        _divTwoItems.addAll(response.items);
+        _hasMoreDivTwo = response.currentPage < response.totalPages;
+        _divTwoPage = response.currentPage + 1;
+        _isLoadingDivTwo = false;
+      });
+    } catch (e) {
+      debugPrint('[AddMoreZipCodes] Error loading division 2: $e');
+      setState(() {
+        _isLoadingDivTwo = false;
+      });
+    }
+  }
+
+  // ================= DIVISION 3 (Paginated) =================
+  Future<void> _loadDivisionThree() async {
+    final form = ref.read(editPlaceFormProvider);
+    final divTwoId = form.divTwoId;
+    if (divTwoId == null) return;
+
+    if (_divThreeDivTwoId != divTwoId) {
+      _divThreeDivTwoId = divTwoId;
+      _divThreeItems = [];
+      _divThreePage = 1;
+      _hasMoreDivThree = true;
+      _divThreeSearchText = '';
+    }
+
+    if (_isLoadingDivThree || !_hasMoreDivThree) return;
+
+    setState(() {
+      _isLoadingDivThree = true;
+    });
+
+    final service = ref.read(placeLookupServiceProvider);
+
+    try {
+      final response = await service.getDivisionThreePaginated(
+        divTwoId: divTwoId,
+        pageNumber: _divThreePage,
+        searchText: _divThreeSearchText.isEmpty ? null : _divThreeSearchText,
+      );
+
+      setState(() {
+        _divThreeItems.addAll(response.items);
+        _hasMoreDivThree = response.currentPage < response.totalPages;
+        _divThreePage = response.currentPage + 1;
+        _isLoadingDivThree = false;
+      });
+    } catch (e) {
+      debugPrint('[AddMoreZipCodes] Error loading division 3: $e');
+      setState(() {
+        _isLoadingDivThree = false;
+      });
+    }
+  }
+
+  void _onPostOfficeScroll() {
+    if (!_postOfficeScrollController.hasClients) return;
+    final position = _postOfficeScrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 120) {
+      _loadPostOffices();
+    }
+  }
+
+  Future<void> _loadPostOffices() async {
+    final filter = ref.read(postOfficeFilterForEditProvider(widget.placeId));
+    if (!filter.isReady) return;
+
+    final countryId = filter.countryId!;
+    final divOneId = filter.divOneId!;
+    final divTwoId = filter.divTwoId!;
+    final divThreeId = filter.divThreeId!;
+    final placeId = filter.placeId;
+
+    final changed =
+        _filterCountryId != countryId ||
+        _filterDivOneId != divOneId ||
+        _filterDivTwoId != divTwoId ||
+        _filterDivThreeId != divThreeId ||
+        _filterPlaceId != placeId;
+
+    if (changed) {
+      _filterCountryId = countryId;
+      _filterDivOneId = divOneId;
+      _filterDivTwoId = divTwoId;
+      _filterDivThreeId = divThreeId;
+      _filterPlaceId = placeId;
+      _postOffices = [];
+      _postOfficePage = 1;
+      _hasMorePostOffices = true;
+      _zipCodesByOffice.clear();
+      _isLoadingZipByOffice.clear();
+    }
+
+    if (_isLoadingPostOffices || !_hasMorePostOffices) return;
+
+    setState(() {
+      _isLoadingPostOffices = true;
+    });
+
+    final service = ref.read(placeLookupServiceProvider);
+
+    try {
+      final response = await service.getPostOfficesPaginated(
+        countryId: countryId,
+        divOneId: divOneId,
+        divTwoId: divTwoId,
+        divThreeId: divThreeId,
+        placeId: placeId,
+        pageNumber: _postOfficePage,
+        searchText: _postOfficeSearchText.isEmpty
+            ? null
+            : _postOfficeSearchText,
+      );
+
+      setState(() {
+        _postOffices.addAll(response.items);
+        _hasMorePostOffices = response.currentPage < response.totalPages;
+        _postOfficePage = response.currentPage + 1;
+        _isLoadingPostOffices = false;
+      });
+    } catch (e) {
+      debugPrint('[AddMoreZipCodes] Error loading post offices: $e');
+      setState(() {
+        _isLoadingPostOffices = false;
+      });
+    }
+  }
+
+  Future<void> _loadZipCodesForOffice(int officeId) async {
+    if (_isLoadingZipByOffice[officeId] == true ||
+        _zipCodesByOffice.containsKey(officeId)) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingZipByOffice[officeId] = true;
+    });
+
+    final service = ref.read(placeLookupServiceProvider);
+
+    try {
+      final zips = await service.getZipCodesByPostOfficeIds(
+        postOfficeIds: [officeId],
+      );
+
+      setState(() {
+        _zipCodesByOffice[officeId] = zips;
+        _isLoadingZipByOffice[officeId] = false;
+      });
+    } catch (e) {
+      debugPrint(
+        '[AddMoreZipCodes] Error loading zip codes for office '
+        '$officeId: $e',
+      );
+      setState(() {
+        _isLoadingZipByOffice[officeId] = false;
+      });
+    }
   }
 
   Widget _buildSelectedZipSection(
@@ -127,35 +491,20 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
   @override
   Widget build(BuildContext context) {
     final filter = ref.watch(postOfficeFilterForEditProvider(widget.placeId));
-
-    final postOfficesAsync = filter.isReady
-        ? ref.watch(postOfficeLookupProvider(filter))
-        : const AsyncValue<List<PostOfficeLookup>>.data(<PostOfficeLookup>[]);
-    final offices = postOfficesAsync.maybeWhen(
-      data: (data) => data,
-      orElse: () => const <PostOfficeLookup>[],
-    );
+    final offices = const <PostOfficeLookup>[];
 
     final theme = Theme.of(context);
     final form = ref.watch(editPlaceFormProvider);
     final notifier = ref.read(editPlaceFormProvider.notifier);
 
-    // ✅ LOOKUPS
-    final countriesAsync = ref.watch(countryLookupProvider);
+    // Resolve labels from selected country in the locally cached list
     CountryLookup? selectedCountry;
-
-    countriesAsync.when(
-      data: (countries) {
-        for (final c in countries) {
-          if (c.id == form.countryId) {
-            selectedCountry = c;
-            break;
-          }
-        }
-      },
-      loading: () {},
-      error: (_, _) {},
-    );
+    for (final c in _countries) {
+      if (c.id == form.countryId) {
+        selectedCountry = c;
+        break;
+      }
+    }
 
     String resolveLabel(String? label, String fallback) {
       if (label == null) return fallback;
@@ -178,18 +527,6 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       "Division 3",
     );
 
-    final divOneAsync = form.countryId == null
-        ? null
-        : ref.watch(divisionOneLookupProvider(form.countryId!));
-
-    final divTwoAsync = form.divOneId == null
-        ? null
-        : ref.watch(divisionTwoLookupProvider(form.divOneId!));
-
-    final divThreeAsync = form.divTwoId == null
-        ? null
-        : ref.watch(divisionThreeLookupProvider(form.divTwoId!));
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add More Zip Codes'),
@@ -203,138 +540,226 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
             // ================= SUMMARY CARD AT TOP =================
             _buildSelectedZipSection(theme, offices),
 
-            const _FormLabel('Select Hierarchy'),
+            const PlaceFormLabel('Select Hierarchy'),
             const SizedBox(height: 8),
 
-            // ================= COUNTRY =================
-            countriesAsync.when(
-              data: (countries) {
-                CountryLookup? selected;
+            // ================= COUNTRY (Paginated dropdown) =================
+            PaginatedSearchDropdown<CountryLookup>(
+              id: 'add_more_country',
+              openGroup: _openDropdownId,
+              label: 'Country',
+              hintText: 'Search country...',
+              asyncItems: _isLoadingCountries && _countries.isEmpty
+                  ? const AsyncValue<List<CountryLookup>>.loading()
+                  : AsyncValue<List<CountryLookup>>.data(_countries),
+              selectedItem: _countries
+                  .where((c) => c.id == form.countryId)
+                  .cast<CountryLookup?>()
+                  .firstOrNull,
+              displayText: (c) => c.name,
+              itemId: (c) => c.id,
+              onItemSelected: (country) {
+                notifier.setCountry(country.id);
 
-                for (final c in countries) {
-                  if (c.id == form.countryId) {
-                    selected = c;
-                    break;
-                  }
-                }
+                setState(() {
+                  _divOneItems = [];
+                  _divOnePage = 1;
+                  _hasMoreDivOne = true;
+                  _divOneSearchText = '';
+                  _divOneCountryId = country.id;
 
-                return SearchableDropdown<CountryLookup>(
-                  label: "Country",
-                  value: selected,
-                  items: countries,
-                  itemLabel: (c) => c.name,
-                  itemId: (c) => c.id,
-                  onChanged: (c) {
-                    if (c != null) {
-                      notifier.setCountry(c.id);
-                    }
-                  },
-                );
+                  _divTwoItems = [];
+                  _divTwoPage = 1;
+                  _hasMoreDivTwo = true;
+                  _divTwoSearchText = '';
+                  _divTwoDivOneId = null;
+
+                  _divThreeItems = [];
+                  _divThreePage = 1;
+                  _hasMoreDivThree = true;
+                  _divThreeSearchText = '';
+                  _divThreeDivTwoId = null;
+
+                  // Clear post office section when hierarchy root changes
+                  _postOffices = [];
+                  _postOfficePage = 1;
+                  _hasMorePostOffices = true;
+                  _zipCodesByOffice.clear();
+                  _isLoadingZipByOffice.clear();
+                });
+
+                _loadDivisionOne();
               },
-              loading: () => const LinearProgressIndicator(),
-              error: (_, _) => const Text('Failed to load countries'),
+              onSearch: (value) {
+                setState(() {
+                  _countrySearchText = value.trim();
+                  _countries = [];
+                  _countryPage = 1;
+                  _hasMoreCountries = true;
+                });
+                _loadCountries();
+              },
+              onLoadMore: _loadCountries,
             ),
 
             const SizedBox(height: 12),
 
-            // ================= DIVISION ONE =================
-            if (divOneAsync != null)
-              divOneAsync.when(
-                data: (divs) {
-                  DivisionOneLookup? selected;
+            // ================= DIVISION ONE (Paginated dropdown) =================
+            if (form.countryId != null)
+              PaginatedSearchDropdown<DivisionOneLookup>(
+                id: 'add_more_div1',
+                openGroup: _openDropdownId,
+                label: div1Label,
+                hintText: 'Search division...',
+                asyncItems: _isLoadingDivOne && _divOneItems.isEmpty
+                    ? const AsyncValue<List<DivisionOneLookup>>.loading()
+                    : AsyncValue<List<DivisionOneLookup>>.data(_divOneItems),
+                selectedItem: _divOneItems
+                    .where((d) => d.id == form.divOneId)
+                    .cast<DivisionOneLookup?>()
+                    .firstOrNull,
+                displayText: (d) => d.name,
+                itemId: (d) => d.id,
+                onItemSelected: (division) {
+                  notifier.setDivOne(division.id);
 
-                  for (final d in divs) {
-                    if (d.id == form.divOneId) {
-                      selected = d;
-                      break;
-                    }
-                  }
+                  setState(() {
+                    _divTwoItems = [];
+                    _divTwoPage = 1;
+                    _hasMoreDivTwo = true;
+                    _divTwoSearchText = '';
+                    _divTwoDivOneId = null;
 
-                  return SearchableDropdown<DivisionOneLookup>(
-                    label: div1Label,
-                    value: selected,
-                    items: divs,
-                    itemLabel: (d) => d.name,
-                    itemId: (d) => d.id,
-                    onChanged: (d) {
-                      if (d != null) {
-                        notifier.setDivOne(d.id);
-                      }
-                    },
-                  );
+                    _divThreeItems = [];
+                    _divThreePage = 1;
+                    _hasMoreDivThree = true;
+                    _divThreeSearchText = '';
+                    _divThreeDivTwoId = null;
+
+                    // Clear post office section when division changes
+                    _postOffices = [];
+                    _postOfficePage = 1;
+                    _hasMorePostOffices = true;
+                    _zipCodesByOffice.clear();
+                    _isLoadingZipByOffice.clear();
+                  });
+
+                  _loadDivisionTwo();
                 },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Failed to load division'),
+                onSearch: (value) {
+                  setState(() {
+                    _divOneSearchText = value.trim();
+                    _divOneItems = [];
+                    _divOnePage = 1;
+                    _hasMoreDivOne = true;
+                  });
+                  _loadDivisionOne();
+                },
+                onLoadMore: _loadDivisionOne,
               ),
 
             const SizedBox(height: 12),
 
-            // ================= DIVISION TWO =================
-            if (divTwoAsync != null)
-              divTwoAsync.when(
-                data: (divs) {
-                  DivisionTwoLookup? selected;
+            // ================= DIVISION TWO (Paginated dropdown) =================
+            if (form.divOneId != null)
+              PaginatedSearchDropdown<DivisionTwoLookup>(
+                id: 'add_more_div2',
+                openGroup: _openDropdownId,
+                label: div2Label,
+                hintText: 'Search division...',
+                asyncItems: _isLoadingDivTwo && _divTwoItems.isEmpty
+                    ? const AsyncValue<List<DivisionTwoLookup>>.loading()
+                    : AsyncValue<List<DivisionTwoLookup>>.data(_divTwoItems),
+                selectedItem: _divTwoItems
+                    .where((d) => d.id == form.divTwoId)
+                    .cast<DivisionTwoLookup?>()
+                    .firstOrNull,
+                displayText: (d) => d.name,
+                itemId: (d) => d.id,
+                onItemSelected: (division) {
+                  notifier.setDivTwo(division.id);
 
-                  for (final d in divs) {
-                    if (d.id == form.divTwoId) {
-                      selected = d;
-                      break;
-                    }
-                  }
+                  setState(() {
+                    _divThreeItems = [];
+                    _divThreePage = 1;
+                    _hasMoreDivThree = true;
+                    _divThreeSearchText = '';
+                    _divThreeDivTwoId = null;
 
-                  return SearchableDropdown<DivisionTwoLookup>(
-                    label: div2Label,
-                    value: selected,
-                    items: divs,
-                    itemLabel: (d) => d.name,
-                    itemId: (d) => d.id,
-                    onChanged: (d) {
-                      if (d != null) {
-                        notifier.setDivTwo(d.id);
-                      }
-                    },
-                  );
+                    // Clear post office section when division changes
+                    _postOffices = [];
+                    _postOfficePage = 1;
+                    _hasMorePostOffices = true;
+                    _zipCodesByOffice.clear();
+                    _isLoadingZipByOffice.clear();
+                  });
+
+                  _loadDivisionThree();
                 },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Failed to load division'),
+                onSearch: (value) {
+                  setState(() {
+                    _divTwoSearchText = value.trim();
+                    _divTwoItems = [];
+                    _divTwoPage = 1;
+                    _hasMoreDivTwo = true;
+                  });
+                  _loadDivisionTwo();
+                },
+                onLoadMore: _loadDivisionTwo,
               ),
 
             const SizedBox(height: 12),
 
-            // ================= DIVISION THREE =================
-            if (divThreeAsync != null)
-              divThreeAsync.when(
-                data: (divs) {
-                  DivisionThreeLookup? selected;
+            // ================= DIVISION THREE (Paginated dropdown) =================
+            if (form.divTwoId != null)
+              PaginatedSearchDropdown<DivisionThreeLookup>(
+                id: 'add_more_div3',
+                openGroup: _openDropdownId,
+                label: div3Label,
+                hintText: 'Search division...',
+                asyncItems: _isLoadingDivThree && _divThreeItems.isEmpty
+                    ? const AsyncValue<List<DivisionThreeLookup>>.loading()
+                    : AsyncValue<List<DivisionThreeLookup>>.data(
+                        _divThreeItems,
+                      ),
+                selectedItem: _divThreeItems
+                    .where((d) => d.id == form.divThreeId)
+                    .cast<DivisionThreeLookup?>()
+                    .firstOrNull,
+                displayText: (d) => d.name,
+                itemId: (d) => d.id,
+                onItemSelected: (division) {
+                  notifier.setDivThree(division.id);
 
-                  for (final d in divs) {
-                    if (d.id == form.divThreeId) {
-                      selected = d;
-                      break;
-                    }
-                  }
+                  // When the deepest level of hierarchy changes, reset
+                  // post office paging state and load offices for the
+                  // selected hierarchy (same behavior as Add Place page).
+                  setState(() {
+                    _postOffices = [];
+                    _postOfficePage = 1;
+                    _hasMorePostOffices = true;
+                    _zipCodesByOffice.clear();
+                    _isLoadingZipByOffice.clear();
+                  });
 
-                  return SearchableDropdown<DivisionThreeLookup>(
-                    label: div3Label,
-                    value: selected,
-                    items: divs,
-                    itemLabel: (d) => d.name,
-                    itemId: (d) => d.id,
-                    onChanged: (d) {
-                      if (d != null) {
-                        notifier.setDivThree(d.id);
-                      }
-                    },
-                  );
+                  _loadPostOffices();
                 },
-                loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Failed to load division'),
+                onSearch: (value) {
+                  setState(() {
+                    _divThreeSearchText = value.trim();
+                    _divThreeItems = [];
+                    _divThreePage = 1;
+                    _hasMoreDivThree = true;
+                  });
+                  _loadDivisionThree();
+                },
+                onLoadMore: _loadDivisionThree,
               ),
 
             const SizedBox(height: 24),
 
             // ================= AVAILABLE POST OFFICES =================
-            const _FormLabel('Available Post Offices'),
+            const PlaceFormLabel('Available Post Offices'),
             const SizedBox(height: 12),
 
             // Search Field
@@ -349,7 +774,16 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
+                            _postOfficeSearchText = '';
+                            _postOffices = [];
+                            _postOfficePage = 1;
+                            _hasMorePostOffices = true;
+                            _zipCodesByOffice.clear();
+                            _isLoadingZipByOffice.clear();
                           });
+                          if (filter.isReady) {
+                            _loadPostOffices();
+                          }
                         },
                       )
                     : null,
@@ -358,136 +792,134 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                 ),
               ),
               onChanged: (value) {
-                setState(() {}); // rebuild for filtering
+                setState(() {
+                  _postOfficeSearchText = value.trim();
+                  _postOffices = [];
+                  _postOfficePage = 1;
+                  _hasMorePostOffices = true;
+                  _zipCodesByOffice.clear();
+                  _isLoadingZipByOffice.clear();
+                });
+                if (filter.isReady) {
+                  _loadPostOffices();
+                }
               },
             ),
 
             const SizedBox(height: 12),
 
             // Scrollable Post Office List
-            postOfficesAsync.when(
-              data: (offices) {
-                if (!filter.isReady) {
-                  return const SizedBox();
-                }
+            if (!filter.isReady)
+              const SizedBox()
+            else if (_isLoadingPostOffices && _postOffices.isEmpty)
+              const LinearProgressIndicator()
+            else if (_postOffices.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  'No post offices found for selected hierarchy',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              )
+            else
+              Column(
+                children: [
+                  Container(
+                    height: 400,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: theme.dividerColor),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListView.builder(
+                      controller: _postOfficeScrollController,
+                      itemCount: _postOffices.length,
+                      itemBuilder: (context, index) {
+                        final office = _postOffices[index];
+                        final officeId = office.postOfficeId;
+                        final officeZips =
+                            _zipCodesByOffice[officeId] ?? <ZipCodeLookup>[];
+                        final isLoadingZips =
+                            _isLoadingZipByOffice[officeId] ?? false;
 
-                if (offices.isEmpty) {
-                  return const Text('No zipcodes found for selected hierarchy');
-                }
-
-                // Filter offices based on search query
-
-                final searchQuery = _searchController.text.toLowerCase().trim();
-
-                final filteredOffices = searchQuery.isEmpty
-                    ? offices
-                    : offices
-                          .map((office) {
-                            final officeMatches = office.postOfficeName
-                                .toLowerCase()
-                                .contains(searchQuery);
-
-                            final matchingZips = office.zipCodes
-                                .where(
-                                  (zip) => zip.zipCode.toLowerCase().contains(
-                                    searchQuery,
+                        return Card(
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          child: ExpansionTile(
+                            title: Text(office.postOfficeName),
+                            subtitle: Text(
+                              officeZips.isEmpty
+                                  ? (isLoadingZips
+                                        ? 'Loading zip codes...'
+                                        : 'Tap to load zip codes')
+                                  : '${officeZips.length} zip codes',
+                            ),
+                            onExpansionChanged: (expanded) {
+                              if (expanded) {
+                                _loadZipCodesForOffice(officeId);
+                              }
+                            },
+                            children: [
+                              if (isLoadingZips && officeZips.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: CircularProgressIndicator(),
+                                )
+                              else if (officeZips.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: Text(
+                                    'No zip codes found',
+                                    style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                    ),
                                   ),
                                 )
-                                .toList();
+                              else
+                                ...officeZips.map((zip) {
+                                  final existingIndex = form.zipCodeItems
+                                      .indexWhere(
+                                        (z) =>
+                                            z.zipCodeLinkId ==
+                                            zip.zipCodeLinkId,
+                                      );
+                                  final isChecked = existingIndex >= 0
+                                      ? form
+                                            .zipCodeItems[existingIndex]
+                                            .isActive
+                                      : false;
 
-                            if (officeMatches) {
-                              // If office name matches, show all zips
-                              return office;
-                            } else if (matchingZips.isNotEmpty) {
-                              // If only zip matches, return office with filtered zips
-                              return PostOfficeLookup(
-                                postOfficeId: office.postOfficeId,
-                                postOfficeName: office.postOfficeName,
-                                zipCodes: matchingZips,
-                              );
-                            }
-
-                            return null;
-                          })
-                          .whereType<PostOfficeLookup>()
-                          .toList();
-                if (filteredOffices.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    child: const Text(
-                      'No post offices match your search',
-                      style: TextStyle(fontStyle: FontStyle.italic),
+                                  return CheckboxListTile(
+                                    value: isChecked,
+                                    title: Text(zip.zipCode),
+                                    onChanged: (_) {
+                                      if (existingIndex == -1) {
+                                        notifier.addNewZip(
+                                          postOfficeId: office.postOfficeId,
+                                          zipCodeLinkId: zip.zipCodeLinkId,
+                                          zipCode: zip.zipCode,
+                                          postOfficeName: office.postOfficeName,
+                                        );
+                                      } else {
+                                        notifier.toggleZip(zip.zipCodeLinkId);
+                                      }
+                                    },
+                                  );
+                                }).toList(),
+                            ],
+                          ),
+                        );
+                      },
                     ),
-                  );
-                }
-
-                return Container(
-                  height: 400, // Fixed height for scrollable area
-                  decoration: BoxDecoration(
-                    border: Border.all(color: theme.dividerColor),
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: ListView.builder(
-                    itemCount: filteredOffices.length,
-                    itemBuilder: (context, index) {
-                      final office = filteredOffices[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: ExpansionTile(
-                          title: Text(office.postOfficeName),
-                          subtitle: Text('${office.zipCodes.length} zip codes'),
-                          children: office.zipCodes.map<Widget>((zip) {
-                            // final alreadyAdded = form.selectedZipIds.contains(
-                            //   zip.zipCodeLinkId,
-                            // );
-                            final existing = form.zipCodeItems.firstWhere(
-                              (z) => z.zipCodeLinkId == zip.zipCodeLinkId,
-                              orElse: () => EditZipCodeItem(
-                                postOfficeId: office.postOfficeId,
-                                zipCodeLinkId: zip.zipCodeLinkId,
-                                zipCode: zip.zipCode,
-                                postOfficeName: office.postOfficeName,
-                                isNew: false,
-                                isActive: zip.active,
-                              ),
-                            );
-
-                            final isChecked = existing.isActive;
-
-                            // return CheckboxListTile(
-                            //   value: alreadyAdded,
-                            //   title: Text(zip.zipCode),
-                            //   onChanged: alreadyAdded
-                            //       ? null
-                            //       : (_) {
-                            //           notifier.addNewZip(
-                            //             postOfficeId: office.postOfficeId,
-                            //             zipCodeLinkId: zip.zipCodeLinkId,
-                            //             zipCode: zip.zipCode,
-                            //             postOfficeName: office.postOfficeName,
-                            //           );
-                            //         },
-                            // );
-                            return CheckboxListTile(
-                              value: isChecked,
-                              title: Text(zip.zipCode),
-                              onChanged: (_) {
-                                notifier.toggleZip(zip.zipCodeLinkId);
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-              loading: () => const LinearProgressIndicator(),
-              error: (_, _) => const Text('Failed to load zipcodes'),
-            ),
+                  if (_isLoadingPostOffices && _postOffices.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: LinearProgressIndicator(),
+                    ),
+                ],
+              ),
 
             const SizedBox(height: 24),
 
@@ -503,19 +935,6 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _FormLabel extends StatelessWidget {
-  final String text;
-  const _FormLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
     );
   }
 }
