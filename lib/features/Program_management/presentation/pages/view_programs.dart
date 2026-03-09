@@ -323,7 +323,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
                   borderRadius: BorderRadius.circular(12),
                   child: StandardListCard(
                     title: program.programName,
-                    subtitle: program.labelName ,
+                    subtitle: program.labelName,
                     leading: leading,
                     actions: actions,
                   ),
@@ -513,7 +513,7 @@ class _ProgramCard extends StatelessWidget {
                           ? 'DELETED'
                           : isActive
                           ? 'ACTIVE'
-                          : 'INACTIVE',
+                          : 'SUSPENDED',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
