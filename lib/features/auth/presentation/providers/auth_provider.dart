@@ -81,11 +81,8 @@ class AuthNotifier extends Notifier<AuthState> {
     final deviceInfo = DeviceInfoPlugin();
     final packageInfo = await PackageInfo.fromPlatform();
 
-    // Parse version number (e.g., '1.0.0' -> 1)
-    int appVersion = 1;
-    try {
-      appVersion = int.tryParse(packageInfo.version.split('.').first) ?? 1;
-    } catch (_) {}
+    // Use the full string version (e.g. '1.0.0')
+    String appVersion = packageInfo.version;
 
     String deviceId =
         await _storage.read(key: 'device_id') ?? const Uuid().v4();
@@ -107,7 +104,7 @@ class AuthNotifier extends Notifier<AuthState> {
       model = webBrowserInfo.userAgent ?? "Unknown";
     } else if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
-      deviceName = androidInfo.model;
+      deviceName = androidInfo.name;
       os = "Android";
       osVersion = androidInfo.version.release;
       manufacturer = androidInfo.manufacturer;

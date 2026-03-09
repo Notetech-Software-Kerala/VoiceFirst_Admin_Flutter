@@ -17,6 +17,7 @@ class AdminMenuEditorScreen extends ConsumerStatefulWidget {
 
 class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
   bool _isSaving = false;
+  int _selectedTabIndex = 0; // 0 for Web, 1 for App
 
   void _onReorderParent(List<AppMenuModel> items, int oldIndex, int newIndex) {
     // Optimistic UI update logic handled in provider or local state
@@ -208,17 +209,15 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
 
   Widget _buildHeader(BuildContext context, List<AppMenuModel> items) {
     return DragTarget<_MenuMoveRequest>(
-      onWillAccept: (data) {
-        if (data == null) return false;
-        // Accept as root only if it's not already root (parentId != 0)
-        if (data.fromParentId == 0) return false;
+      onWillAcceptWithDetails: (details) {
+        if (details.data.fromParentId == 0) return false;
         return true;
       },
-      onAccept: (data) {
+      onAcceptWithDetails: (details) {
         _moveChild(
           items,
-          data.item,
-          data.fromParentId,
+          details.data.item,
+          details.data.fromParentId,
           0, // 0 = Root
         );
       },
@@ -234,54 +233,109 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
                 : null,
           ),
           padding: const EdgeInsets.all(24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Edit Navigation",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Edit Navigation",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isHovered
+                            ? "Drop to make top-level"
+                            : "Drag items to reorder",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isHovered
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey[400],
+                          fontWeight: isHovered
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isHovered
-                        ? "Drop to make top-level"
-                        : "Drag items to reorder",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isHovered
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey[400],
-                      fontWeight: isHovered
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.edit,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
                     ),
                   ),
                 ],
               ),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.edit,
-                  size: 16,
-                  color: Theme.of(context).primaryColor,
-                ),
+              const SizedBox(height: 24),
+              // Tabs Row
+              Row(
+                children: [
+                  _buildTab(
+                    title: "Web Menu",
+                    index: 0,
+                    primary: Theme.of(context).primaryColor,
+                  ),
+                  _buildTab(
+                    title: "App Menu",
+                    index: 1,
+                    primary: Theme.of(context).primaryColor,
+                  ),
+                ],
               ),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTab({
+    required String title,
+    required int index,
+    required Color primary,
+  }) {
+    final isSelected = _selectedTabIndex == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _selectedTabIndex = index),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? primary : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            title,
+            style: TextStyle(
+              color: isSelected ? primary : Colors.grey[500],
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -313,8 +367,8 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
             child: Icon(Icons.drag_indicator, color: Colors.grey[600]),
           ),
           title: DragTarget<_MenuMoveRequest>(
-            onWillAccept: (data) {
-              if (data == null) return false;
+            onWillAcceptWithDetails: (details) {
+              final data = details.data;
               // Prevent dropping on self
               if (data.item.appMenuId == item.appMenuId) return false;
               // Prevent dropping if target is the current parent (already there)
@@ -322,7 +376,8 @@ class _AdminMenuEditorScreenState extends ConsumerState<AdminMenuEditorScreen> {
 
               return true;
             },
-            onAccept: (data) {
+            onAcceptWithDetails: (details) {
+              final data = details.data;
               // Validate: Cannot drop into a parent that has a route (is a page, not a folder)
               if (item.route.trim().isNotEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
