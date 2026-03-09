@@ -8,12 +8,16 @@ class AuthRepository {
   Future<TokenModel> login(LoginRequestModel request) async {
     try {
       final uri = Uri.parse('${ApiEndpoints.baseUrl}/auth/login');
-      debugPrint("Login Request: $uri");
+      final logBody = jsonEncode(request.toJson());
+      debugPrint("=== STARTING REAL LOGIN REQUEST ===");
+      debugPrint("Login Request URI: $uri");
+      debugPrint("Login Request Body:");
+      debugPrint(logBody);
 
       final response = await http.post(
         uri,
         headers: ApiEndpoints.defaultHeaders,
-        body: jsonEncode(request.toJson()),
+        body: logBody,
       );
 
       debugPrint("Login Status: ${response.statusCode}");
