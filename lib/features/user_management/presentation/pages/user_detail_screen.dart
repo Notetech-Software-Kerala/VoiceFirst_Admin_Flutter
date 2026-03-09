@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/widgets/delete_bottom_sheet.dart';
+import '../../../../core/widgets/recovery_bottom_sheet.dart';
 import '../../data/models/user_model.dart';
+import '../providers/user_provider.dart';
 import 'edit_user_screen.dart';
 
-class UserDetailScreen extends StatelessWidget {
+class UserDetailScreen extends ConsumerWidget {
   final UserModel user;
 
   const UserDetailScreen({super.key, required this.user});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final primary = theme.primaryColor;
+    final userNotifier = ref.read(userProvider.notifier);
 
     return Scaffold(
       // 1. Top Navigation Bar
@@ -241,85 +246,186 @@ class UserDetailScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Edit Profile Button
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => EditUserScreen(user: user),
+                    if (user.deleted)
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          showRecoveryBottomSheet(
+                            context: context,
+                            itemName: "${user.firstName} ${user.lastName}",
+                            title: "RECOVER USER?",
+                            questionText:
+                                "Are you sure you want to restore this user?",
+                            onRecover: () async {
+                              try {
+                                await userNotifier.recoverUser(user.id);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "User recovered successfully",
+                                      ),
+                                    ),
+                                  );
+                                  Navigator.pop(context); // Go back to list
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "Failed to recover user: $e",
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.restore_from_trash, size: 20),
+                        label: const Text("Recover Profile"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      label: const Text("Edit Profile"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 52),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          elevation: 4,
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                        elevation: 4,
-                        shadowColor: primary.withValues(alpha: 0.4),
-                        textStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      )
+                    else ...[
+                      // Edit Profile Button
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditUserScreen(user: user),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        label: const Text("Edit Profile"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 52),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 4,
+                          shadowColor: primary.withValues(alpha: 0.4),
+                          textStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Deactivate & Delete Row
-                    Row(
-                      children: [
-                        // Deactivate Button
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.block, size: 20),
-                            label: const Text("Deactivate"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isDark
-                                  ? const Color(0xFF1E293B)
-                                  : Colors.grey[200],
-                              foregroundColor: isDark
-                                  ? Colors.white
-                                  : Colors.grey[900],
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 12),
+                      // Deactivate & Delete Row
+                      Row(
+                        children: [
+                          // Deactivate Button (Placeholder)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Deactivate coming soon"),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.block, size: 20),
+                              label: const Text("Deactivate"),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isDark
+                                    ? const Color(0xFF1E293B)
+                                    : Colors.grey[200],
+                                foregroundColor: isDark
+                                    ? Colors.white
+                                    : Colors.grey[900],
+                                minimumSize: const Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
-                              elevation: 0,
-                              textStyle: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Delete Button
+                          Container(
+                            width: 56,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.red.withValues(alpha: 0.2),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // Delete Button
-                        Container(
-                          width: 56,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.red.withValues(alpha: 0.2),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+                                showDeleteBottomSheet(
+                                  context: context,
+                                  itemName:
+                                      "${user.firstName} ${user.lastName}",
+                                  title: "DELETE USER?",
+                                  warningText:
+                                      "Are you sure you want to remove this user?",
+                                  subWarningText:
+                                      "This action cannot be undone.",
+                                  onDelete: () async {
+                                    try {
+                                      await userNotifier.deleteUser(user.id);
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "User deleted successfully",
+                                            ),
+                                          ),
+                                        );
+                                        Navigator.pop(
+                                          context,
+                                        ); // Go back to list
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "Failed to delete user: $e",
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                );
+                              },
                             ),
                           ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.red,
-                            ),
-                            onPressed: () {},
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

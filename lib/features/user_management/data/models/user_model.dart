@@ -6,6 +6,7 @@ class UserModel {
   final String? mobileNo;
   final String? birthYear;
   final bool active;
+  final bool deleted; // Tracking soft deletion
   final DateTime? createdDate;
   final String? roleName; // Assuming API returns role name or ID
   final String? imageUrl; // Hypothetical, API might not return this directly
@@ -18,6 +19,7 @@ class UserModel {
     this.mobileNo,
     this.birthYear,
     required this.active,
+    this.deleted = false,
     this.createdDate,
     this.roleName,
     this.imageUrl,
@@ -32,6 +34,7 @@ class UserModel {
       mobileNo: json['mobileNo']?.toString(),
       birthYear: json['birthYear']?.toString(),
       active: json['active'] ?? true,
+      deleted: json['deleted'] ?? false,
       createdDate: json['createdDate'] != null
           ? DateTime.tryParse(json['createdDate'])
           : null,

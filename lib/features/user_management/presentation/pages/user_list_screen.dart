@@ -5,6 +5,8 @@ import 'user_detail_screen.dart';
 import 'edit_user_screen.dart';
 import '../../../../core/widgets/standard_pagination_controls.dart';
 import '../../../../core/widgets/standard_page_layout.dart';
+import '../../../../core/widgets/delete_bottom_sheet.dart';
+import '../../../../core/widgets/recovery_bottom_sheet.dart';
 
 class UserListScreen extends ConsumerWidget {
   const UserListScreen({super.key});
@@ -149,9 +151,93 @@ class UserListScreen extends ConsumerWidget {
                     imageUrl:
                         user.imageUrl ??
                         "https://i.pravatar.cc/150?u=${user.id}", // Fallback
-                    statusColor: user.active ? Colors.green : Colors.grey,
+                    statusColor: user.deleted
+                        ? Colors.red
+                        : (user.active ? Colors.green : Colors.grey),
                     roleColor: Colors.blue, // Simplify for now
-                    isDimmed: !user.active,
+                    isDimmed: !user.active || user.deleted,
+                    isDeleted: user.deleted,
+                    onEdit: user.deleted
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditUserScreen(user: user),
+                              ),
+                            );
+                          },
+                    onRecover: !user.deleted
+                        ? null
+                        : () {
+                            showRecoveryBottomSheet(
+                              context: context,
+                              itemName: "${user.firstName} ${user.lastName}",
+                              title: "RECOVER USER?",
+                              questionText:
+                                  "Are you sure you want to restore this user?",
+                              onRecover: () async {
+                                try {
+                                  await userNotifier.recoverUser(user.id);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "User recovered successfully",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Failed to recover user: $e",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            );
+                          },
+                    onDelete: user.deleted
+                        ? null
+                        : () {
+                            showDeleteBottomSheet(
+                              context: context,
+                              itemName: "${user.firstName} ${user.lastName}",
+                              title: "DELETE USER?",
+                              warningText:
+                                  "Are you sure you want to remove this user?",
+                              subWarningText: "This action cannot be undone.",
+                              onDelete: () async {
+                                try {
+                                  await userNotifier.deleteUser(user.id);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          "User deleted successfully",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          "Failed to delete user: $e",
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            );
+                          },
                   ),
                 );
               }, childCount: userState.users.length),
@@ -199,7 +285,7 @@ class _FilterChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? primary
-              : (isDark ? primary.withValues(alpha: 0.1) : Colors.grey[200]),
+              : (isDark ? primary.withAlpha(25) : Colors.grey[200]),
           borderRadius: BorderRadius.circular(100),
         ),
         child: Text(
@@ -209,7 +295,7 @@ class _FilterChip extends StatelessWidget {
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             color: isSelected
                 ? Colors.white
-                : (isDark ? primary.withValues(alpha: 0.8) : Colors.grey[700]),
+                : (isDark ? primary.withAlpha(200) : Colors.grey[700]),
           ),
         ),
       ),
@@ -227,6 +313,10 @@ class _UserCard extends StatelessWidget {
   final Color statusColor;
   final Color roleColor;
   final bool isDimmed;
+  final bool isDeleted;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onRecover;
 
   const _UserCard({
     required this.name,
@@ -238,6 +328,10 @@ class _UserCard extends StatelessWidget {
     required this.statusColor,
     required this.roleColor,
     this.isDimmed = false,
+    this.isDeleted = false,
+    this.onEdit,
+    this.onDelete,
+    this.onRecover,
   });
 
   @override
@@ -246,7 +340,7 @@ class _UserCard extends StatelessWidget {
 
     // Using Opacity widget here for the whole card dimming effect
     return Opacity(
-      opacity: isDimmed ? 0.75 : 1.0,
+      opacity: isDimmed ? (isDeleted ? 0.4 : 0.75) : 1.0,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
@@ -256,7 +350,7 @@ class _UserCard extends StatelessWidget {
           border: Border.all(color: theme.dividerColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
+              color: Colors.black.withAlpha(5),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -282,7 +376,7 @@ class _UserCard extends StatelessWidget {
                         border: Border.all(color: theme.cardColor, width: 2),
                       ),
                       child: isDimmed
-                          ? Container(color: Colors.grey.withValues(alpha: 0.5))
+                          ? Container(color: Colors.grey.withAlpha(127))
                           : null, // Grayscale hack
                     ),
                     Positioned(
@@ -322,11 +416,64 @@ class _UserCard extends StatelessWidget {
                   ),
                 ),
                 // Menu Icon
-                IconButton(
-                  icon: const Icon(Icons.more_vert),
-                  onPressed: () {},
-                  color: theme.hintColor,
-                  visualDensity: VisualDensity.compact,
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: theme.hintColor),
+                  onSelected: (value) {
+                    if (value == 'edit' && onEdit != null) {
+                      onEdit!();
+                    } else if (value == 'delete' && onDelete != null) {
+                      onDelete!();
+                    } else if (value == 'recover' && onRecover != null) {
+                      onRecover!();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                        if (!isDeleted) ...[
+                          const PopupMenuItem<String>(
+                            value: 'edit',
+                            child: ListTile(
+                              leading: Icon(Icons.edit, size: 20),
+                              title: Text('Edit'),
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: 'delete',
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.delete,
+                                size: 20,
+                                color: Colors.red,
+                              ),
+                              title: Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
+                          ),
+                        ] else ...[
+                          const PopupMenuItem<String>(
+                            value: 'recover',
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.restore,
+                                size: 20,
+                                color: Colors.green,
+                              ),
+                              title: Text(
+                                'Recover',
+                                style: TextStyle(color: Colors.green),
+                              ),
+                              contentPadding: EdgeInsets.zero,
+                              dense: true,
+                            ),
+                          ),
+                        ],
+                      ],
                 ),
               ],
             ),

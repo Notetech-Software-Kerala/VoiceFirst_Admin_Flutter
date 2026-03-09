@@ -1,6 +1,6 @@
 class DeviceModel {
   final String deviceId;
-  final int version;
+  final String version;
   final String deviceName;
   final String deviceType;
   final String os;
