@@ -193,7 +193,7 @@ class _GlobalFilterBottomSheetState extends State<GlobalFilterBottomSheet> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _FilterChip(
-                        label: "Inactive",
+                        label: "Suspended",
                         isSelected: _filter.active == false,
                         onTap: () {
                           setState(() {

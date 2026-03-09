@@ -416,7 +416,7 @@ class _EditUserScreenState extends ConsumerState<EditUserScreen> {
                                 Text(
                                   _isActive
                                       ? "Currently Active"
-                                      : "Currently Inactive",
+                                      : "Currently Suspended",
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,

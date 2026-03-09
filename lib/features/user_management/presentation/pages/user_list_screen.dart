@@ -142,7 +142,7 @@ class UserListScreen extends ConsumerWidget {
                     name: "${user.firstName} ${user.lastName}",
                     email: user.email,
                     role: user.roleName ?? "User",
-                    status: user.active ? "Active" : "Inactive",
+                    status: user.active ? "Active" : "Suspended",
                     joinText: user.createdDate != null
                         ? "Joined ${user.createdDate.toString().split(' ')[0]}" // Simple formatting
                         : "Unknown date",

@@ -97,7 +97,7 @@ class CountryDetailPage extends ConsumerWidget {
                     Expanded(
                       flex: 1,
                       child: Text(
-                        isActive ? 'Active' : 'Inactive',
+                        isActive ? 'Active' : 'Suspended',
                         textAlign: TextAlign.right,
                         style: TextStyle(
                           fontWeight: FontWeight.w700,

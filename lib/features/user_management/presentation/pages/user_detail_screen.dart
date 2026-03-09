@@ -155,7 +155,7 @@ class UserDetailScreen extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          user.active ? "ACTIVE" : "INACTIVE",
+                          user.active ? "ACTIVE" : "SUSPENDED",
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,

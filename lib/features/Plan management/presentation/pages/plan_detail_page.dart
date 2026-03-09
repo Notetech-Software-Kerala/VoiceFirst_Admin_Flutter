@@ -58,7 +58,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
       statusText = "Active";
       statusColor = Colors.green;
     } else {
-      statusText = "Inactive";
+      statusText = "Suspended";
       statusColor = Colors.orange;
     }
 
@@ -276,7 +276,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                                   child: Text(
                                                     a.active
                                                         ? "Active"
-                                                        : "Inactive",
+                                                        : "Suspended",
                                                     style: TextStyle(
                                                       color: a.active
                                                           ? Colors.green
@@ -304,7 +304,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                                       label: "Status",
                                                       value: a.active
                                                           ? "Active"
-                                                          : "Inactive",
+                                                          : "Suspended",
                                                       valueColor: a.active
                                                           ? Colors.green
                                                           : Colors.orange,
@@ -668,7 +668,7 @@ class _StatusChip extends StatelessWidget {
       text = "Active";
     } else {
       color = Colors.orange;
-      text = "Inactive";
+      text = "Suspended";
     }
 
     return Chip(

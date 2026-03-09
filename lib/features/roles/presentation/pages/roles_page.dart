@@ -178,7 +178,7 @@ class _RolesPageState extends ConsumerState<RolesPage> {
                   },
                   child: StandardListCard(
                     title: role.roleName,
-                    subtitle: isActive ? "Active Role" : "Inactive Role",
+                    subtitle: isActive ? "Active Role" : "Suspended Role",
                     leading: StandardIconBox(
                       icon: Icons.shield,
                       color: Theme.of(context).brightness == Brightness.dark
@@ -197,7 +197,7 @@ class _RolesPageState extends ConsumerState<RolesPage> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        isActive ? "Active" : "Inactive",
+                        isActive ? "Active" : "Suspended",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,

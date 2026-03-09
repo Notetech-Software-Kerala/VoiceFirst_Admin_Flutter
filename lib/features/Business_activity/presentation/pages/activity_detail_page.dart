@@ -78,7 +78,7 @@ class ActivityDetailPage extends ConsumerWidget {
                               ? 'Deleted'
                               : (updatedActivity.active
                                     ? 'Active'
-                                    : 'Inactive'),
+                                    : 'Suspended'),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: isDeleted
