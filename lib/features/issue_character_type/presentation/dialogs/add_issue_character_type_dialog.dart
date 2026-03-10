@@ -20,17 +20,27 @@ class AddIssueCharacterTypeDialog {
       }
 
       final notifier = ref.read(issueCharacterTypeProvider.notifier);
-      final error = await notifier.add(name);
 
-      if (error == null) {
-        Navigator.pop(context);
+      try {
+        final message = await notifier.add(name);
+
+        if (!context.mounted) return;
+
         CustomSnackbar.show(
           context,
-          message: '$name added successfully',
+          message: message,
           type: SnackBarType.success,
         );
-      } else {
-        CustomSnackbar.show(context, message: error, type: SnackBarType.error);
+        Navigator.pop(context);
+      } catch (e) {
+        if (!context.mounted) return;
+
+        CustomSnackbar.show(
+          context,
+          message: e.toString().replaceFirst('Exception: ', ''),
+          type: SnackBarType.error,
+        );
+        Navigator.pop(context);
       }
     }
 

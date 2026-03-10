@@ -21,63 +21,36 @@ class CustomSnackbar {
             : _getDefaultDuration(type));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      // SnackBar(
-      //   content: Row(
-      //     children: [
-      //       Icon(icon, color: Colors.white),
-      //       const SizedBox(width: 12),
-      //       Expanded(child: Text(message)),
-      //       IconButton(
-      //         icon: const Icon(Icons.close, color: Colors.white),
-      //         tooltip: 'Close',
-      //         onPressed: () {
-      //           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      //         },
-      //         padding: EdgeInsets.zero,
-      //         constraints: const BoxConstraints(),
-      //       ),
-      //     ],
-      //   ),
-      //   backgroundColor: color,
-      //   duration: resolvedDuration,
-      //   action: action,
-      //   behavior: SnackBarBehavior.floating,
-      //   margin: const EdgeInsets.all(16),
-      //   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      // ),
       SnackBar(
-        content: SizedBox(
-          height: message.length > 60 ? 64 : 48, // Standard Material height
-          child: Row(
-            children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  message,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 14),
-                ),
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                softWrap: true,
+                maxLines: 5,
+                overflow: TextOverflow.visible,
+                style: const TextStyle(fontSize: 14),
               ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () {
-                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                },
-                child: const Icon(Icons.close, color: Colors.white, size: 20),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+              child: const Icon(Icons.close, color: Colors.white, size: 20),
+            ),
+          ],
         ),
         backgroundColor: color,
         duration: resolvedDuration,
         action: action,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16,
-        ), // remove vertical padding
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );

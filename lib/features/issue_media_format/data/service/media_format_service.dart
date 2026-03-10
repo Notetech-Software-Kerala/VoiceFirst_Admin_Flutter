@@ -4,28 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
-import 'package:voice_first_admin/features/issue_character_type/data/models/issue_charactertype_model.dart';
-import 'package:voice_first_admin/features/issue_character_type/data/models/issue_character_type_filter.dart';
+import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_model.dart';
+import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_filter.dart';
 
-class CharacterTypeService {
-  static const String _path = '/issue-character-type';
+class MediaFormatService {
+  static const String _path = '/issue-media-format';
 
-  /// Create a new issue character type
-  ///
-  /// Request body:
-  ///   { "issueCharacterType": "string" }
-  Future<(IssueCharacterTypeModel, String)> createCharacterType(
-    String name,
-  ) async {
+  Future<(IssueMediaFormatModel, String)> createMediaFormat(String name) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
 
     debugPrint('API REQUEST: POST $url');
-    debugPrint('Request Body: {"issueCharacterType":"$name"}');
+    debugPrint('Request Body: {"issueMediaFormat":"$name"}');
 
     final response = await http.post(
       url,
       headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode({'issueCharacterType': name}),
+      body: jsonEncode({'issueMediaFormat': name}),
     );
 
     debugPrint(
@@ -33,30 +27,25 @@ class CharacterTypeService {
     );
 
     final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-    final message =
-        jsonBody['message']?.toString() ??
-        (response.statusCode == 200 || response.statusCode == 201
-            ? 'Issue character type created successfully'
-            : 'Failed to create issue character type');
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       debugPrint(
-        'API ERROR (createCharacterType): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (createMediaFormat): status=${response.statusCode}, body=${response.body}',
       );
-      throw Exception(message);
+      final errorMessage =
+          jsonBody['message']?.toString() ??
+          'Failed to create issue media format';
+      throw Exception(errorMessage);
     }
-
+    final message =
+        jsonBody['message']?.toString() ??
+        'Issue media format created successfully';
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return (IssueCharacterTypeModel.fromJson(data), message);
+    return (IssueMediaFormatModel.fromJson(data), message);
   }
 
-  /// Get all issue character types (paged)
-  ///
-  /// Uses the endpoint:
-  ///   GET https://voicefirst.admin.notetech.com/api/issue-character-type
-  /// and maps the response `data.items` into IssueCharacterTypeModel.
-  Future<PaginatedResponse<IssueCharacterTypeModel>> getAll(
-    IssueCharacterTypeFilter filter,
+  Future<PaginatedResponse<IssueMediaFormatModel>> getAll(
+    IssueMediaFormatFilter filter,
   ) async {
     final uri = Uri.parse(
       '${ApiEndpoints.baseUrl}$_path',
@@ -71,25 +60,21 @@ class CharacterTypeService {
     final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint(
-        'API ERROR BODY (GET issue character types): ${response.body}',
-      );
+      debugPrint('API ERROR BODY (GET issue media formats): ${response.body}');
       final message =
           jsonBody['message']?.toString() ??
-          'Failed to load issue character types';
+          'Failed to load issue media formats';
       throw Exception(message);
     }
-    debugPrint(
-      'API MESSAGE (GET issue character types): ${jsonBody['message']}',
-    );
+    debugPrint('API MESSAGE (GET issue media formats): ${jsonBody['message']}');
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     final itemsJson = data['items'] as List<dynamic>? ?? <dynamic>[];
     final items = itemsJson
-        .map((e) => IssueCharacterTypeModel.fromJson(e as Map<String, dynamic>))
+        .map((e) => IssueMediaFormatModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    return PaginatedResponse<IssueCharacterTypeModel>(
+    return PaginatedResponse<IssueMediaFormatModel>(
       items: items,
       totalCount: data['totalCount'] as int? ?? items.length,
       pageNumber: data['pageNumber'] as int? ?? filter.pageNumber,
@@ -98,11 +83,7 @@ class CharacterTypeService {
     );
   }
 
-  /// Get a single issue character type by ID
-  ///
-  /// Endpoint:
-  ///   GET https://voicefirst.admin.notetech.com/api/issue-character-type/{id}
-  Future<IssueCharacterTypeModel> getById(int id) async {
+  Future<IssueMediaFormatModel> getById(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
 
     debugPrint('API REQUEST: GET $url');
@@ -115,39 +96,34 @@ class CharacterTypeService {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       debugPrint(
-        'API ERROR BODY (GET issue character type by id): ${response.body}',
+        'API ERROR BODY (GET issue media format by id): ${response.body}',
       );
       final message =
           jsonBody['message']?.toString() ??
-          'Failed to load issue character type';
+          'Failed to load issue media format';
       throw Exception(message);
     }
     debugPrint(
-      'API MESSAGE (GET issue character type by id): ${jsonBody['message']}',
+      'API MESSAGE (GET issue media format by id): ${jsonBody['message']}',
     );
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueCharacterTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 
-  /// Update an issue character type
-  ///
-  /// Request body supports partial updates, e.g.:
-  ///   { "issueCharacterType": "string", "active": true }
-  /// Only non-null fields are sent so we pass only changed data.
-  Future<IssueCharacterTypeModel> updateCharacterType({
+  Future<IssueMediaFormatModel> updateMediaFormat({
     required int id,
-    String? issueCharacterType,
+    String? issueMediaFormat,
     bool? active,
   }) async {
-    if (issueCharacterType == null && active == null) {
+    if (issueMediaFormat == null && active == null) {
       throw Exception('Nothing to update');
     }
 
     final Map<String, dynamic> body = {};
 
-    if (issueCharacterType != null) {
-      body['issueCharacterType'] = issueCharacterType;
+    if (issueMediaFormat != null) {
+      body['issueMediaFormat'] = issueMediaFormat;
     }
     if (active != null) {
       body['active'] = active;
@@ -172,19 +148,18 @@ class CharacterTypeService {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       debugPrint(
-        'API ERROR (updateCharacterType): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (updateMediaFormat): status=${response.statusCode}, body=${response.body}',
       );
       final message =
           jsonBody['message']?.toString() ??
-          'Failed to update issue character type';
+          'Failed to update issue media format';
       throw Exception(message);
     }
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueCharacterTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 
-  /// Soft delete an issue character type
-  Future<IssueCharacterTypeModel> deleteCharacterType(int id) async {
+  Future<IssueMediaFormatModel> deleteMediaFormat(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
 
     debugPrint('API REQUEST: DELETE $url');
@@ -199,22 +174,26 @@ class CharacterTypeService {
     );
 
     final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final message =
+        jsonBody['message']?.toString() ??
+        (response.statusCode == 200 || response.statusCode == 201
+            ? 'Issue media format deleted successfully'
+            : 'Failed to delete issue media format');
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       debugPrint(
-        'API ERROR (deleteCharacterType): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (deleteMediaFormat): status=${response.statusCode}, body=${response.body}',
       );
-      final message =
-          jsonBody['message']?.toString() ??
-          'Failed to delete issue character type';
       throw Exception(message);
     }
+
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueCharacterTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 
-  /// Recover a previously deleted issue character type
-  Future<IssueCharacterTypeModel> recoverCharacterType(int id) async {
+  // Future<IssueMediaFormatModel> recoverMediaFormat(int id) async {}
+
+  Future<IssueMediaFormatModel> recoverMediaFormat(int id) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/recover/$id');
 
     debugPrint('API REQUEST: PATCH $url');
@@ -232,14 +211,14 @@ class CharacterTypeService {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       debugPrint(
-        'API ERROR (recoverCharacterType): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (recoverMediaFormat): status=${response.statusCode}, body=${response.body}',
       );
       final message =
           jsonBody['message']?.toString() ??
-          'Failed to recover issue character type';
+          'Failed to recover issue media format';
       throw Exception(message);
     }
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueCharacterTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 }
