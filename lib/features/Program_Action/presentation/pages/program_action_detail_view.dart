@@ -76,7 +76,7 @@ class ProgramActionDetailView extends ConsumerWidget {
                         Text(
                           isDeleted
                               ? 'Deleted'
-                              : (updatedAction.active ? 'Active' : 'Inactive'),
+                              : (updatedAction.active ? 'Active' : 'Suspended'),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: isDeleted

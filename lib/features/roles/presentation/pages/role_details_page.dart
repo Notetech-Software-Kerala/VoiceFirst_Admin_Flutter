@@ -158,13 +158,13 @@ class _RoleDetailsPageState extends ConsumerState<RoleDetailsPage> {
               // Expandable Cards
               _ExpandableCard(
                 title: "General Status",
-                subtitle: _role.active ? "Active Role" : "Inactive Role",
+                subtitle: _role.active ? "Active Role" : "Suspended Role",
                 icon: Icons.info_outline,
                 isExpanded: true,
                 children: [
                   _DetailGridItem(
                     label: "Status",
-                    value: _role.active ? "Active" : "Inactive",
+                    value: _role.active ? "Active" : "Suspended",
                   ),
                   _DetailGridItem(
                     label: "Mandatory",

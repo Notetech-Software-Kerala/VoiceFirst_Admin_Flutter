@@ -282,6 +282,27 @@ class SidebarWidget extends ConsumerWidget {
                       isSelected: currentIndex == 10,
                       onTap: () => onNavigate(10),
                     ),
+                    _SidebarSubItem(
+                      title: "Issue Character Type",
+                      subtitle: "Manage Issue Character Types",
+                      icon: Icons.label_important_outline,
+                      isSelected: currentIndex == 12,
+                      onTap: () => onNavigate(12),
+                    ),
+                    _SidebarSubItem(
+                      title: "Issue Media Format",
+                      subtitle: "Manage Issue Media Formats",
+                      icon: Icons.label_important_outline,
+                      isSelected: currentIndex == 13,
+                      onTap: () => onNavigate(13),
+                    ),
+                     _SidebarSubItem(
+                      title: "Issue Media Type",
+                      subtitle: "Manage Issue Media Types",
+                      icon: Icons.label_important_outline,
+                      isSelected: currentIndex == 14,
+                      onTap: () => onNavigate(14),
+                    ),
                   ],
                 ),
 

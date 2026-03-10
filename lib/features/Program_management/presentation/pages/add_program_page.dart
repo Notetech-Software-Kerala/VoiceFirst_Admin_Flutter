@@ -15,7 +15,6 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _labelCtrl = TextEditingController();
   final TextEditingController _routeCtrl = TextEditingController();
-  final ScrollController _actionsScrollController = ScrollController();
 
   int _applicationId = 1;
 
@@ -28,8 +27,152 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
     _nameCtrl.dispose();
     _labelCtrl.dispose();
     _routeCtrl.dispose();
-    _actionsScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openActionsBottomSheet(List actions) async {
+    if (!mounted) return;
+
+    final theme = Theme.of(context);
+    final Set<int> tempSelected = {..._selectedActionIds};
+    String searchQuery = '';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, modalSetState) {
+            final filtered = actions.where((a) {
+              final q = searchQuery.toLowerCase();
+              if (q.isEmpty) return true;
+              final name = (a.actionName ?? '').toString().toLowerCase();
+              return name.contains(q);
+            }).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.75,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Select Program Actions',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search actions...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          isDense: true,
+                        ),
+                        onChanged: (value) {
+                          modalSetState(() {
+                            searchQuery = value.trim();
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? const Center(
+                              child: Text('No actions match your search'),
+                            )
+                          : ListView.separated(
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, _) => Divider(
+                                height: 1,
+                                color: theme.dividerColor.withAlpha(128),
+                              ),
+                              itemBuilder: (context, index) {
+                                final a = filtered[index];
+                                final isChecked = tempSelected.contains(
+                                  a.actionId as int,
+                                );
+                                return CheckboxListTile(
+                                  title: Text(a.actionName ?? ''),
+                                  value: isChecked,
+                                  dense: true,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  onChanged: (checked) {
+                                    modalSetState(() {
+                                      if (checked ?? false) {
+                                        tempSelected.add(a.actionId as int);
+                                      } else {
+                                        tempSelected.remove(a.actionId as int);
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      child: Row(
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              modalSetState(() {
+                                tempSelected.clear();
+                              });
+                            },
+                            child: const Text('Clear All'),
+                          ),
+                          const Spacer(),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedActionIds
+                                  ..clear()
+                                  ..addAll(tempSelected);
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: const Text('Apply'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _save() async {
@@ -329,67 +472,62 @@ class _AddProgramPageState extends ConsumerState<AddProgramPage> {
                         if (actions.isEmpty) {
                           return const Text('No actions available');
                         }
+                        final selected = actions
+                            .where(
+                              (a) => _selectedActionIds.contains(
+                                a.actionId,
+                              ),
+                            )
+                            .toList();
+                        final selectedLabel = selected.isEmpty
+                            ? 'No actions selected'
+                            : selected.length <= 2
+                            ? selected
+                                  .map((a) => (a.actionName).toString())
+                                  .join(', ')
+                            : '${selected.length} actions selected';
+
                         return Container(
                           decoration: BoxDecoration(
                             color: theme.cardColor,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: theme.dividerColor),
                           ),
-                          child: Theme(
-                            data: theme.copyWith(
-                              dividerColor: Colors.transparent,
-                            ),
-                            child: ExpansionTile(
-                              title: const Text(
-                                'Select Program Actions',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                          child: InkWell(
+                            onTap: () => _openActionsBottomSheet(actions),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
                               ),
-                              children: [
-                                SizedBox(
-                                  height: 260,
-                                  child: Scrollbar(
-                                    controller: _actionsScrollController,
-                                    thumbVisibility: true,
-                                    child: ListView.separated(
-                                      controller: _actionsScrollController,
-                                      shrinkWrap: true,
-                                      physics: const ClampingScrollPhysics(),
-                                      itemCount: actions.length,
-                                      separatorBuilder: (_, _) => Divider(
-                                        height: 1,
-                                        color: theme.dividerColor.withAlpha(
-                                          128,
-                                        ),
-                                      ),
-                                      itemBuilder: (context, index) {
-                                        final a = actions[index];
-                                        return CheckboxListTile(
-                                          title: Text(a.actionName),
-                                          value: _selectedActionIds.contains(
-                                            a.actionId,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Select Program Actions',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
                                           ),
-                                          dense: true,
-                                          controlAffinity:
-                                              ListTileControlAffinity.leading,
-                                          onChanged: (checked) {
-                                            setState(() {
-                                              if (checked ?? false) {
-                                                _selectedActionIds.add(
-                                                  a.actionId,
-                                                );
-                                              } else {
-                                                _selectedActionIds.remove(
-                                                  a.actionId,
-                                                );
-                                              }
-                                            });
-                                          },
-                                        );
-                                      },
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          selectedLabel,
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: theme.hintColor,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
+                                  const Icon(Icons.arrow_drop_up),
+                                ],
+                              ),
                             ),
                           ),
                         );

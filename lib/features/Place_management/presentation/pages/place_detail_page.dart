@@ -98,7 +98,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                         Text(
                           isDeleted
                               ? 'Deleted'
-                              : (place.active ? 'Active' : 'Inactive'),
+                              : (place.active ? 'Active' : 'Suspended'),
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
                             color: isDeleted

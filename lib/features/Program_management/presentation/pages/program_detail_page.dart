@@ -276,7 +276,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                     statusText = 'Active';
                                     statusColor = Colors.green;
                                   } else {
-                                    statusText = 'Inactive';
+                                    statusText = 'Suspended';
                                     statusColor = Colors.orange;
                                   }
 
