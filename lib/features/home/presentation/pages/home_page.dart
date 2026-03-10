@@ -7,6 +7,8 @@ import 'package:voice_first_admin/features/Program_Action/presentation/pages/vie
 import 'package:voice_first_admin/features/Program_management/presentation/pages/view_programs.dart';
 import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:voice_first_admin/features/issue_character_type/presentation/pages/view_issue_character_type.dart';
+import 'package:voice_first_admin/features/issue_media_format/presentation/pages/view_issue_media_format.dart';
+import 'package:voice_first_admin/features/issue_media_type/presentation/pages/view_issue_media_type.dart';
 import 'package:voice_first_admin/features/profile/presentation/pages/profile_page.dart';
 import 'package:voice_first_admin/features/roles/presentation/pages/roles_page.dart';
 import 'package:voice_first_admin/features/post_office/presentation/pages/post_office_list_page.dart';
@@ -45,6 +47,8 @@ class _HomePageState extends State<HomePage> {
         MenuManagementScreen(),
         ViewPlacePage(),
         ViewIssueCharacterTypePage(),
+        ViewIssueMediaFormatPage(),
+        ViewIssueMediaTypePage(), // Reusing character type page for media format for now, replace with actual page when implemented
       ],
     );
 

@@ -29,20 +29,22 @@ class EditIssueCharacterTypeDialog {
             return;
           }
 
-          final error = await ref
+          final result = await ref
               .read(issueCharacterTypeProvider.notifier)
               .update(
                 id: characterType.issueCharacterTypeId,
                 issueCharacterType: name,
               );
 
-          if (error != null) {
+          if (result != null) {
+            // Non-null means error message from notifier
             if (dialogContext.mounted) {
               CustomSnackbar.show(
                 context,
-                message: error,
+                message: result,
                 type: SnackBarType.error,
               );
+              Navigator.of(dialogContext).pop();
             }
             return;
           }
@@ -56,14 +58,13 @@ class EditIssueCharacterTypeDialog {
           );
 
           if (dialogContext.mounted) {
+            CustomSnackbar.show(
+              context,
+              message: 'Character type updated successfully',
+              type: SnackBarType.success,
+            );
             Navigator.of(dialogContext).pop();
           }
-
-          CustomSnackbar.show(
-            context,
-            message: '$name updated successfully',
-            type: SnackBarType.success,
-          );
         }
 
         return AlertDialog(
