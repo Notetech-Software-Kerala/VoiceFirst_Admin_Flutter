@@ -16,40 +16,13 @@ class MyHttpOverrides extends HttpOverrides {
     return super.createHttpClient(context)
       ..badCertificateCallback = (X509Certificate cert, String host, int port) {
         // Allow ONLY your API domain
-        return host == "voicefirst.admin.notetech.com";
+        return host == "voicefirst.adminapi.notetech.com";
       };
   }
 }
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-// void handleResetLink(Uri uri) {
-//   if (uri.path == "/reset-password") {
-//     final grant = uri.queryParameters["grant"];
 
-//     navigatorKey.currentState?.push(
-//       MaterialPageRoute(builder: (_) => NewPasswordPage(grant: grant!)),
-//     );
-//   }
-// }
-// void handleResetLink(Uri uri) {
-//   if (uri.path == "/reset-password") {
-//     final grant = uri.queryParameters["grant"] ??
-//     uri.queryParameters["reset-token"];
-
-//     if (grant != null && grant.isNotEmpty) {
-//       // navigatorKey.currentState?.push(
-//       //   MaterialPageRoute(
-//       //     builder: (_) => NewPasswordPage(grant: grant),
-//       //   ),
-//       // );
-//       Future.delayed(Duration.zero, () {
-//         navigatorKey.currentState?.push(
-//           MaterialPageRoute(builder: (_) => NewPasswordPage(grant: grant)),
-//         );
-//       });
-//     }
-//   }
-// }
 
 void handleResetLink(Uri uri) {
   try {
@@ -76,11 +49,7 @@ void handleResetLink(Uri uri) {
         (route) => false,
       );
     });
-    // Future.delayed(Duration.zero, () {
-    //   navigatorKey.currentState?.push(
-    //     MaterialPageRoute(builder: (_) => NewPasswordPage(grant: grant)),
-    //   );
-    // });
+    
   } catch (e) {
     debugPrint("Deep link error: $e");
   }
