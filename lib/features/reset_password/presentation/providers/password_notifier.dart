@@ -28,29 +28,53 @@ class PasswordNotifier extends Notifier<PasswordState> {
     }
   }
 
+  // Future<void> resetPassword({
+  //   required String email,
+  //   required String otp,
+  //   required String newPassword,
+  // }) async {
+    // state = state.copyWith(isLoading: true, errorMessage: null, success: false);
+    // try {
+    //   await _service.resetPassword(
+    //     ResetPasswordRequest(email: email, otp: otp, newPassword: newPassword),
+    //   );
+    //   state = state.copyWith(isLoading: false, success: true);
+    // } catch (e) {
+      // state = state.copyWith(
+      //   isLoading: false,
+      //   errorMessage: e.toString(),
+      //   success: false,
+      // );
+  //   }
+  // }
+
   Future<void> resetPassword({
-    required String email,
-    required String otp,
-    required String newPassword,
-  }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null, success: false);
-    try {
-      await _service.resetPassword(
-        ResetPasswordRequest(email: email, otp: otp, newPassword: newPassword),
-      );
-      state = state.copyWith(isLoading: false, success: true);
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString(),
-        success: false,
-      );
-    }
+  required String grant,
+  required String newPassword,
+}) async {
+  state = state.copyWith(isLoading: true, errorMessage: null, success: false);
+
+  try {
+    await _service.resetPassword(
+      ResetPasswordRequest(
+        newPassword: newPassword,
+        passwordResetGrant: grant,
+      ),
+    );
+
+    state = state.copyWith(isLoading: false, success: true);
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      errorMessage: e.toString(),
+      success: false,
+    );
   }
+}
 
   Future<void> changePassword({
     required String oldPassword,
-    required String newPassword,
+    required String newPassword,  
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null, success: false);
     try {

@@ -7,11 +7,13 @@ import 'package:voice_first_admin/features/auth/presentation/pages/login_screen.
 import 'package:voice_first_admin/features/reset_password/presentation/providers/password_provider.dart';
 
 class NewPasswordPage extends ConsumerStatefulWidget {
-  final String email;
-  final String otp;
+  // final String email;
+  // final String otp;
 
-  const NewPasswordPage({super.key, required this.email, required this.otp});
+  // const NewPasswordPage({super.key, required this.email, required this.otp});
+  final String grant;
 
+  const NewPasswordPage({super.key, required this.grant});
   @override
   ConsumerState<NewPasswordPage> createState() => _NewPasswordPageState();
 }
@@ -46,10 +48,18 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
       if (prev?.isLoading == true && next.isLoading == false) {
         if (next.success) {
           passwordNotifier.clearSuccess();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Password reset successful")),
+          );
+
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const LoginScreen()),
             (route) => false,
           );
+          // Navigator.of(context).pushAndRemoveUntil(
+          //   MaterialPageRoute(builder: (_) => const LoginScreen()),
+          //   (route) => false,
+          // );
         } else if (next.errorMessage != null) {
           _showError(
             next.errorMessage ?? 'Failed to reset password. Try again.',
@@ -257,10 +267,16 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
                 await ref
                     .read(passwordProvider.notifier)
                     .resetPassword(
-                      email: widget.email,
-                      otp: widget.otp,
+                      grant: widget.grant,
                       newPassword: _newPasswordController.text,
                     );
+                // await ref
+                //     .read(passwordProvider.notifier)
+                //     .resetPassword(
+                //       email: widget.email,
+                //       otp: widget.otp,
+                //       newPassword: _newPasswordController.text,
+                //     );
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,

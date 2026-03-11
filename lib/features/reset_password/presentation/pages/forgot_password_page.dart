@@ -135,16 +135,23 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     ref.listen(passwordProvider, (prev, next) {
       if (prev?.isLoading == true && next.isLoading == false) {
         if (next.success) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  VerifyOtpPage(email: _emailController.text.trim()),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                "Password reset email sent. Please check your inbox.",
+              ),
             ),
           );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (_) =>
+          //         VerifyOtpPage(email: _emailController.text.trim()),
+          //   ),
+          // );
           passwordNotifier.clearSuccess();
         } else if (next.errorMessage != null) {
-          _showError(next.errorMessage ?? 'Failed to send OTP. Try again.');
+          _showError(next.errorMessage ?? 'Failed to send Email. Try again.');
           passwordNotifier.clearError();
         }
       }
@@ -213,7 +220,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 const Text(
-                                  "Enter your corporate email to receive an OTP.",
+                                  "Enter your corporate email to receive a password reset link.",
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF9CA3AF),

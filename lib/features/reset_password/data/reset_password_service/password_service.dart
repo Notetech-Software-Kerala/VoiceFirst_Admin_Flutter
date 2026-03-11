@@ -25,7 +25,7 @@ class PasswordService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to send OTP');
+      throw Exception(response.body);
     }
   }
 
@@ -46,7 +46,7 @@ class PasswordService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to reset password');
+      throw Exception(response.body);
     }
   }
 
@@ -67,7 +67,7 @@ class PasswordService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to change password');
+      throw Exception(response.body);
     }
   }
 }
