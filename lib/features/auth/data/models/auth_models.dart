@@ -36,7 +36,7 @@ class DeviceModel {
 class LoginRequestModel {
   final String email;
   final String password;
-  final String clientType;
+  final int clientType;
   final DeviceModel device;
 
   const LoginRequestModel({

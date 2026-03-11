@@ -95,14 +95,7 @@ class AuthNotifier extends Notifier<AuthState> {
     String manufacturer = "Unknown";
     String model = "Unknown";
 
-    if (kIsWeb) {
-      final webBrowserInfo = await deviceInfo.webBrowserInfo;
-      deviceName = webBrowserInfo.browserName.name.toString();
-      os = webBrowserInfo.platform ?? "Web OS";
-      osVersion = webBrowserInfo.appVersion ?? "Unknown";
-      manufacturer = webBrowserInfo.vendor ?? "Unknown";
-      model = webBrowserInfo.userAgent ?? "Unknown";
-    } else if (Platform.isAndroid) {
+    if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
       deviceName = androidInfo.name;
       os = "Android";
@@ -139,7 +132,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final request = LoginRequestModel(
         email: email,
         password: password,
-        clientType: kIsWeb ? "Web" : "Mobile",
+        clientType: Platform.isIOS ? 2 : 3,
         device: deviceDetails,
       );
 
