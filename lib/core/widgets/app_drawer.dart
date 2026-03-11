@@ -296,12 +296,19 @@ class SidebarWidget extends ConsumerWidget {
                       isSelected: currentIndex == 13,
                       onTap: () => onNavigate(13),
                     ),
-                     _SidebarSubItem(
+                    _SidebarSubItem(
                       title: "Issue Media Type",
                       subtitle: "Manage Issue Media Types",
                       icon: Icons.label_important_outline,
                       isSelected: currentIndex == 14,
                       onTap: () => onNavigate(14),
+                    ),
+                    _SidebarSubItem(
+                      title: "Issue Status",
+                      subtitle: "Manage Issue Statuses",
+                      icon: Icons.flag_outlined,
+                      isSelected: currentIndex == 15,
+                      onTap: () => onNavigate(15),
                     ),
                   ],
                 ),
