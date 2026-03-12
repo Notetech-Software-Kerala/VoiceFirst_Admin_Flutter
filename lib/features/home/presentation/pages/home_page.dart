@@ -10,6 +10,7 @@ import 'package:voice_first_admin/features/issue_character_type/presentation/pag
 import 'package:voice_first_admin/features/issue_media_format/presentation/pages/view_issue_media_format.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/pages/view_issue_media_type.dart';
 import 'package:voice_first_admin/features/issue_status/presentation/pages/view_issue_status.dart';
+import 'package:voice_first_admin/features/issue_type/presentation/pages/view_issue_type.dart';
 import 'package:voice_first_admin/features/profile/presentation/pages/profile_page.dart';
 import 'package:voice_first_admin/features/roles/presentation/pages/roles_page.dart';
 import 'package:voice_first_admin/features/post_office/presentation/pages/post_office_list_page.dart';
@@ -51,6 +52,7 @@ class _HomePageState extends State<HomePage> {
         ViewIssueMediaFormatPage(),
         ViewIssueMediaTypePage(),
         ViewIssueStatusPage(), // 15 (Issue Status)
+        ViewIssueTypePage(), // 16 (Issue Type)
       ],
     );
 

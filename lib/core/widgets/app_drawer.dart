@@ -310,6 +310,13 @@ class SidebarWidget extends ConsumerWidget {
                       isSelected: currentIndex == 15,
                       onTap: () => onNavigate(15),
                     ),
+                    _SidebarSubItem(
+                      title: "Issue Type",
+                      subtitle: "Manage Issue Types",
+                      icon: Icons.category_outlined,
+                      isSelected: currentIndex == 16,
+                      onTap: () => onNavigate(16),
+                    ),
                   ],
                 ),
 
