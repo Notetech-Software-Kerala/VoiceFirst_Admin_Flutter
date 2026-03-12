@@ -4,26 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
-import 'package:voice_first_admin/features/issue_status/data/models/issue_status_model.dart';
-import 'package:voice_first_admin/features/issue_status/presentation/dialogs/edit_issue_status_dialog.dart';
-import 'package:voice_first_admin/features/issue_status/presentation/providers/issue_status_provider.dart';
+import 'package:voice_first_admin/features/issue_type/data/models/issue_type_model.dart';
+import 'package:voice_first_admin/features/issue_type/presentation/dialogs/edit_issue_type_dialog.dart';
+import 'package:voice_first_admin/features/issue_type/presentation/providers/issue_type_provider.dart';
 
 const _emerald = Color(0xFF10B981);
 
 String _formatAuditDate(DateTime dt) {
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
   final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
   final minute = dt.minute.toString().padLeft(2, '0');
@@ -31,31 +21,31 @@ String _formatAuditDate(DateTime dt) {
   return '${months[dt.month - 1]} ${dt.day}, ${dt.year} • $hour:$minute $period';
 }
 
-class IssueStatusDetailPage extends ConsumerWidget {
+class IssueTypeDetailPage extends ConsumerWidget {
   final int id;
 
-  const IssueStatusDetailPage({super.key, required this.id});
+  const IssueTypeDetailPage({super.key, required this.id});
 
   AppBar _simpleAppBar(ThemeData theme) => AppBar(
-    backgroundColor: theme.scaffoldBackgroundColor,
-    elevation: 0,
-    scrolledUnderElevation: 0,
-    centerTitle: true,
-    leading: const BackButton(),
-    title: const Text(
-      'Status Details',
-      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-    ),
-    bottom: PreferredSize(
-      preferredSize: const Size.fromHeight(1),
-      child: Container(color: theme.dividerColor, height: 1),
-    ),
-  );
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: const BackButton(),
+        title: const Text(
+          'Type Details',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: theme.dividerColor, height: 1),
+        ),
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final asyncValue = ref.watch(issueStatusDetailProvider(id));
+    final asyncValue = ref.watch(issueTypeDetailProvider(id));
 
     return asyncValue.when(
       loading: () => Scaffold(
@@ -73,8 +63,8 @@ class IssueStatusDetailPage extends ConsumerWidget {
           ),
         ),
       ),
-      data: (status) {
-        final isDeleted = status.deleted;
+      data: (issueType) {
+        final isDeleted = issueType.deleted;
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
@@ -84,11 +74,14 @@ class IssueStatusDetailPage extends ConsumerWidget {
             centerTitle: true,
             leading: const BackButton(),
             title: const Text(
-              'Status Details',
+              'Type Details',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             actions: [
-              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+              IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: () {},
+              ),
               const SizedBox(width: 8),
             ],
             bottom: PreferredSize(
@@ -106,22 +99,18 @@ class IssueStatusDetailPage extends ConsumerWidget {
                     children: [
                       _SectionHeader('Basic Information'),
                       const SizedBox(height: 12),
-                      _BasicInfoCard(status: status, isDeleted: isDeleted),
+                      _BasicInfoCard(issueType: issueType, isDeleted: isDeleted),
                       const SizedBox(height: 32),
                       _SectionHeader('Audit Trail'),
                       const SizedBox(height: 12),
-                      _AuditTrailCard(status: status, isDeleted: isDeleted),
+                      _AuditTrailCard(issueType: issueType, isDeleted: isDeleted),
                     ],
                   ),
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: _FooterActions(
-                      status: status,
-                      isDeleted: isDeleted,
-                      id: id,
-                    ),
+                    child: _FooterActions(issueType: issueType, isDeleted: isDeleted, id: id),
                   ),
                 ],
               ),
@@ -159,10 +148,10 @@ class _SectionHeader extends StatelessWidget {
 // ── Basic Info Card ────────────────────────────────────────────────────────────
 
 class _BasicInfoCard extends StatelessWidget {
-  final IssueStatusModel status;
+  final IssueTypeModel issueType;
   final bool isDeleted;
 
-  const _BasicInfoCard({required this.status, required this.isDeleted});
+  const _BasicInfoCard({required this.issueType, required this.isDeleted});
 
   @override
   Widget build(BuildContext context) {
@@ -178,13 +167,13 @@ class _BasicInfoCard extends StatelessWidget {
       badgeColor = Colors.red;
       badgeText = 'DELETED';
       badgeIcon = Icons.cancel_outlined;
-    } else if (status.active) {
+    } else if (issueType.active) {
       badgeColor = _emerald;
       badgeText = 'ACTIVE';
       badgeIcon = Icons.check_circle;
     } else {
       badgeColor = Colors.orange;
-      badgeText = 'SUSPENDED';
+      badgeText = 'INACTIVE';
       badgeIcon = Icons.pause_circle_outlined;
     }
 
@@ -222,7 +211,7 @@ class _BasicInfoCard extends StatelessWidget {
             ),
             child: Center(
               child: Icon(
-                Icons.fact_check_outlined,
+                Icons.category_outlined,
                 size: 48,
                 color: primary.withValues(alpha: 0.4),
               ),
@@ -243,7 +232,7 @@ class _BasicInfoCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'STATUS NAME',
+                            'TYPE NAME',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -253,7 +242,7 @@ class _BasicInfoCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            status.issueStatus,
+                            issueType.issueType,
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -271,9 +260,7 @@ class _BasicInfoCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: badgeColor.withValues(alpha: 0.1),
-                        border: Border.all(
-                          color: badgeColor.withValues(alpha: 0.2),
-                        ),
+                        border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -295,9 +282,28 @@ class _BasicInfoCard extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // Description
+                if (issueType.description != null &&
+                    issueType.description!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      issueType.description!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 16),
                 Divider(color: theme.dividerColor, height: 1),
                 const SizedBox(height: 16),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -305,7 +311,7 @@ class _BasicInfoCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'ISSUE STATUS ID',
+                          'ISSUE TYPE ID',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -314,7 +320,7 @@ class _BasicInfoCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${status.issueStatusId}',
+                          '${issueType.issueTypeId}',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -345,10 +351,10 @@ class _BasicInfoCard extends StatelessWidget {
 // ── Audit Trail Card ───────────────────────────────────────────────────────────
 
 class _AuditTrailCard extends StatelessWidget {
-  final IssueStatusModel status;
+  final IssueTypeModel issueType;
   final bool isDeleted;
 
-  const _AuditTrailCard({required this.status, required this.isDeleted});
+  const _AuditTrailCard({required this.issueType, required this.isDeleted});
 
   @override
   Widget build(BuildContext context) {
@@ -356,22 +362,20 @@ class _AuditTrailCard extends StatelessWidget {
     final primary = theme.primaryColor;
 
     final hasModified =
-        (status.modifiedUser != null &&
-            status.modifiedUser!.trim().isNotEmpty) ||
-        status.modifiedDate != null;
+        (issueType.modifiedUser != null && issueType.modifiedUser!.trim().isNotEmpty) ||
+        issueType.modifiedDate != null;
 
     final hasDeletedInfo =
         isDeleted &&
-        ((status.deletedUser != null &&
-                status.deletedUser!.trim().isNotEmpty) ||
-            status.deletedDate != null);
+        ((issueType.deletedUser != null && issueType.deletedUser!.trim().isNotEmpty) ||
+            issueType.deletedDate != null);
 
     final rows = <Widget>[
       _AuditRow(
         title: 'Created By',
-        name: status.createdUser ?? 'Unknown',
-        date: status.createdDate != null
-            ? _formatAuditDate(status.createdDate!)
+        name: issueType.createdUser ?? 'Unknown',
+        date: issueType.createdDate != null
+            ? _formatAuditDate(issueType.createdDate!)
             : 'N/A',
         icon: Icons.person_add_outlined,
         iconColor: primary,
@@ -381,34 +385,30 @@ class _AuditTrailCard extends StatelessWidget {
 
     if (hasModified) {
       rows.add(Divider(color: theme.dividerColor, height: 1));
-      rows.add(
-        _AuditRow(
-          title: 'Last Modified By',
-          name: status.modifiedUser ?? 'Unknown',
-          date: status.modifiedDate != null
-              ? _formatAuditDate(status.modifiedDate!)
-              : 'N/A',
-          icon: Icons.edit_note_outlined,
-          iconColor: Colors.orange,
-          trailingIcon: Icons.update,
-        ),
-      );
+      rows.add(_AuditRow(
+        title: 'Last Modified By',
+        name: issueType.modifiedUser ?? 'Unknown',
+        date: issueType.modifiedDate != null
+            ? _formatAuditDate(issueType.modifiedDate!)
+            : 'N/A',
+        icon: Icons.edit_note_outlined,
+        iconColor: Colors.orange,
+        trailingIcon: Icons.update,
+      ));
     }
 
     if (hasDeletedInfo) {
       rows.add(Divider(color: theme.dividerColor, height: 1));
-      rows.add(
-        _AuditRow(
-          title: 'Deleted By',
-          name: status.deletedUser ?? 'Unknown',
-          date: status.deletedDate != null
-              ? _formatAuditDate(status.deletedDate!)
-              : 'N/A',
-          icon: Icons.delete_forever_outlined,
-          iconColor: Colors.red,
-          trailingIcon: Icons.cancel_outlined,
-        ),
-      );
+      rows.add(_AuditRow(
+        title: 'Deleted By',
+        name: issueType.deletedUser ?? 'Unknown',
+        date: issueType.deletedDate != null
+            ? _formatAuditDate(issueType.deletedDate!)
+            : 'N/A',
+        icon: Icons.delete_forever_outlined,
+        iconColor: Colors.red,
+        trailingIcon: Icons.cancel_outlined,
+      ));
     }
 
     return Container(
@@ -470,10 +470,7 @@ class _AuditRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   name,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -493,12 +490,12 @@ class _AuditRow extends StatelessWidget {
 // ── Footer Actions ─────────────────────────────────────────────────────────────
 
 class _FooterActions extends ConsumerWidget {
-  final IssueStatusModel status;
+  final IssueTypeModel issueType;
   final bool isDeleted;
   final int id;
 
   const _FooterActions({
-    required this.status,
+    required this.issueType,
     required this.isDeleted,
     required this.id,
   });
@@ -523,44 +520,34 @@ class _FooterActions extends ConsumerWidget {
                 ? ElevatedButton.icon(
                     onPressed: () => showRecoveryBottomSheet(
                       context: context,
-                      itemName: status.issueStatus,
+                      itemName: issueType.issueType,
                       onRecover: () async {
                         final error = await ref
-                            .read(issueStatusProvider.notifier)
-                            .recover(status.issueStatusId);
+                            .read(issueTypeProvider.notifier)
+                            .recover(issueType.issueTypeId);
                         if (!context.mounted) return;
                         if (error == null) {
-                          ref.invalidate(issueStatusDetailProvider(id));
+                          ref.invalidate(issueTypeDetailProvider(id));
                           CustomSnackbar.show(
                             context,
-                            message:
-                                '${status.issueStatus} recovered successfully',
+                            message: '${issueType.issueType} recovered successfully',
                             type: SnackBarType.success,
                           );
                         } else {
-                          CustomSnackbar.show(
-                            context,
-                            message: error,
-                            type: SnackBarType.error,
-                          );
+                          CustomSnackbar.show(context, message: error, type: SnackBarType.error);
                         }
                       },
                     ),
                     icon: const Icon(Icons.restore_outlined, size: 20),
-                    label: const Text('Recover Status'),
+                    label: const Text('Recover Type'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _emerald,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 48),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 8,
                       shadowColor: _emerald.withValues(alpha: 0.3),
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   )
                 : Row(
@@ -568,22 +555,19 @@ class _FooterActions extends ConsumerWidget {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () =>
-                              EditIssueStatusDialog.show(context, ref, status),
+                              EditIssueTypeDialog.show(context, ref, issueType),
                           icon: const Icon(Icons.edit_outlined, size: 20),
-                          label: const Text('Edit Status'),
+                          label: const Text('Edit Type'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primary,
                             foregroundColor: Colors.white,
                             minimumSize: const Size(0, 48),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                                borderRadius: BorderRadius.circular(12)),
                             elevation: 8,
                             shadowColor: primary.withValues(alpha: 0.3),
                             textStyle: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+                                fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                         ),
                       ),
@@ -591,26 +575,22 @@ class _FooterActions extends ConsumerWidget {
                       InkWell(
                         onTap: () => showDeleteBottomSheet(
                           context: context,
-                          itemName: status.issueStatus,
+                          itemName: issueType.issueType,
                           onDelete: () async {
                             final error = await ref
-                                .read(issueStatusProvider.notifier)
-                                .delete(status.issueStatusId);
+                                .read(issueTypeProvider.notifier)
+                                .delete(issueType.issueTypeId);
                             if (!context.mounted) return;
                             if (error == null) {
-                              ref.invalidate(issueStatusDetailProvider(id));
+                              ref.invalidate(issueTypeDetailProvider(id));
                               CustomSnackbar.show(
                                 context,
-                                message:
-                                    '${status.issueStatus} deleted successfully',
+                                message: '${issueType.issueType} deleted successfully',
                                 type: SnackBarType.success,
                               );
                             } else {
                               CustomSnackbar.show(
-                                context,
-                                message: error,
-                                type: SnackBarType.error,
-                              );
+                                  context, message: error, type: SnackBarType.error);
                             }
                           },
                         ),
@@ -621,14 +601,10 @@ class _FooterActions extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.1),
                             border: Border.all(
-                              color: Colors.red.withValues(alpha: 0.2),
-                            ),
+                                color: Colors.red.withValues(alpha: 0.2)),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                          ),
+                          child: const Icon(Icons.delete_outline, color: Colors.red),
                         ),
                       ),
                     ],
