@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/Business_activity/models/update_activity_request.dart';
 import '../../business_activity_service/business_activity_service.dart';
 import 'business_activity_state.dart';
 
@@ -64,13 +66,12 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       state = state.copyWith(isLoading: false);
     }
   }
- 
 
   // ───────────────── CRUD ─────────────────
 
-  Future<String?> add(String name) async {
+  Future<String?> add(String name, {List<int>? customFieldIds}) async {
     try {
-      await _service.createActivity(name);
+      await _service.createActivity(name, customFieldIds: customFieldIds);
       // Reload to respect sort order and pagination
       await load();
       return null;
@@ -78,29 +79,81 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       return 'Failed to add activity';
     }
   }
+Future<String?> update({
+  required int id,
+  String? activityName,
+  bool? active,
+  List<int>? addCustomFieldIds,
+  List<Map<String, dynamic>>? updateCustomField,
+}) async {
+  try {
+    final request = UpdateActivityRequest(
+      activityName: activityName,
+      active: active,
+      addCustomFieldIds: addCustomFieldIds,
+      updateCustomField: updateCustomField,
+    );
 
-  Future<String?> update({
-    required int id,
-    String? activityName,
-    bool? active,
-  }) async {
-    try {
-      final updated = await _service.updateActivity(
-        id: id,
-        activityName: activityName,
-        active: active,
-      );
-
-      state = state.copyWith(
-        items: state.items
-            .map((a) => a.activityId == id ? updated : a)
-            .toList(),
-      );
+    if (request.toJson().isEmpty) {
+      debugPrint('[Notifier] Nothing changed → skipping API');
       return null;
-    } catch (e) {
-      return 'Failed to update activity';
     }
+
+    final updated = await _service.updateActivity(id, request);
+
+    state = state.copyWith(
+      items: state.items
+          .map((a) => a.activityId == id ? updated : a)
+          .toList(),
+    );
+
+    return null;
+  } catch (e) {
+    debugPrint('[Notifier] update error: $e');
+    return 'Failed to update activity';
   }
+}
+  // Future<String?> update({
+  //   required int id,
+  //   String? activityName,
+  //   bool? active,
+  //   List<int>? addCustomFieldIds,
+  //   List<Map<String, dynamic>>? updateCustomField,
+  // }) async {
+    // try {
+    //   final oldActivity = state.items.firstWhere((a) => a.activityId == id);
+
+    //   final request = UpdateActivityRequest.fromChanges(
+    //     newName: activityName ?? oldActivity.activityName,
+    //     oldName: oldActivity.activityName,
+    //     newActive: active,
+    //     oldActive: oldActivity.active,
+    //     newFieldIds: addCustomFieldIds != null
+    //         ? {
+    //             ...oldActivity.activityCustomFields!.map(
+    //               (e) => e.customFieldId,
+    //             ),
+    //             ...addCustomFieldIds,
+    //           }
+    //         : oldActivity.activityCustomFields!
+    //               .where((f) => f.active)
+    //               .map((f) => f.customFieldId)
+    //               .toSet(),
+    //     oldFields: oldActivity.activityCustomFields ?? [],
+    //   );
+
+    //   final updated = await _service.updateActivity(id, request);
+
+    //   state = state.copyWith(
+    //     items: state.items
+    //         .map((a) => a.activityId == id ? updated : a)
+    //         .toList(),
+    //   );
+    //   return null;
+    // } catch (e) {
+      // return 'Failed to update activity';
+    // }
+  // }
 
   Future<String?> delete(int id) async {
     try {

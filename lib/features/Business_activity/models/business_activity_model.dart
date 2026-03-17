@@ -1,6 +1,9 @@
+import 'package:voice_first_admin/features/Business_activity/models/activity_custom_field.dart';
+
 class BusinessActivity {
   final int activityId;
   final String activityName;
+  final List<ActivityCustomField>? activityCustomFields;
   final bool active;
   final bool isDeleted;
 
@@ -16,6 +19,7 @@ class BusinessActivity {
   BusinessActivity({
     required this.activityId,
     required this.activityName,
+    this.activityCustomFields,
     required this.active,
     required this.isDeleted,
     required this.createdUser,
@@ -30,6 +34,11 @@ class BusinessActivity {
     return BusinessActivity(
       activityId: json['activityId'] as int,
       activityName: json['activityName'] as String,
+      activityCustomFields: json['activityCustomFields'] != null
+    ? (json['activityCustomFields'] as List)
+        .map((e) => ActivityCustomField.fromJson(e))
+        .toList()
+    : null,
       active: json['active'] as bool,
       isDeleted: json['deleted'],
       createdUser: json['createdUser'],
@@ -78,3 +87,4 @@ class BusinessActivity {
     );
   }
 }
+

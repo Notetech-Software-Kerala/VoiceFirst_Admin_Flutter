@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/reset_password/presentation/pages/verify_otp_page.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/providers/password_notifier.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/providers/password_provider.dart';
 
@@ -359,7 +358,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   strokeWidth: 2,
                 ),
               )
-            : const Text('SEND OTP'),
+            : const Text('SEND EMAIL'),
       ),
     );
   }
