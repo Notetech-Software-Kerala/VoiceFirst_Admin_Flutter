@@ -91,246 +91,247 @@ class _ViewIssueStatusPageState extends ConsumerState<ViewIssueStatusPage> {
     final state = ref.watch(issueStatusProvider);
     final notifier = ref.read(issueStatusProvider.notifier);
 
-    return Scaffold(
-      // ── AppBar ──────────────────────────────────────────────────────────
-      appBar: AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.9),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
+    return Builder(
+      builder: (outerContext) => Scaffold(
+        // ── AppBar ──────────────────────────────────────────────────────────
+        appBar: AppBar(
+          backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.9),
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: false,
+          titleSpacing: 0,
+          leading: IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+            onPressed: () => Scaffold.of(outerContext).openDrawer(),
           ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "VOICEFIRST",
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-                color: primary,
-              ),
-            ),
-            const Text(
-              "Issue Status",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: primary,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: primary.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.add, color: Colors.white),
-                onPressed: () => AddIssueStatusDialog.show(context, ref),
-                visualDensity: VisualDensity.compact,
-              ),
-            ),
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: theme.dividerColor, height: 1),
-        ),
-      ),
-
-      // ── Body ─────────────────────────────────────────────────────────────
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 672),
-          child: RefreshIndicator(
-            onRefresh: () async => notifier.loadAll(),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [
-                // ── Search Bar ──────────────────────────────────────────
-                TextField(
-                  controller: _searchController,
-                  onChanged: notifier.search,
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: isDark
-                        ? const Color(0x801E293B)
-                        : Colors.grey[200],
-                    hintText: "Search statuses...",
-                    hintStyle: const TextStyle(color: Colors.grey),
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: primary, width: 2),
-                    ),
-                  ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "VOICEFIRST",
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                  color: primary,
                 ),
-                const SizedBox(height: 16),
-
-                // ── Header Row ──────────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "SYSTEM MASTER DATA",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '${state.totalCount} ${state.totalCount == 1 ? 'Status' : 'Statuses'}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: primary,
-                        ),
-                      ),
+              ),
+              const Text(
+                "Issue Status",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: primary,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // ── Loading / Empty / List ──────────────────────────────
-                if (state.isLoading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (state.filtered.isEmpty)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Text(
-                        'No issue statuses found',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                  )
-                else
-                  ...state.filtered.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-                    final color = _cardColors[index % _cardColors.length];
-                    final icon = _cardIcons[index % _cardIcons.length];
-
-                    return _StatusCard(
-                      item: item,
-                      color: color,
-                      icon: icon,
-                      subtitle: _buildSubtitle(item),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              IssueStatusDetailPage(id: item.issueStatusId),
-                        ),
-                      ),
-                      onEdit: () =>
-                          EditIssueStatusDialog.show(context, ref, item),
-                      onDelete: () => showDeleteBottomSheet(
-                        context: context,
-                        itemName: item.issueStatus,
-                        onDelete: () async {
-                          final error = await notifier.delete(
-                            item.issueStatusId,
-                          );
-                          if (context.mounted) {
-                            CustomSnackbar.show(
-                              context,
-                              message:
-                                  error ?? 'Issue status deleted successfully',
-                              type: error != null
-                                  ? SnackBarType.error
-                                  : SnackBarType.success,
-                            );
-                          }
-                        },
-                      ),
-                    );
-                  }),
-
-                const SizedBox(height: 24),
-
-                // ── Add New Status Button ───────────────────────────────
-                ElevatedButton.icon(
+                child: IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white),
                   onPressed: () => AddIssueStatusDialog.show(context, ref),
-                  icon: const Icon(Icons.add_circle_outline, size: 20),
-                  label: const Text("Add New Status"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 8,
-                    shadowColor: primary.withValues(alpha: 0.3),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: theme.dividerColor, height: 1),
+          ),
+        ),
+
+        // ── Body ─────────────────────────────────────────────────────────────
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 672),
+            child: RefreshIndicator(
+              onRefresh: () async => notifier.loadAll(),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                children: [
+                  // ── Search Bar ──────────────────────────────────────────
+                  TextField(
+                    controller: _searchController,
+                    onChanged: notifier.search,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: isDark
+                          ? const Color(0x801E293B)
+                          : Colors.grey[200],
+                      hintText: "Search statuses...",
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primary, width: 2),
+                      ),
                     ),
                   ),
-                ),
-
-                // ── Pagination ─────────────────────────────────────────
-                if (state.totalPages > 1) ...[
                   const SizedBox(height: 16),
+
+                  // ── Header Row ──────────────────────────────────────────
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: state.currentPage > 1
-                            ? () => notifier.goToPage(state.currentPage - 1)
-                            : null,
+                      const Text(
+                        "SYSTEM MASTER DATA",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                          color: Colors.grey,
+                        ),
                       ),
-                      Text(
-                        'Page ${state.currentPage} of ${state.totalPages}',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: state.currentPage < state.totalPages
-                            ? () => notifier.goToPage(state.currentPage + 1)
-                            : null,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${state.totalCount} ${state.totalCount == 1 ? 'Status' : 'Statuses'}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: primary,
+                          ),
+                        ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+
+                  // ── Loading / Empty / List ──────────────────────────────
+                  if (state.isLoading)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  else if (state.filtered.isEmpty)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: Text(
+                          'No issue statuses found',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    )
+                  else
+                    ...state.filtered.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final item = entry.value;
+                      final color = _cardColors[index % _cardColors.length];
+                      final icon = _cardIcons[index % _cardIcons.length];
+
+                      return _StatusCard(
+                        item: item,
+                        color: color,
+                        icon: icon,
+                        subtitle: _buildSubtitle(item),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                IssueStatusDetailPage(id: item.issueStatusId),
+                          ),
+                        ),
+                        onEdit: () =>
+                            EditIssueStatusDialog.show(context, ref, item),
+                        onDelete: () => showDeleteBottomSheet(
+                          context: context,
+                          itemName: item.issueStatus,
+                          onDelete: () async {
+                            final error = await notifier.delete(
+                              item.issueStatusId,
+                            );
+                            if (context.mounted) {
+                              CustomSnackbar.show(
+                                context,
+                                message:
+                                    error ??
+                                    'Issue status deleted successfully',
+                                type: error != null
+                                    ? SnackBarType.error
+                                    : SnackBarType.success,
+                              );
+                            }
+                          },
+                        ),
+                      );
+                    }),
+
+                  const SizedBox(height: 24),
+
+                  // ── Add New Status Button ───────────────────────────────
+                  ElevatedButton.icon(
+                    onPressed: () => AddIssueStatusDialog.show(context, ref),
+                    icon: const Icon(Icons.add_circle_outline, size: 20),
+                    label: const Text("Add New Status"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primary,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 8,
+                      shadowColor: primary.withValues(alpha: 0.3),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+
+                  // ── Pagination ─────────────────────────────────────────
+                  if (state.totalPages > 1) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: state.currentPage > 1
+                              ? () => notifier.goToPage(state.currentPage - 1)
+                              : null,
+                        ),
+                        Text(
+                          'Page ${state.currentPage} of ${state.totalPages}',
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: state.currentPage < state.totalPages
+                              ? () => notifier.goToPage(state.currentPage + 1)
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

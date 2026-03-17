@@ -33,28 +33,27 @@ class _HomePageState extends State<HomePage> {
     // Responsive Layout Check
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
-    final content = IndexedStack(
-      index: _selectedIndex,
-      children: [
-        DashboardPage(),
-        RolesPage(),
-        UserListScreen(), // 2 (Users)
-        ProfilePage(), // 3 (Settings/Profile)
-        PostOfficeListScreen(),
-        ViewBusinessActivityPage(), // 4 (Business Activity)
-        CountryView(),
-        ProgramActionView(),
-        ProgramManagementView(),
-        ViewPlanPage(),
-        MenuManagementScreen(),
-        ViewPlacePage(),
-        ViewIssueCharacterTypePage(),
-        ViewIssueMediaFormatPage(),
-        ViewIssueMediaTypePage(),
-        ViewIssueStatusPage(), // 15 (Issue Status)
-        ViewIssueTypePage(), // 16 (Issue Type)
-      ],
-    );
+    final pages = [
+      DashboardPage(),
+      RolesPage(),
+      UserListScreen(),
+      ProfilePage(),
+      PostOfficeListScreen(),
+      ViewBusinessActivityPage(),
+      CountryView(),
+      ProgramActionView(),
+      ProgramManagementView(),
+      ViewPlanPage(),
+      MenuManagementScreen(),
+      ViewPlacePage(),
+      ViewIssueCharacterTypePage(),
+      ViewIssueMediaFormatPage(),
+      ViewIssueMediaTypePage(),
+      ViewIssueStatusPage(),
+      ViewIssueTypePage(),
+    ];
+
+    final content = pages[_selectedIndex];
 
     if (isDesktop) {
       return Scaffold(

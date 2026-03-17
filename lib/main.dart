@@ -23,7 +23,6 @@ class MyHttpOverrides extends HttpOverrides {
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-
 void handleResetLink(Uri uri) {
   try {
     if (uri.pathSegments.isEmpty) return;
@@ -37,7 +36,13 @@ void handleResetLink(Uri uri) {
       return;
     }
 
-    final grant = uri.pathSegments[1];
+    // final grant = uri.pathSegments[1];
+    final grant = uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
+
+    if (grant == null || grant.isEmpty) {
+      debugPrint("Reset token invalid");
+      return;
+    }
 
     if (grant.isEmpty) {
       debugPrint("Reset token empty");
@@ -49,7 +54,6 @@ void handleResetLink(Uri uri) {
         (route) => false,
       );
     });
-    
   } catch (e) {
     debugPrint("Deep link error: $e");
   }
@@ -114,6 +118,7 @@ class _VoiceFirstAdminAppState extends ConsumerState<VoiceFirstAdminApp> {
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeAnimationDuration: Duration.zero,
       navigatorKey: navigatorKey,
       home: const LoginScreen(),
     );
