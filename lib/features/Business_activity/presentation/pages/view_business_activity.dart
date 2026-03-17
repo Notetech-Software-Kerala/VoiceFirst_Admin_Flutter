@@ -7,9 +7,9 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/pages/add_activity.dart';
+import 'package:voice_first_admin/features/Business_activity/presentation/pages/edit_activity_page.dart';
 import '../providers/business_activity_provider.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/add_activity_dialog.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/dialogs/edit_activity_dialog.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'activity_detail_page.dart';
 
@@ -82,8 +82,6 @@ class _ViewBusinessActivityPageState
     final totalPages = (state.totalCount / _pageSize).ceil();
     final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
-    
-
     return StandardPageLayout(
       title: state.isMultiSelect
           ? '${state.selectedIds.length} selected'
@@ -142,7 +140,13 @@ class _ViewBusinessActivityPageState
       onRefresh: () async => notifier.load(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'business_activity_list_fab',
-        onPressed: () => AddActivityDialog.show(context, ref),
+        // onPressed: () => AddActivityDialog.show(context, ref),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AddActivityPage()),
+          );
+        },
         backgroundColor: colorScheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -225,7 +229,12 @@ class _ViewBusinessActivityPageState
                     onTap: () {
                       if (a.isDeleted) return;
 
-                      EditActivityDialog.show(context, ref, a);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => EditActivityPage(activity: a),
+                        ),
+                      );
                     },
                   ),
                 );
@@ -270,7 +279,8 @@ class _ViewBusinessActivityPageState
                       : () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => ActivityDetailPage(activity: a),
+                            builder: (_) =>
+                                ActivityDetailPage(activityId: a.activityId),
                           ),
                         ),
                   onLongPress: a.isDeleted

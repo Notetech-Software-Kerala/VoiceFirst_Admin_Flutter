@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/Business_activity/models/custom_field_lookup_model.dart';
+import 'package:voice_first_admin/features/Business_activity/models/update_activity_request.dart';
 
 class PaginatedResponse<T> {
   final List<T> items;
@@ -40,16 +42,25 @@ class PaginatedResponse<T> {
 }
 
 class BusinessActivityService {
-  Future<BusinessActivity> createActivity(String name) async {
+  Future<BusinessActivity> createActivity(
+    String name, {
+    List<int>? customFieldIds,
+  }) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/activity');
 
+    final body = {
+      "activityName": name,
+      if (customFieldIds != null && customFieldIds.isNotEmpty)
+        "addCustomFieldIds": customFieldIds,
+    };
+
     debugPrint('API REQUEST: POST $url');
-    debugPrint('Request Body: {"activityName":"$name"}');
+    debugPrint('Request Body: ${jsonEncode(body)}');
 
     final response = await http.post(
       url,
       headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode({'activityName': name}),
+      body: jsonEncode(body),
     );
 
     debugPrint(
@@ -59,12 +70,9 @@ class BusinessActivityService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
       return BusinessActivity.fromJson(json['data']);
-    } else {
-      debugPrint(
-        'API ERROR (createActivity): status=${response.statusCode}, body=${response.body}',
-      );
-      throw Exception('Failed to create activity');
     }
+
+    throw Exception('Failed to create activity');
   }
 
   Future<PaginatedResponse<BusinessActivity>> getAllActivities(
@@ -122,24 +130,13 @@ class BusinessActivityService {
     return BusinessActivity.fromJson(json['data']);
   }
 
-  Future<BusinessActivity> updateActivity({
-    required int id,
-    String? activityName,
-    bool? active,
-  }) async {
-    if (activityName == null && active == null) {
-      throw Exception('Nothing to update');
-    }
-
-    final Map<String, dynamic> body = {};
-
-    if (activityName != null) {
-      body['activityName'] = activityName;
-    }
-    if (active != null) {
-      body['active'] = active;
-    }
+  Future<BusinessActivity> updateActivity(
+    int id,
+    UpdateActivityRequest request,
+  ) async {
     final url = Uri.parse('${ApiEndpoints.baseUrl}/activity/$id');
+
+    final body = request.toJson();
 
     debugPrint('API REQUEST: PATCH $url');
     debugPrint('Request Body: ${jsonEncode(body)}');
@@ -150,19 +147,18 @@ class BusinessActivityService {
       body: jsonEncode(body),
     );
 
-    debugPrint(
-      'API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}',
-    );
+    debugPrint('API RESPONSE: PATCH $url -> ${response.statusCode}');
 
-    if (response.statusCode != 200) {
-      debugPrint(
-        'API ERROR (updateActivity): status=${response.statusCode}, body=${response.body}',
-      );
-      throw Exception('Failed to update activity');
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      debugPrint('API ERROR BODY (update activity): ${response.body}');
+      throw Exception('Failed to update activity: ${response.statusCode}');
     }
 
-    final json = jsonDecode(response.body);
-    return BusinessActivity.fromJson(json['data']);
+    final jsonBody = jsonDecode(response.body);
+
+    debugPrint('API MESSAGE (update activity): ${jsonBody['message']}');
+
+    return BusinessActivity.fromJson(jsonBody['data']);
   }
 
   Future<void> toggleStatus(int id, bool active) async {
@@ -263,5 +259,27 @@ class BusinessActivityService {
         'Failed to bulk delete activities: ${response.statusCode}',
       );
     }
+  }
+
+  Future<List<CustomFieldLookup>> getCustomFieldLookup() async {
+    final url = Uri.parse('${ApiEndpoints.baseUrl}/user-custom-field/lookup');
+
+    debugPrint('API REQUEST: GET $url');
+
+    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
+
+    debugPrint(
+      'API RESPONSE: GET $url -> ${response.statusCode} ${response.body}',
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Failed to load custom fields");
+    }
+
+    final json = jsonDecode(response.body);
+
+    final items = json['data']['items'] as List;
+
+    return items.map((e) => CustomFieldLookup.fromJson(e)).toList();
   }
 }
