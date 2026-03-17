@@ -4,7 +4,7 @@ class ApiEndpoints {
   ApiEndpoints._();
 
   /// Base URL for all API calls
-  static const String baseUrl = "https://voicefirst.admin.notetech.com/api";
+  static const String baseUrl = "https://voicefirst.adminapi.notetech.com/api";
 
   /// Common headers
   static const Map<String, String> defaultHeaders = {
