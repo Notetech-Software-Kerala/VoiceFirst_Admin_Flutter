@@ -5,7 +5,7 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/features/issue_status/data/models/issue_status_model.dart';
-import 'package:voice_first_admin/features/issue_status/presentation/dialogs/edit_issue_status_dialog.dart';
+import 'package:voice_first_admin/features/issue_status/presentation/pages/edit_issue_status_page.dart';
 import 'package:voice_first_admin/features/issue_status/presentation/providers/issue_status_provider.dart';
 
 const _emerald = Color(0xFF10B981);
@@ -567,8 +567,19 @@ class _FooterActions extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () =>
-                              EditIssueStatusDialog.show(context, ref, status),
+                          onPressed: () async {
+                            final updated = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => EditIssueStatusPage(
+                                    status: status),
+                              ),
+                            );
+                            if (updated == true && context.mounted) {
+                              ref.invalidate(
+                                  issueStatusDetailProvider(id));
+                            }
+                          },
                           icon: const Icon(Icons.edit_outlined, size: 20),
                           label: const Text('Edit Status'),
                           style: ElevatedButton.styleFrom(

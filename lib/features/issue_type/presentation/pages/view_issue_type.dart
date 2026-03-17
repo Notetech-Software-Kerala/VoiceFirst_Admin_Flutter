@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_model.dart';
 import 'package:voice_first_admin/features/issue_type/presentation/dialogs/add_issue_type_dialog.dart';
 import 'package:voice_first_admin/features/issue_type/presentation/dialogs/edit_issue_type_dialog.dart';
@@ -64,7 +65,8 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
     final state = ref.watch(issueTypeProvider);
     final notifier = ref.read(issueTypeProvider.notifier);
 
-    return Scaffold(
+    return Builder(
+      builder: (outerContext) => Scaffold(
       // ── AppBar ──────────────────────────────────────────────────────────
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor.withValues(alpha: 0.9),
@@ -72,11 +74,9 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
         scrolledUnderElevation: 0,
         centerTitle: false,
         titleSpacing: 0,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          onPressed: () => Scaffold.of(outerContext).openDrawer(),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,8 +146,13 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
                           fillColor: theme.cardColor,
                           hintText: 'Search issue types...',
                           hintStyle: const TextStyle(color: Colors.grey),
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.grey,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 0,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: theme.dividerColor),
@@ -169,7 +174,9 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
                       icon: const Icon(Icons.filter_list, size: 20),
                       label: const Text('Filters'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: isDark ? Colors.grey[300] : Colors.grey[700],
+                        foregroundColor: isDark
+                            ? Colors.grey[300]
+                            : Colors.grey[700],
                         backgroundColor: theme.cardColor,
                         side: BorderSide(color: theme.dividerColor),
                         minimumSize: const Size(0, 48),
@@ -240,10 +247,12 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => IssueTypeDetailPage(id: item.issueTypeId),
+                          builder: (_) =>
+                              IssueTypeDetailPage(id: item.issueTypeId),
                         ),
                       ),
-                      onEdit: () => EditIssueTypeDialog.show(context, ref, item),
+                      onEdit: () =>
+                          EditIssueTypeDialog.show(context, ref, item),
                       onDelete: () => showDeleteBottomSheet(
                         context: context,
                         itemName: item.issueType,
@@ -252,8 +261,11 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
                           if (context.mounted) {
                             CustomSnackbar.show(
                               context,
-                              message: error ?? 'Issue type deleted successfully',
-                              type: error != null ? SnackBarType.error : SnackBarType.success,
+                              message:
+                                  error ?? 'Issue type deleted successfully',
+                              type: error != null
+                                  ? SnackBarType.error
+                                  : SnackBarType.success,
                             );
                           }
                         },
@@ -285,34 +297,17 @@ class _ViewIssueTypePageState extends ConsumerState<ViewIssueTypePage> {
                 ),
 
                 // ── Pagination ────────────────────────────────────────────
-                if (state.totalPages > 1) ...[
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.chevron_left),
-                        onPressed: state.currentPage > 1
-                            ? () => notifier.goToPage(state.currentPage - 1)
-                            : null,
-                      ),
-                      Text(
-                        'Page ${state.currentPage} of ${state.totalPages}',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        onPressed: state.currentPage < state.totalPages
-                            ? () => notifier.goToPage(state.currentPage + 1)
-                            : null,
-                      ),
-                    ],
-                  ),
-                ],
+                const SizedBox(height: 16),
+                StandardPaginationControls(
+                  currentPage: state.currentPage,
+                  totalPages: state.totalPages,
+                  onPageChanged: (page) => notifier.goToPage(page),
+                ),
               ],
             ),
           ),
         ),
+          ),
       ),
     );
   }
@@ -375,7 +370,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -384,6 +379,7 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             title.toUpperCase(),
@@ -393,14 +389,22 @@ class _StatCard extends StatelessWidget {
               color: Colors.grey,
               letterSpacing: 0.5,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: valueColor,
+          const SizedBox(height: 2),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: valueColor,
+                ),
+              ),
             ),
           ),
         ],
@@ -445,8 +449,8 @@ class _IssueTypeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isDeleted
               ? (isDark
-                  ? const Color(0x800F172A)
-                  : Colors.white.withValues(alpha: 0.5))
+                    ? const Color(0x800F172A)
+                    : Colors.white.withValues(alpha: 0.5))
               : theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -469,10 +473,7 @@ class _IssueTypeCard extends StatelessWidget {
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  color: isDeleted ? Colors.grey : color[600],
-                ),
+                child: Icon(icon, color: isDeleted ? Colors.grey : color[600]),
               ),
               const SizedBox(width: 16),
 

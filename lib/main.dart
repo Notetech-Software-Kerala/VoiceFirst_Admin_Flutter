@@ -114,6 +114,7 @@ class _VoiceFirstAdminAppState extends ConsumerState<VoiceFirstAdminApp> {
       themeMode: themeMode,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
+      themeAnimationDuration: Duration.zero,
       navigatorKey: navigatorKey,
       home: const LoginScreen(),
     );

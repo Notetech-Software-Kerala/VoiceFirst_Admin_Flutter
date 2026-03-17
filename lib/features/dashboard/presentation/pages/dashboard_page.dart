@@ -4,64 +4,34 @@ import 'package:voice_first_admin/features/Business_activity/presentation/pages/
 import 'package:voice_first_admin/features/Program_Action/presentation/pages/view_program_action.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Column(
-        children: [
-          const _StickyHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  SizedBox(height: 24),
-                  _HorizontalSnapCards(),
-                  _GridMenuSection(),
-                  _OperationalActivityList(),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StickyHeader extends ConsumerWidget {
-  const _StickyHeader();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final primary = theme.primaryColor;
+    final secondaryTextColor = isDark
+        ? const Color(0xFF90ADCB)
+        : const Color(0xFF64748B);
     final profile = ref.watch(profileProvider);
     final isDesktop = MediaQuery.of(context).size.width > 900;
 
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        MediaQuery.of(context).padding.top + 12,
-        16,
-        12,
-      ),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
-        border: Border(bottom: BorderSide(color: theme.dividerColor)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return SafeArea(
+      bottom: false,
+      child: Column(
         children: [
-          Expanded(
+          // ── App Bar ──────────────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.scaffoldBackgroundColor,
+              border: Border(bottom: BorderSide(color: theme.dividerColor)),
+            ),
             child: Row(
               children: [
+                // Menu button (only on mobile where drawer is used)
                 if (!isDesktop) ...[
                   InkWell(
                     onTap: () => Scaffold.of(context).openDrawer(),
@@ -82,21 +52,58 @@ class _StickyHeader extends ConsumerWidget {
                   ),
                   const SizedBox(width: 12),
                 ],
+
+                // VoiceFirst logo + title
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'V',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'VoiceFirst',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'ADMIN',
+                  style: TextStyle(
+                    color: primary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const Spacer(),
+
+                // Avatar / Notification Bell
                 Stack(
+                  alignment: Alignment.center,
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
+                        color: theme.cardColor,
                         shape: BoxShape.circle,
                         image: DecorationImage(
                           image: NetworkImage(profile.profileImageUrl),
                           fit: BoxFit.cover,
                         ),
                         border: Border.all(
-                          color: theme.colorScheme.primary.withValues(
-                            alpha: 0.3,
-                          ),
+                          color: primary.withValues(alpha: 0.3),
                           width: 2,
                         ),
                       ),
@@ -105,8 +112,8 @@ class _StickyHeader extends ConsumerWidget {
                       bottom: 0,
                       right: 0,
                       child: Container(
-                        width: 12,
-                        height: 12,
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
                           color: Colors.green,
                           shape: BoxShape.circle,
@@ -119,322 +126,332 @@ class _StickyHeader extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile.userName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
+              ],
+            ),
+          ),
+
+          // ── Scrollable Body ──────────────────────────────────────────────
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+              children: [
+                // ── SYSTEM MASTER OVERVIEW ──────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'SYSTEM MASTER OVERVIEW',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: secondaryTextColor,
                       ),
-                      Text(
-                        profile.userRole,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          height: 1.1,
-                        ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.verified_user, size: 12, color: primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            'FULL ACCESS',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SmallStatCard(
+                        title: 'Media Types',
+                        value: '14',
+                        icon: Icons.perm_media_outlined,
+                        iconColor: primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _SmallStatCard(
+                        title: 'Answer Types',
+                        value: '8',
+                        icon: Icons.fact_check_outlined,
+                        iconColor: Colors.blue[400]!,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _SmallStatCard(
+                        title: 'Issue Status',
+                        value: '5',
+                        icon: Icons.rule_outlined,
+                        iconColor: Colors.amber,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // ── ORGANIZATION SUMMARY ─────────────────────────────────
+                Text(
+                  'ORGANIZATION SUMMARY',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                    color: secondaryTextColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: primary,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primary.withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Active Companies',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            '42',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _GlassChip(
+                            icon: Icons.apartment,
+                            label: '128 Branches',
+                          ),
+                          const SizedBox(height: 8),
+                          _GlassChip(icon: Icons.group, label: '2,840 Users'),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // ── ADMINISTRATIVE TOOLS ─────────────────────────────────
+                Text(
+                  'ADMINISTRATIVE TOOLS',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                    color: secondaryTextColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ToolCard(
+                        title: 'Master Data',
+                        subtitle: 'Configurations',
+                        icon: Icons.storage,
+                        color: Colors.indigo,
+                        onTap: () {},
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ToolCard(
+                        title: 'Org Hierarchy',
+                        subtitle: 'Companies & Branches',
+                        icon: Icons.corporate_fare,
+                        color: primary,
+                        onTap: () {},
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ToolCard(
+                        title: 'User & Roles',
+                        subtitle: 'Access Control',
+                        icon: Icons.manage_accounts,
+                        color: Colors.orange,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ViewBusinessActivityPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ToolCard(
+                        title: 'Program Actions',
+                        subtitle: 'Workflow Config',
+                        icon: Icons.policy_outlined,
+                        color: Colors.grey,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProgramActionView(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // ── RECENT SYSTEM ACTIVITY ───────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'RECENT SYSTEM ACTIVITY',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: secondaryTextColor,
+                      ),
+                    ),
+                    Text(
+                      'LIVE LOG',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                        color: primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _ActivityRow(
+                  title: 'Master Data Sync Complete',
+                  desc: 'Global product catalog updated across all nodes',
+                  time: '2m ago',
+                  icon: Icons.sync,
+                  color: Colors.green,
+                ),
+                _ActivityRow(
+                  title: 'New Company Registered',
+                  desc: "'Nova Solutions' added to Enterprise segment",
+                  time: '15m ago',
+                  icon: Icons.domain_add,
+                  color: primary,
+                ),
+                _ActivityRow(
+                  title: 'Global Role Modified',
+                  desc: 'Branch Manager access updated by System',
+                  time: '1h ago',
+                  icon: Icons.security_update_warning,
+                  color: Colors.amber,
+                  opacity: 0.6,
+                ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isDark ? theme.cardColor : Colors.grey[100],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.notifications_outlined,
-                  color: isDark ? Colors.white : Colors.grey[600],
-                ),
-              ),
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
   }
 }
 
-class _HorizontalSnapCards extends StatelessWidget {
-  const _HorizontalSnapCards();
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper Widgets
+// ─────────────────────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 180,
-      child: PageView(
-        controller: PageController(viewportFraction: 0.75),
-        padEnds: false,
-        children: const [
-          Padding(
-            padding: EdgeInsets.only(left: 16, right: 8),
-            child: _StatusCard(
-              title: "Master Data",
-              value: "Synced",
-              icon: Icons.dataset,
-              iconColor: Color(0xFF0D7FF2),
-              badgeText: "v4.2.0",
-              badgeColor: Colors.green,
-              footerText: "Last update 2m ago",
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(right: 8),
-            child: _StatusCard(
-              title: "Active Branches",
-              value: "12",
-              icon: Icons.domain,
-              iconColor: Colors.blueAccent,
-              badgeText: "2 New",
-              badgeColor: Colors.blue,
-              footerText: "Sections: 45 Active",
-              badgeIcon: Icons.add,
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: _StatusCard(
-              title: "User Licenses",
-              value: "845",
-              icon: Icons.badge,
-              iconColor: Colors.amber,
-              badgeText: "92%",
-              badgeColor: Colors.amber,
-              footerText: "Utilization rate",
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusCard extends StatelessWidget {
+class _SmallStatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
   final Color iconColor;
-  final String badgeText;
-  final Color badgeColor;
-  final String footerText;
-  final IconData? badgeIcon;
 
-  const _StatusCard({
+  const _SmallStatCard({
     required this.title,
     required this.value,
     required this.icon,
     required this.iconColor,
-    required this.badgeText,
-    required this.badgeColor,
-    required this.footerText,
-    this.badgeIcon,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: theme.dividerColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -10,
-            top: -10,
-            child: Icon(
-              icon,
-              size: 80,
-              color: iconColor.withValues(alpha: 0.1),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? badgeColor.withValues(alpha: 0.2)
-                          : badgeColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (badgeIcon != null)
-                          Icon(
-                            badgeIcon,
-                            size: 14,
-                            color: isDark
-                                ? badgeColor.withValues(alpha: 0.8)
-                                : badgeColor,
-                          ),
-                        Text(
-                          badgeText,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: isDark
-                                ? badgeColor.withValues(alpha: 0.8)
-                                : badgeColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      footerText,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _GridMenuSection extends StatelessWidget {
-  const _GridMenuSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "System Management",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: theme.iconTheme.color,
+            ),
           ),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.5,
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _MenuButton(
-                icon: Icons.storage,
-                color: Colors.indigo,
-                label: "Master Data",
-                onTap: (context) {},
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              _MenuButton(
-                icon: Icons.apartment,
-                color: const Color(0xFF0D7FF2),
-                label: "Branches & Sections",
-                onTap: (context) {},
-              ),
-              _MenuButton(
-                icon: Icons.admin_panel_settings,
-                color: Colors.orange,
-                label: "Roles & Users",
-                onTap: (context) {},
-              ),
-              _MenuButton(
-                icon: Icons.business,
-                color: Colors.teal,
-                label: "Business Activity",
-                onTap: (context) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ViewBusinessActivityPage(),
-                    ),
-                  );
-                },
-              ),
-              _MenuButton(
-                icon: Icons.business,
-                color: Colors.teal,
-                label: "Program Actions",
-                onTap: (context) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProgramActionView(),
-                    ),
-                  );
-                },
-              ),
+              Icon(icon, size: 16, color: iconColor),
             ],
           ),
         ],
@@ -443,16 +460,51 @@ class _GridMenuSection extends StatelessWidget {
   }
 }
 
-class _MenuButton extends StatelessWidget {
+class _GlassChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _GlassChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
   final IconData icon;
   final Color color;
-  final String label;
-  final Function(BuildContext) onTap;
+  final VoidCallback onTap;
 
-  const _MenuButton({
+  const _ToolCard({
+    required this.title,
+    required this.subtitle,
     required this.icon,
     required this.color,
-    required this.label,
     required this.onTap,
   });
 
@@ -460,30 +512,48 @@ class _MenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      onTap: () => onTap(context),
-      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: theme.dividerColor),
-          borderRadius: BorderRadius.circular(16),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 10, color: theme.iconTheme.color),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            const Positioned(
+              top: 0,
+              right: 0,
+              child: Icon(Icons.verified, size: 16, color: Colors.green),
             ),
           ],
         ),
@@ -492,193 +562,89 @@ class _MenuButton extends StatelessWidget {
   }
 }
 
-class _OperationalActivityList extends StatelessWidget {
-  const _OperationalActivityList();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                "Operational Activity",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  "View all",
-                  style: TextStyle(color: theme.primaryColor),
-                ),
-              ),
-            ],
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.dividerColor),
-            ),
-            child: Column(
-              children: const [
-                _ActivityItem(
-                  icon: Icons.sync_alt,
-                  iconColor: Colors.purple,
-                  title: "Master Data Sync",
-                  status: "SUCCESS",
-                  statusColor: Colors.green,
-                  desc: "Product catalog definition updated",
-                  time: "10:42 AM",
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.add_business,
-                  iconColor: Color(0xFF0D7FF2),
-                  title: "New Branch Created",
-                  status: "CREATED",
-                  statusColor: Colors.blue,
-                  desc: "\"Downtown Hub\" added to West Region",
-                  time: "09:15 AM",
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.lock_reset,
-                  iconColor: Colors.amber,
-                  title: "Permission Updated",
-                  status: "MODIFIED",
-                  statusColor: Colors.amber,
-                  desc: "Sales Manager role access changed",
-                  time: "Yesterday",
-                  isLast: true,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ActivityItem extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
+class _ActivityRow extends StatelessWidget {
   final String title;
-  final String status;
-  final Color statusColor;
   final String desc;
   final String time;
-  final bool isLast;
+  final IconData icon;
+  final Color color;
+  final double opacity;
 
-  const _ActivityItem({
-    required this.icon,
-    required this.iconColor,
+  const _ActivityRow({
     required this.title,
-    required this.status,
-    required this.statusColor,
     required this.desc,
     required this.time,
-    required this.isLast,
+    required this.icon,
+    required this.color,
+    this.opacity = 1.0,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : Border(
-                bottom: BorderSide(
-                  color: theme.dividerColor.withValues(alpha: 0.5),
-                ),
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.dividerColor),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
               ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? iconColor.withValues(alpha: 0.2)
-                  : iconColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+              child: Icon(icon, color: color, size: 16),
             ),
-            child: Icon(
-              icon,
-              color: isDark ? iconColor.withValues(alpha: 0.8) : iconColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? statusColor.withValues(alpha: 0.2)
-                            : statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? statusColor.withValues(alpha: 0.9)
-                              : statusColor,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  desc,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: theme.colorScheme.onSurfaceVariant,
+                      Text(
+                        time,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.iconTheme.color,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  Text(
+                    desc,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: theme.iconTheme.color,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            time,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

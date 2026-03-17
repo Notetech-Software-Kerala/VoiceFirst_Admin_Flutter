@@ -5,15 +5,25 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_model.dart';
-import 'package:voice_first_admin/features/issue_type/presentation/dialogs/edit_issue_type_dialog.dart';
+import 'package:voice_first_admin/features/issue_type/presentation/pages/edit_issue_type_page.dart';
 import 'package:voice_first_admin/features/issue_type/presentation/providers/issue_type_provider.dart';
 
 const _emerald = Color(0xFF10B981);
 
 String _formatAuditDate(DateTime dt) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
   final minute = dt.minute.toString().padLeft(2, '0');
@@ -27,20 +37,20 @@ class IssueTypeDetailPage extends ConsumerWidget {
   const IssueTypeDetailPage({super.key, required this.id});
 
   AppBar _simpleAppBar(ThemeData theme) => AppBar(
-        backgroundColor: theme.scaffoldBackgroundColor,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        leading: const BackButton(),
-        title: const Text(
-          'Type Details',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: theme.dividerColor, height: 1),
-        ),
-      );
+    backgroundColor: theme.scaffoldBackgroundColor,
+    elevation: 0,
+    scrolledUnderElevation: 0,
+    centerTitle: true,
+    leading: const BackButton(),
+    title: const Text(
+      'Type Details',
+      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    ),
+    bottom: PreferredSize(
+      preferredSize: const Size.fromHeight(1),
+      child: Container(color: theme.dividerColor, height: 1),
+    ),
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,10 +88,7 @@ class IssueTypeDetailPage extends ConsumerWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {},
-              ),
+              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
               const SizedBox(width: 8),
             ],
             bottom: PreferredSize(
@@ -99,18 +106,28 @@ class IssueTypeDetailPage extends ConsumerWidget {
                     children: [
                       _SectionHeader('Basic Information'),
                       const SizedBox(height: 12),
-                      _BasicInfoCard(issueType: issueType, isDeleted: isDeleted),
+                      _BasicInfoCard(
+                        issueType: issueType,
+                        isDeleted: isDeleted,
+                      ),
                       const SizedBox(height: 32),
                       _SectionHeader('Audit Trail'),
                       const SizedBox(height: 12),
-                      _AuditTrailCard(issueType: issueType, isDeleted: isDeleted),
+                      _AuditTrailCard(
+                        issueType: issueType,
+                        isDeleted: isDeleted,
+                      ),
                     ],
                   ),
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: _FooterActions(issueType: issueType, isDeleted: isDeleted, id: id),
+                    child: _FooterActions(
+                      issueType: issueType,
+                      isDeleted: isDeleted,
+                      id: id,
+                    ),
                   ),
                 ],
               ),
@@ -260,7 +277,9 @@ class _BasicInfoCard extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: badgeColor.withValues(alpha: 0.1),
-                        border: Border.all(color: badgeColor.withValues(alpha: 0.2)),
+                        border: Border.all(
+                          color: badgeColor.withValues(alpha: 0.2),
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -362,12 +381,14 @@ class _AuditTrailCard extends StatelessWidget {
     final primary = theme.primaryColor;
 
     final hasModified =
-        (issueType.modifiedUser != null && issueType.modifiedUser!.trim().isNotEmpty) ||
+        (issueType.modifiedUser != null &&
+            issueType.modifiedUser!.trim().isNotEmpty) ||
         issueType.modifiedDate != null;
 
     final hasDeletedInfo =
         isDeleted &&
-        ((issueType.deletedUser != null && issueType.deletedUser!.trim().isNotEmpty) ||
+        ((issueType.deletedUser != null &&
+                issueType.deletedUser!.trim().isNotEmpty) ||
             issueType.deletedDate != null);
 
     final rows = <Widget>[
@@ -385,30 +406,34 @@ class _AuditTrailCard extends StatelessWidget {
 
     if (hasModified) {
       rows.add(Divider(color: theme.dividerColor, height: 1));
-      rows.add(_AuditRow(
-        title: 'Last Modified By',
-        name: issueType.modifiedUser ?? 'Unknown',
-        date: issueType.modifiedDate != null
-            ? _formatAuditDate(issueType.modifiedDate!)
-            : 'N/A',
-        icon: Icons.edit_note_outlined,
-        iconColor: Colors.orange,
-        trailingIcon: Icons.update,
-      ));
+      rows.add(
+        _AuditRow(
+          title: 'Last Modified By',
+          name: issueType.modifiedUser ?? 'Unknown',
+          date: issueType.modifiedDate != null
+              ? _formatAuditDate(issueType.modifiedDate!)
+              : 'N/A',
+          icon: Icons.edit_note_outlined,
+          iconColor: Colors.orange,
+          trailingIcon: Icons.update,
+        ),
+      );
     }
 
     if (hasDeletedInfo) {
       rows.add(Divider(color: theme.dividerColor, height: 1));
-      rows.add(_AuditRow(
-        title: 'Deleted By',
-        name: issueType.deletedUser ?? 'Unknown',
-        date: issueType.deletedDate != null
-            ? _formatAuditDate(issueType.deletedDate!)
-            : 'N/A',
-        icon: Icons.delete_forever_outlined,
-        iconColor: Colors.red,
-        trailingIcon: Icons.cancel_outlined,
-      ));
+      rows.add(
+        _AuditRow(
+          title: 'Deleted By',
+          name: issueType.deletedUser ?? 'Unknown',
+          date: issueType.deletedDate != null
+              ? _formatAuditDate(issueType.deletedDate!)
+              : 'N/A',
+          icon: Icons.delete_forever_outlined,
+          iconColor: Colors.red,
+          trailingIcon: Icons.cancel_outlined,
+        ),
+      );
     }
 
     return Container(
@@ -470,7 +495,10 @@ class _AuditRow extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   name,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -530,11 +558,16 @@ class _FooterActions extends ConsumerWidget {
                           ref.invalidate(issueTypeDetailProvider(id));
                           CustomSnackbar.show(
                             context,
-                            message: '${issueType.issueType} recovered successfully',
+                            message:
+                                '${issueType.issueType} recovered successfully',
                             type: SnackBarType.success,
                           );
                         } else {
-                          CustomSnackbar.show(context, message: error, type: SnackBarType.error);
+                          CustomSnackbar.show(
+                            context,
+                            message: error,
+                            type: SnackBarType.error,
+                          );
                         }
                       },
                     ),
@@ -544,18 +577,33 @@ class _FooterActions extends ConsumerWidget {
                       backgroundColor: _emerald,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 48),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 8,
                       shadowColor: _emerald.withValues(alpha: 0.3),
-                      textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   )
                 : Row(
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () =>
-                              EditIssueTypeDialog.show(context, ref, issueType),
+                          onPressed: () async {
+                            final updated = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditIssueTypePage(issueType: issueType),
+                              ),
+                            );
+                            if (updated == true && context.mounted) {
+                              ref.invalidate(issueTypeDetailProvider(id));
+                            }
+                          },
                           icon: const Icon(Icons.edit_outlined, size: 20),
                           label: const Text('Edit Type'),
                           style: ElevatedButton.styleFrom(
@@ -563,11 +611,14 @@ class _FooterActions extends ConsumerWidget {
                             foregroundColor: Colors.white,
                             minimumSize: const Size(0, 48),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             elevation: 8,
                             shadowColor: primary.withValues(alpha: 0.3),
                             textStyle: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),
@@ -585,12 +636,16 @@ class _FooterActions extends ConsumerWidget {
                               ref.invalidate(issueTypeDetailProvider(id));
                               CustomSnackbar.show(
                                 context,
-                                message: '${issueType.issueType} deleted successfully',
+                                message:
+                                    '${issueType.issueType} deleted successfully',
                                 type: SnackBarType.success,
                               );
                             } else {
                               CustomSnackbar.show(
-                                  context, message: error, type: SnackBarType.error);
+                                context,
+                                message: error,
+                                type: SnackBarType.error,
+                              );
                             }
                           },
                         ),
@@ -601,10 +656,14 @@ class _FooterActions extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Colors.red.withValues(alpha: 0.1),
                             border: Border.all(
-                                color: Colors.red.withValues(alpha: 0.2)),
+                              color: Colors.red.withValues(alpha: 0.2),
+                            ),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.delete_outline, color: Colors.red),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
                         ),
                       ),
                     ],

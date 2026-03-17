@@ -8,7 +8,7 @@ class AppTheme {
   static const cardLight = Color(0xFFFFFFFF);
   static const cardDark = Color(0xFF182634);
 
-  static ThemeData get lightTheme => _buildTheme(
+  static final ThemeData lightTheme = _buildTheme(
     brightness: Brightness.light,
     bg: bgLight,
     card: cardLight,
@@ -17,7 +17,7 @@ class AppTheme {
     borderColor: Colors.grey[200]!,
   );
 
-  static ThemeData get darkTheme => _buildTheme(
+  static final ThemeData darkTheme = _buildTheme(
     brightness: Brightness.dark,
     bg: bgDark,
     card: cardDark,
