@@ -86,7 +86,7 @@ class ActivityDetailPage extends ConsumerWidget {
                                 color: isDeleted
                                     ? Colors.red
                                     : (updatedActivity.active
-                                          ? Colors.green
+                                          ? const Color.fromARGB(255, 40, 21, 135)
                                           : Colors.orange),
                               ),
                             ),
