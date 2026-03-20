@@ -84,10 +84,7 @@ class BusinessActivityService {
 
     debugPrint('API REQUEST: GET $url');
 
-    final response = await http.get(
-      url,
-      headers: {'Content-Type': 'application/json'},
-    );
+    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
 
     debugPrint(
       'API RESPONSE: GET $url -> ${response.statusCode} ${response.body}',

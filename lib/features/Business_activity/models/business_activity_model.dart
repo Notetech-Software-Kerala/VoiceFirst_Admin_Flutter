@@ -35,10 +35,10 @@ class BusinessActivity {
       activityId: json['activityId'] as int,
       activityName: json['activityName'] as String,
       activityCustomFields: json['activityCustomFields'] != null
-    ? (json['activityCustomFields'] as List)
-        .map((e) => ActivityCustomField.fromJson(e))
-        .toList()
-    : null,
+          ? (json['activityCustomFields'] as List)
+                .map((e) => ActivityCustomField.fromJson(e))
+                .toList()
+          : null,
       active: json['active'] as bool,
       isDeleted: json['deleted'],
       createdUser: json['createdUser'],
@@ -63,6 +63,7 @@ class BusinessActivity {
   BusinessActivity copyWith({
     int? activityId,
     String? activityName,
+    List<ActivityCustomField>? activityCustomFields,
     bool? active,
     bool? isDeleted,
     String? createdUser,
@@ -76,6 +77,7 @@ class BusinessActivity {
     return BusinessActivity(
       activityId: activityId ?? this.activityId,
       activityName: activityName ?? this.activityName,
+      activityCustomFields: activityCustomFields ?? this.activityCustomFields,
       active: active ?? this.active,
       isDeleted: isDeleted ?? this.isDeleted,
       createdUser: createdUser ?? this.createdUser,
@@ -87,4 +89,3 @@ class BusinessActivity {
     );
   }
 }
-
