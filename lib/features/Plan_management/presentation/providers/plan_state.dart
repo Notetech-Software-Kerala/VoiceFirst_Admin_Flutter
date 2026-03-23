@@ -1,4 +1,4 @@
-import '../../models/plan_model.dart';
+import '../../data/models/plan_model.dart';
 
 class PlanState {
   final List<Plan> plans;

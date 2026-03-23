@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/models/division2_filter.dart';
+import 'package:voice_first_admin/features/Country_Management/division2/data/models/division2_filter.dart';
 
 void main() {
   group('DivisionTwoFilter', () {

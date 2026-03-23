@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/models/division1_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
+import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_filter.dart';
+import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
 
 class DivisionOneService {
   Future<PaginatedResponse<DivisionOneModel>> getAll(

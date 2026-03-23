@@ -10,8 +10,8 @@
 //     });
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
-import '../../models/program_action_link_lookup.dart';
-import '../../plan_service/plan_service.dart';
+import '../../data/models/program_action_link_lookup.dart';
+import '../../data/plan_service/plan_service.dart';
 
 ////////////////////////////////////////////////////////////
 /// STATE

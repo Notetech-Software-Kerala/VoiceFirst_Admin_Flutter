@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
-import '../../models/plan_model.dart';
-import '../../plan_service/plan_service.dart';
+import '../../data/models/plan_model.dart';
+import '../../data/plan_service/plan_service.dart';
 import 'plan_state.dart';
 
 class PlanNotifier extends Notifier<PlanState> {

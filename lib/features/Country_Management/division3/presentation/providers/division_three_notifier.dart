@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/division3_service/division3_service.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/models/division3_filter.dart';
+import 'package:voice_first_admin/features/Country_Management/division3/data/division3_service/division3_service.dart';
+import 'package:voice_first_admin/features/Country_Management/division3/data/models/division3_filter.dart';
 import 'package:voice_first_admin/features/Country_Management/division3/presentation/providers/division_three_state.dart';
 
 class DivisionThreeNotifier extends StateNotifier<DivisionThreeState> {

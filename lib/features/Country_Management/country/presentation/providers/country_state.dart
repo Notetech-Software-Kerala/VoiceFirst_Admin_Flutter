@@ -1,4 +1,4 @@
-import 'package:voice_first_admin/features/Country_Management/country/models/country_model.dart';
+import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
 
 class CountryState {
   final List<CountryModel> countries;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/providers/business_activity_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/providers/custom_field_lookup_provider.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/widgets/custom_fields_selector.dart';
