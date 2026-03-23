@@ -5,6 +5,8 @@ import 'package:voice_first_admin/core/providers/theme_provider.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:voice_first_admin/features/auth/presentation/pages/login_screen.dart';
+import 'package:voice_first_admin/features/auth/presentation/providers/auth_provider.dart';
+import 'package:voice_first_admin/features/home/presentation/pages/home_page.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/pages/new_password_page.dart';
 import 'package:app_links/app_links.dart';
 import 'dart:async';
@@ -15,7 +17,6 @@ class MyHttpOverrides extends HttpOverrides {
   HttpClient createHttpClient(SecurityContext? context) {
     return super.createHttpClient(context)
       ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-        // Allow ONLY your API domain
         return host == "voicefirst.adminapi.notetech.com";
       };
   }
@@ -27,16 +28,8 @@ void handleResetLink(Uri uri) {
   try {
     if (uri.pathSegments.isEmpty) return;
 
-    // check route
     if (uri.pathSegments.first != "reset-password") return;
 
-    // check token exists
-    if (uri.pathSegments.length < 2) {
-      debugPrint("Reset link missing token");
-      return;
-    }
-
-    // final grant = uri.pathSegments[1];
     final grant = uri.pathSegments.length > 1 ? uri.pathSegments[1] : null;
 
     if (grant == null || grant.isEmpty) {
@@ -44,10 +37,6 @@ void handleResetLink(Uri uri) {
       return;
     }
 
-    if (grant.isEmpty) {
-      debugPrint("Reset token empty");
-      return;
-    }
     Future.delayed(Duration.zero, () {
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => NewPasswordPage(grant: grant)),
@@ -60,15 +49,12 @@ void handleResetLink(Uri uri) {
 }
 
 void main() {
-  // ✅ Activate the SSL bypass
   if (kDebugMode) {
     HttpOverrides.global = MyHttpOverrides();
   }
   runApp(const ProviderScope(child: VoiceFirstAdminApp()));
 }
 
-// class VoiceFirstAdminApp extends ConsumerWidget {
-//   const VoiceFirstAdminApp({super.key});
 class VoiceFirstAdminApp extends ConsumerStatefulWidget {
   const VoiceFirstAdminApp({super.key});
 
@@ -87,17 +73,9 @@ class _VoiceFirstAdminAppState extends ConsumerState<VoiceFirstAdminApp> {
   }
 
   Future<void> _initDeepLinks() async {
-    // app opened from link
     final uri = await _appLinks.getInitialAppLink();
-
-    if (uri != null) {
-      handleResetLink(uri);
-    }
-
-    // app already running
-    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      handleResetLink(uri);
-    });
+    if (uri != null) handleResetLink(uri);
+    _linkSubscription = _appLinks.uriLinkStream.listen(handleResetLink);
   }
 
   @override
@@ -108,9 +86,6 @@ class _VoiceFirstAdminAppState extends ConsumerState<VoiceFirstAdminApp> {
 
   @override
   Widget build(BuildContext context) {
-    // @override
-    // Widget build(BuildContext context, WidgetRef ref) {
-    // Watch dynamic theme mode
     final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
@@ -120,7 +95,29 @@ class _VoiceFirstAdminAppState extends ConsumerState<VoiceFirstAdminApp> {
       darkTheme: AppTheme.darkTheme,
       themeAnimationDuration: Duration.zero,
       navigatorKey: navigatorKey,
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
+  }
+}
+
+/// Routes to [HomePage] if already authenticated, otherwise [LoginScreen].
+/// Shows a loading splash while the auth check is in progress.
+class AuthGate extends ConsumerWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+
+    if (auth.isLoading) {
+      // Splash while stored token is being checked
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (auth.isAuthenticated) {
+      return const HomePage();
+    }
+
+    return const LoginScreen();
   }
 }

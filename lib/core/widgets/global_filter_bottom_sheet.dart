@@ -150,11 +150,11 @@ class _GlobalFilterBottomSheetState extends State<GlobalFilterBottomSheet> {
                           label: "Order",
                           value: _filter.sortOrder,
                           items: const [
-                            DropdownMenuItem(value: 'Asc', child: Text('Asc')),
                             DropdownMenuItem(
                               value: 'Desc',
                               child: Text('Desc'),
                             ),
+                            DropdownMenuItem(value: 'Asc', child: Text('Asc')),
                           ],
                           onChanged: (v) => setState(
                             () => _filter = _filter.copyWith(sortOrder: v),

@@ -17,6 +17,7 @@ import 'package:voice_first_admin/features/post_office/presentation/pages/post_o
 import '../../../../core/widgets/app_drawer.dart';
 import 'package:voice_first_admin/features/menu_configuration/presentation/pages/menu_management_screen.dart';
 import 'package:voice_first_admin/features/user_management/presentation/pages/user_list_screen.dart';
+import 'package:voice_first_admin/features/custom_field/presentation/pages/view_custom_fields_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -51,6 +52,7 @@ class _HomePageState extends State<HomePage> {
       ViewIssueMediaTypePage(),
       ViewIssueStatusPage(),
       ViewIssueTypePage(),
+      ViewCustomFieldsPage(), // 17
     ];
 
     final content = pages[_selectedIndex];

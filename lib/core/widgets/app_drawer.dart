@@ -186,83 +186,19 @@ class SidebarWidget extends ConsumerWidget {
                   onTap: () => onNavigate(0),
                 ),
 
-                // Organization Accordion
+                // ── Organization ───────────────────────────────────────────
                 _SidebarAccordion(
                   title: "Organization",
                   icon: Icons.corporate_fare,
-                  // We simulate expanding selection if children are selected
-                  isExpanded: currentIndex == 1,
+                  isExpanded: [1, 2, 4].contains(currentIndex),
                   children: [
                     _SidebarSubItem(
-                      title: "Org Setup",
+                      title: "Roles",
                       subtitle: "Manage Permissions & Roles",
                       icon: Icons.admin_panel_settings,
                       isSelected: currentIndex == 1,
                       onTap: () => onNavigate(1),
                     ),
-                    _SidebarSubItem(
-                      title: "Post Office",
-                      subtitle: "Setup Locations",
-                      icon: Icons.local_post_office,
-                      isSelected: currentIndex == 4,
-                      onTap: () => onNavigate(4),
-                    ),
-                    _SidebarSubItem(
-                      title: "Branches",
-                      subtitle: "Manage global locations",
-                      icon: Icons.account_tree,
-                    ),
-                    _SidebarSubItem(
-                      title: "Business Activity",
-                      subtitle: "Manage Business Activity",
-                      icon: Icons.business_center_outlined,
-                      isSelected: currentIndex == 5,
-                      onTap: () => onNavigate(5),
-                    ),
-                    _SidebarSubItem(
-                      title: "Manage Country",
-                      subtitle: "Manage Country",
-                      icon: Icons.business_center_outlined,
-                      isSelected: currentIndex == 6,
-                      onTap: () => onNavigate(6),
-                    ),
-
-                    _SidebarSubItem(
-                      title: "Program Action",
-                      icon: Icons.playlist_play,
-                      isSelected: currentIndex == 7,
-                      onTap: () => onNavigate(7),
-                      subtitle: 'Manage Program Action',
-                    ),
-                    _SidebarSubItem(
-                      title: "Program Management",
-                      icon: Icons.settings_applications,
-                      isSelected: currentIndex == 8,
-                      onTap: () => onNavigate(8),
-                      subtitle: 'Manage Programs',
-                    ),
-                    _SidebarSubItem(
-                      title: "Plan Management",
-                      icon: Icons.settings_applications,
-                      isSelected: currentIndex == 9,
-                      onTap: () => onNavigate(9),
-                      subtitle: 'Manage Plans',
-                    ),
-                    _SidebarSubItem(
-                      title: "Place Management",
-                      subtitle: "Manage Places",
-                      icon: Icons.settings_applications,
-                      isSelected: currentIndex == 11,
-                      onTap: () => onNavigate(11),
-                    ),
-                  ],
-                ),
-
-                // System Accordion
-                _SidebarAccordion(
-                  title: "System",
-                  icon: Icons.settings_input_component,
-                  children: [
                     _SidebarSubItem(
                       title: "Users",
                       subtitle: "User management",
@@ -271,10 +207,77 @@ class SidebarWidget extends ConsumerWidget {
                       onTap: () => onNavigate(2),
                     ),
                     _SidebarSubItem(
-                      title: "Master Data",
-                      subtitle: "Core system records",
-                      icon: Icons.dataset,
+                      title: "Branches",
+                      subtitle: "Manage global locations",
+                      icon: Icons.account_tree,
                     ),
+                    _SidebarSubItem(
+                      title: "Post Office",
+                      subtitle: "Setup Locations",
+                      icon: Icons.local_post_office,
+                      isSelected: currentIndex == 4,
+                      onTap: () => onNavigate(4),
+                    ),
+                  ],
+                ),
+
+                // ── Master Data ─────────────────────────────────────────────
+                _SidebarAccordion(
+                  title: "Master Data",
+                  icon: Icons.dataset_outlined,
+                  isExpanded: [5, 6, 7, 8, 9, 11].contains(currentIndex),
+                  children: [
+                    _SidebarSubItem(
+                      title: "Business Activity",
+                      subtitle: "Manage Business Activities",
+                      icon: Icons.business_center_outlined,
+                      isSelected: currentIndex == 5,
+                      onTap: () => onNavigate(5),
+                    ),
+                    _SidebarSubItem(
+                      title: "Country",
+                      subtitle: "Manage Countries",
+                      icon: Icons.flag_outlined,
+                      isSelected: currentIndex == 6,
+                      onTap: () => onNavigate(6),
+                    ),
+                    _SidebarSubItem(
+                      title: "Program Action",
+                      subtitle: "Manage Program Actions",
+                      icon: Icons.playlist_play,
+                      isSelected: currentIndex == 7,
+                      onTap: () => onNavigate(7),
+                    ),
+                    _SidebarSubItem(
+                      title: "Program Management",
+                      subtitle: "Manage Programs",
+                      icon: Icons.settings_applications,
+                      isSelected: currentIndex == 8,
+                      onTap: () => onNavigate(8),
+                    ),
+                    _SidebarSubItem(
+                      title: "Plan Management",
+                      subtitle: "Manage Plans",
+                      icon: Icons.alt_route,
+                      isSelected: currentIndex == 9,
+                      onTap: () => onNavigate(9),
+                    ),
+                    _SidebarSubItem(
+                      title: "Place Management",
+                      subtitle: "Manage Places",
+                      icon: Icons.place_outlined,
+                      isSelected: currentIndex == 11,
+                      onTap: () => onNavigate(11),
+                    ),
+                  ],
+                ),
+
+                // ── System ──────────────────────────────────────────────────
+                _SidebarAccordion(
+                  title: "System",
+                  icon: Icons.settings_input_component,
+                  isExpanded: [10, 12, 13, 14, 15, 16, 17].contains(currentIndex),
+                  children: [
                     _SidebarSubItem(
                       title: "Menu Config",
                       subtitle: "Configure User App Menu",
@@ -292,14 +295,14 @@ class SidebarWidget extends ConsumerWidget {
                     _SidebarSubItem(
                       title: "Issue Media Format",
                       subtitle: "Manage Issue Media Formats",
-                      icon: Icons.label_important_outline,
+                      icon: Icons.perm_media_outlined,
                       isSelected: currentIndex == 13,
                       onTap: () => onNavigate(13),
                     ),
                     _SidebarSubItem(
                       title: "Issue Media Type",
                       subtitle: "Manage Issue Media Types",
-                      icon: Icons.label_important_outline,
+                      icon: Icons.video_library_outlined,
                       isSelected: currentIndex == 14,
                       onTap: () => onNavigate(14),
                     ),
@@ -316,6 +319,13 @@ class SidebarWidget extends ConsumerWidget {
                       icon: Icons.category_outlined,
                       isSelected: currentIndex == 16,
                       onTap: () => onNavigate(16),
+                    ),
+                    _SidebarSubItem(
+                      title: "Custom Fields",
+                      subtitle: "Manage Custom Fields",
+                      icon: Icons.text_snippet_outlined,
+                      isSelected: currentIndex == 17,
+                      onTap: () => onNavigate(17),
                     ),
                   ],
                 ),

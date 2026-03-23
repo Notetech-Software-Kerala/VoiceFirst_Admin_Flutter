@@ -311,8 +311,8 @@ class DashboardPage extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: _ToolCard(
-                        title: 'User & Roles',
-                        subtitle: 'Access Control',
+                        title: 'Business Activities',
+                        subtitle: 'Manage Business Activities',
                         icon: Icons.manage_accounts,
                         color: Colors.orange,
                         onTap: () {
