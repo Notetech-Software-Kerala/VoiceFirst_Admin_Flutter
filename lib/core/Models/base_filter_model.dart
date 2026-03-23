@@ -16,7 +16,7 @@ class BaseFilterModel {
     this.searchBy,
     this.searchText,
     this.sortBy,
-    this.sortOrder = 'Desc',
+    this.sortOrder = 'Asc',
     this.active,
     this.deleted,
     this.createdFromDate,
