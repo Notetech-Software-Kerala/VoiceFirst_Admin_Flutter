@@ -270,13 +270,6 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
                       grant: widget.grant,
                       newPassword: _newPasswordController.text,
                     );
-                // await ref
-                //     .read(passwordProvider.notifier)
-                //     .resetPassword(
-                //       email: widget.email,
-                //       otp: widget.otp,
-                //       newPassword: _newPasswordController.text,
-                //     );
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,

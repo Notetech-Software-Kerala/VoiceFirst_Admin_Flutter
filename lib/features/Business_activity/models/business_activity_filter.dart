@@ -75,3 +75,4 @@ class BusinessActivityFilter {
     return params;
   }
 }
+

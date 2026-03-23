@@ -6,7 +6,6 @@ class BusinessActivityState {
   final List<BusinessActivity> items;
 
   /// Current API query (filters + pagination)
-  // final BusinessActivityQuery query;
   final BaseFilterModel filter;
 
   /// Pagination
