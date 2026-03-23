@@ -1,4 +1,4 @@
-import 'package:voice_first_admin/features/Country_Management/division3/models/division_three_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division3/data/models/division_three_model.dart';
 
 class DivisionThreeState {
   final List<DivisionThreeModel> items;

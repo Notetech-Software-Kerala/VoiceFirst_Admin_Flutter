@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:voice_first_admin/features/Country_Management/country/models/country_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/models/division_two_model.dart';
+import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
 
 class Division2DetailPage extends StatelessWidget {
   final CountryModel country;

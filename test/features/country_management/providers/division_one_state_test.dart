@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/models/division1_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/presentation/providers/division_one_state.dart';
 
 void main() {

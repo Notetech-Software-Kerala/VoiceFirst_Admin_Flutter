@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../models/business_activity_model.dart';
+import '../../data/models/business_activity_model.dart';
 import '../providers/business_activity_provider.dart';
 
 class ActivityActionBar extends ConsumerWidget {

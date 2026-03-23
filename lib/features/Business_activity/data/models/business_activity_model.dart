@@ -1,4 +1,4 @@
-import 'package:voice_first_admin/features/Business_activity/models/activity_custom_field.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/activity_custom_field.dart';
 
 class BusinessActivity {
   final int activityId;

@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'business_activity_notifier.dart';
 import 'business_activity_state.dart';
-import '../../business_activity_service/business_activity_service.dart';
-import '../../models/business_activity_model.dart';
+import '../../data/business_activity_service/business_activity_service.dart';
+import '../../data/models/business_activity_model.dart';
 
 final businessActivityProvider =
     NotifierProvider<BusinessActivityNotifier, BusinessActivityState>(

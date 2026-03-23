@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
-import 'package:voice_first_admin/features/Business_activity/models/update_activity_request.dart';
-import '../../business_activity_service/business_activity_service.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/update_activity_request.dart';
+import '../../data/business_activity_service/business_activity_service.dart';
 import 'business_activity_state.dart';
 
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {

@@ -1189,7 +1189,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
 import 'package:voice_first_admin/features/Business_activity/presentation/pages/edit_activity_page.dart';
 import '../providers/business_activity_provider.dart';
 import '../../../../core/widgets/custom_snackbar.dart';

@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
-import 'package:voice_first_admin/features/Plan%20management/presentation/providers/plan_provider.dart';
+import 'package:voice_first_admin/features/Plan_management/presentation/providers/plan_provider.dart';
 
-import '../../models/plan_model.dart';
-import '../../plan_service/plan_service.dart';
+import '../../data/models/plan_model.dart';
+import '../../data/plan_service/plan_service.dart';
 
 ////////////////////////////////////////////////////////////
 /// STATE

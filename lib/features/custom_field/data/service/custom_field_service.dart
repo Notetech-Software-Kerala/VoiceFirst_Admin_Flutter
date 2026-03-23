@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_filter.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_model.dart';
-import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
+import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
 
 class CustomFieldService {
   static const String _path = '/user-custom-field';

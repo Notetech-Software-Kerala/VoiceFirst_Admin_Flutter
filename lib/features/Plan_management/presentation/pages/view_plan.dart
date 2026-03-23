@@ -9,10 +9,10 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'add_plan.dart';
-import '../providers/plan_provider.dart';
-import 'plan_detail_page.dart';
-import '../../models/plan_model.dart';
+import 'package:voice_first_admin/features/Plan_management/data/models/plan_model.dart';
+import 'package:voice_first_admin/features/Plan_management/presentation/pages/add_plan.dart';
+import 'package:voice_first_admin/features/Plan_management/presentation/pages/plan_detail_page.dart';
+import 'package:voice_first_admin/features/Plan_management/presentation/providers/plan_provider.dart';
 
 class ViewPlanPage extends ConsumerStatefulWidget {
   const ViewPlanPage({super.key});

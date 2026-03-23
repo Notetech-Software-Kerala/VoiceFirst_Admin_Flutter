@@ -5,7 +5,7 @@ import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Program_management/models/create_program_request.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
+import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
 import 'package:voice_first_admin/features/Program_management/models/update_program_request.dart';
 
 class ProgramManagementService {

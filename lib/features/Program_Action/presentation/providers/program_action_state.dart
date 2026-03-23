@@ -1,4 +1,4 @@
-import 'package:voice_first_admin/features/Program_Action/models/program_action_model.dart';
+import 'package:voice_first_admin/features/Program_Action/data/models/program_action_model.dart';
 
 class ProgramActionState {
   final List<ProgramActionModel> actions;
