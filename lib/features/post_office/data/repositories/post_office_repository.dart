@@ -1,33 +1,21 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/features/post_office/data/models/post_office_filter_model.dart';
-import '../../../../core/config/api_endpoints.dart';
 
 class PostOfficeRepository {
-  Map<String, String> get _headers => {'Content-Type': 'application/json'};
+  final Dio _dio;
+  PostOfficeRepository(this._dio);
 
-  Future<Map<String, dynamic>> getPostOffices(
-    PostOfficeFilterModel filter,
-  ) async {
+  Future<Map<String, dynamic>> getPostOffices(PostOfficeFilterModel filter) async {
     try {
-      // Robust URI construction
-      final uri = Uri.parse(
-        '${ApiEndpoints.baseUrl}/post-office',
-      ).replace(queryParameters: filter.toQueryParams());
-
-      debugPrint("Fetching Post Offices: $uri");
-
-      final response = await http.get(uri);
+      debugPrint("Fetching Post Offices: /post-office");
+      final response = await _dio.get(
+        '/post-office',
+        queryParameters: filter.toQueryParams(),
+      );
 
       debugPrint("Response Status: ${response.statusCode}");
-      // debugPrint("Response Body: ${response.body}"); // Uncomment if needed
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw "Failed to load: ${response.statusCode} ${response.body}";
-      }
+      return response.data as Map<String, dynamic>;
     } catch (e) {
       debugPrint("Error in getPostOffices: $e");
       rethrow;
@@ -35,138 +23,74 @@ class PostOfficeRepository {
   }
 
   Future<Map<String, dynamic>> getPostOfficeById(int id) async {
-    try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office/$id');
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw "Failed to load post office details";
-      }
-    } catch (e) {
-      rethrow;
+    final response = await _dio.get('/post-office/$id');
+    if (response.statusCode == 200) {
+      return response.data as Map<String, dynamic>;
+    } else {
+      throw "Failed to load post office details";
     }
   }
 
   Future<void> createPostOffice(Map<String, dynamic> data) async {
-    try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office');
-      final response = await http.post(
-        uri,
-        headers: _headers,
-        body: jsonEncode(data),
-      );
-
-      if (!_isSuccess(response)) {
-        throw "Create failed: ${response.statusCode} ${response.body}";
-      }
-    } catch (e) {
-      rethrow;
+    final response = await _dio.post('/post-office', data: data);
+    if (!_isSuccess(response)) {
+      throw "Create failed: ${response.statusCode}";
     }
   }
 
   Future<void> updatePostOffice(int id, Map<String, dynamic> data) async {
-    try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office/$id');
-      final response = await http.patch(
-        uri,
-        headers: _headers,
-        body: jsonEncode(data),
-      );
-
-      if (!_isSuccess(response)) {
-        throw "Update failed: ${response.statusCode} ${response.body}";
-      }
-    } catch (e) {
-      rethrow;
+    final response = await _dio.patch('/post-office/$id', data: data);
+    if (!_isSuccess(response)) {
+      throw "Update failed: ${response.statusCode}";
     }
   }
 
   Future<void> deletePostOffice(int id) async {
-    try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office/$id');
-      final response = await http.delete(uri);
-
-      if (!_isSuccess(response)) {
-        throw "Delete failed: ${response.statusCode}";
-      }
-    } catch (e) {
-      rethrow;
+    final response = await _dio.delete('/post-office/$id');
+    if (!_isSuccess(response)) {
+      throw "Delete failed: ${response.statusCode}";
     }
   }
 
   Future<List<dynamic>> getCountries() async {
-    try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/country/lookup');
-      final response = await http.get(uri);
-
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        return json['data'] ?? [];
-      } else {
-        throw "Failed to load countries";
-      }
-    } catch (e) {
-      rethrow;
+    final response = await _dio.get('/country/lookup');
+    if (response.statusCode == 200) {
+      final json = response.data as Map<String, dynamic>;
+      return json['data'] ?? [];
     }
+    throw "Failed to load countries";
   }
 
   // --- DIVISION LOOKUPS ---
-
   Future<List<dynamic>> getDivisionOne(String countryId) async {
-    try {
-      final uri = Uri.parse(
-        '${ApiEndpoints.baseUrl}/division/one/lookup/$countryId',
-      );
-      final response = await http.get(uri);
-
-      if (_isSuccess(response)) {
-        final json = jsonDecode(response.body);
-        return json['data'] ?? [];
-      }
-      throw "Failed to load Division 1";
-    } catch (e) {
-      rethrow;
+    final response = await _dio.get('/division/one/lookup/$countryId');
+    if (_isSuccess(response)) {
+      final json = response.data as Map<String, dynamic>;
+      return json['data'] ?? [];
     }
+    throw "Failed to load Division 1";
   }
 
   Future<List<dynamic>> getDivisionTwo(String divOneId) async {
-    try {
-      final uri = Uri.parse(
-        '${ApiEndpoints.baseUrl}/division/two/lookup/$divOneId',
-      );
-      final response = await http.get(uri);
-
-      if (_isSuccess(response)) {
-        final json = jsonDecode(response.body);
-        return json['data'] ?? [];
-      }
-      throw "Failed to load Division 2";
-    } catch (e) {
-      rethrow;
+    final response = await _dio.get('/division/two/lookup/$divOneId');
+    if (_isSuccess(response)) {
+      final json = response.data as Map<String, dynamic>;
+      return json['data'] ?? [];
     }
+    throw "Failed to load Division 2";
   }
 
   Future<List<dynamic>> getDivisionThree(String divTwoId) async {
-    try {
-      final uri = Uri.parse(
-        '${ApiEndpoints.baseUrl}/division/three/lookup/$divTwoId',
-      );
-      final response = await http.get(uri);
-
-      if (_isSuccess(response)) {
-        final json = jsonDecode(response.body);
-        return json['data'] ?? [];
-      }
-      throw "Failed to load Division 3";
-    } catch (e) {
-      rethrow;
+    final response = await _dio.get('/division/three/lookup/$divTwoId');
+    if (_isSuccess(response)) {
+      final json = response.data as Map<String, dynamic>;
+      return json['data'] ?? [];
     }
+    throw "Failed to load Division 3";
   }
 
-  bool _isSuccess(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
+  bool _isSuccess(Response response) {
+    if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
       return true;
     }
     return false;

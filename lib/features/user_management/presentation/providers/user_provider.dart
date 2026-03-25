@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/user_model.dart';
 import '../../data/models/user_filter_model.dart';
 import '../../data/repositories/user_repository.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
 class UserState {
   final bool isLoading;
@@ -35,7 +36,9 @@ class UserState {
   }
 }
 
-final userRepositoryProvider = Provider((ref) => UserRepository());
+final userRepositoryProvider = Provider((ref) {
+  return UserRepository(ref.read(dioClientProvider));
+});
 
 final userProvider = NotifierProvider<UserNotifier, UserState>(() {
   return UserNotifier();

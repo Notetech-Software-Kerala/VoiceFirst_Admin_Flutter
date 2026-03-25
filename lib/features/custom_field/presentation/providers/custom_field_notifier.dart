@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_filter.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_model.dart';
-import 'package:voice_first_admin/features/custom_field/data/service/custom_field_service.dart';
+import 'package:voice_first_admin/features/custom_field/data/repositories/custom_field_repository.dart';
 import 'custom_field_state.dart';
 
 class CustomFieldNotifier extends Notifier<CustomFieldState> {
-  late final CustomFieldService _service;
+  late final CustomFieldRepository _repository;
 
   @override
   CustomFieldState build() {
-    _service = CustomFieldService();
+    _repository = CustomFieldRepository(ref.read(dioClientProvider));
     return CustomFieldState.initial();
   }
 
@@ -23,7 +24,7 @@ class CustomFieldNotifier extends Notifier<CustomFieldState> {
     try {
       final effectiveFilter = filter ??
           CustomFieldFilter(pageNumber: 1, pageSize: _defaultPageSize);
-      final response = await _service.getAll(effectiveFilter);
+      final response = await _repository.getAll(effectiveFilter);
       state = state.copyWith(
         items: response.items,
         filtered: response.items,
@@ -64,7 +65,7 @@ class CustomFieldNotifier extends Notifier<CustomFieldState> {
   Future<String?> add(CustomFieldModel field) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
-      await _service.create(field);
+      await _repository.create(field);
       await loadAll();
       state = state.copyWith(isSaving: false);
       return null;
@@ -79,7 +80,7 @@ class CustomFieldNotifier extends Notifier<CustomFieldState> {
   Future<String?> edit(int id, CustomFieldModel field) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
-      final updated = await _service.update(id: id, field: field);
+      final updated = await _repository.update(id: id, field: field);
       state = state.copyWith(
         isSaving: false,
         items: state.items.map((e) => e.fieldId == id ? updated : e).toList(),
@@ -97,7 +98,7 @@ class CustomFieldNotifier extends Notifier<CustomFieldState> {
   // ─── Delete ────────────────────────────────────────────────────────────────
   Future<String?> remove(int id) async {
     try {
-      await _service.delete(id);
+      await _repository.delete(id);
       state = state.copyWith(
         items: state.items.where((e) => e.fieldId != id).toList(),
         filtered: state.filtered.where((e) => e.fieldId != id).toList(),

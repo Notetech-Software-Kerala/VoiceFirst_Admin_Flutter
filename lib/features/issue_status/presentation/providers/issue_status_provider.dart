@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_status/data/models/issue_status_model.dart';
 import 'package:voice_first_admin/features/issue_status/data/service/issue_status_service.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'issue_status_notifier.dart';
 import 'issue_status_state.dart';
 
@@ -11,6 +12,6 @@ final issueStatusProvider =
 
 final issueStatusDetailProvider =
     FutureProvider.family<IssueStatusModel, int>((ref, id) async {
-      final service = IssueStatusService();
+      final service = IssueStatusService(ref.read(dioClientProvider));
       return service.getById(id);
     });
