@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/post_office_model.dart';
 import '../../data/models/post_office_filter_model.dart';
 import '../../data/repositories/post_office_repository.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
 class PostOfficeState {
   final bool isLoading;
@@ -39,7 +40,9 @@ class PostOfficeState {
   int get limit => filter.limit;
 }
 
-final postOfficeRepositoryProvider = Provider((ref) => PostOfficeRepository());
+final postOfficeRepositoryProvider = Provider((ref) {
+  return PostOfficeRepository(ref.read(dioClientProvider));
+});
 
 final postOfficeProvider =
     NotifierProvider<PostOfficeNotifier, PostOfficeState>(() {

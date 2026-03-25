@@ -1,34 +1,24 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_filter.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_model.dart';
 import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
 
-class CustomFieldService {
+class CustomFieldRepository {
+  final Dio _dio;
+  CustomFieldRepository(this._dio);
+
   static const String _path = '/user-custom-field';
 
   // ─── CREATE ───────────────────────────────────────────────────────────────
   Future<(CustomFieldModel, String)> create(CustomFieldModel field) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
-    final body = jsonEncode(field.toCreateJson());
+    debugPrint('API REQUEST: POST $_path');
+    final response = await _dio.post(_path, data: field.toCreateJson());
 
-    debugPrint('API REQUEST: POST $url\nBody: $body');
+    debugPrint('API RESPONSE: POST $_path -> ${response.statusCode}');
 
-    final response = await http.post(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: body,
-    );
-
-    debugPrint('API RESPONSE: POST $url -> ${response.statusCode} ${response.body}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-    final message = jsonBody['message']?.toString() ??
-        (response.statusCode == 200 || response.statusCode == 201
-            ? 'Custom field created successfully'
-            : 'Failed to create custom field');
+    final jsonBody = response.data as Map<String, dynamic>;
+    final message = jsonBody['message']?.toString() ?? 'Custom field created successfully';
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(message);
@@ -39,31 +29,22 @@ class CustomFieldService {
   }
 
   // ─── READ ALL ─────────────────────────────────────────────────────────────
-  Future<PaginatedResponse<CustomFieldModel>> getAll(
-    CustomFieldFilter filter,
-  ) async {
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}$_path')
-        .replace(queryParameters: filter.toQueryParams());
+  Future<PaginatedResponse<CustomFieldModel>> getAll(CustomFieldFilter filter) async {
+    debugPrint('API REQUEST: GET $_path');
+    final response = await _dio.get(_path, queryParameters: filter.toQueryParams());
 
-    debugPrint('API REQUEST: GET $uri');
+    debugPrint('API RESPONSE: GET $_path -> ${response.statusCode}');
 
-    final response = await http.get(uri, headers: ApiEndpoints.defaultHeaders);
-
-    debugPrint('API RESPONSE: GET $uri -> ${response.statusCode}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final jsonBody = response.data as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final message =
-          jsonBody['message']?.toString() ?? 'Failed to load custom fields';
+      final message = jsonBody['message']?.toString() ?? 'Failed to load custom fields';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     final itemsJson = data['items'] as List<dynamic>? ?? <dynamic>[];
-    final items = itemsJson
-        .map((e) => CustomFieldModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final items = itemsJson.map((e) => CustomFieldModel.fromJson(e as Map<String, dynamic>)).toList();
 
     return PaginatedResponse<CustomFieldModel>(
       items: items,
@@ -76,19 +57,15 @@ class CustomFieldService {
 
   // ─── READ ONE ─────────────────────────────────────────────────────────────
   Future<CustomFieldModel> getById(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: GET $_path/$id');
+    final response = await _dio.get('$_path/$id');
 
-    debugPrint('API REQUEST: GET $url');
+    debugPrint('API RESPONSE: GET $_path/$id -> ${response.statusCode}');
 
-    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
-
-    debugPrint('API RESPONSE: GET $url -> ${response.statusCode}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final jsonBody = response.data as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final message =
-          jsonBody['message']?.toString() ?? 'Failed to load custom field';
+      final message = jsonBody['message']?.toString() ?? 'Failed to load custom field';
       throw Exception(message);
     }
 
@@ -101,24 +78,15 @@ class CustomFieldService {
     required int id,
     required CustomFieldModel field,
   }) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
-    final body = jsonEncode(field.toUpdateJson());
+    debugPrint('API REQUEST: PATCH $_path/$id');
+    final response = await _dio.patch('$_path/$id', data: field.toUpdateJson());
 
-    debugPrint('API REQUEST: PATCH $url\nBody: $body');
+    debugPrint('API RESPONSE: PATCH $_path/$id -> ${response.statusCode}');
 
-    final response = await http.patch(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: body,
-    );
-
-    debugPrint('API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final jsonBody = response.data as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final message =
-          jsonBody['message']?.toString() ?? 'Failed to update custom field';
+      final message = jsonBody['message']?.toString() ?? 'Failed to update custom field';
       throw Exception(message);
     }
 
@@ -128,21 +96,14 @@ class CustomFieldService {
 
   // ─── DELETE ───────────────────────────────────────────────────────────────
   Future<void> delete(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: DELETE $_path/$id');
+    final response = await _dio.delete('$_path/$id');
 
-    debugPrint('API REQUEST: DELETE $url');
-
-    final response = await http.delete(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-    );
-
-    debugPrint('API RESPONSE: DELETE $url -> ${response.statusCode} ${response.body}');
+    debugPrint('API RESPONSE: DELETE $_path/$id -> ${response.statusCode}');
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-      final message =
-          jsonBody['message']?.toString() ?? 'Failed to delete custom field';
+      final jsonBody = response.data as Map<String, dynamic>;
+      final message = jsonBody['message']?.toString() ?? 'Failed to delete custom field';
       throw Exception(message);
     }
   }

@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import '../../../../core/config/api_endpoints.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
 // --- Lookup Item Model ---
 class LookupItem {
@@ -27,13 +25,12 @@ final rolesLookupProvider = FutureProvider.autoDispose<List<LookupItem>>((
   ref,
 ) async {
   try {
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}/role/lookup');
-    debugPrint("Fetching Roles Lookup: $uri");
-
-    final response = await http.get(uri);
+    debugPrint("Fetching Roles Lookup: /role/lookup");
+    final dio = ref.read(dioClientProvider);
+    final response = await dio.get('/role/lookup');
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+      final decoded = response.data;
       // Usually API responses are wrapped in a 'data' array or object
       final List<dynamic> data = decoded is Map
           ? (decoded['data'] ?? [])
@@ -53,19 +50,19 @@ final dialCodeLookupProvider = FutureProvider.autoDispose<List<LookupItem>>((
   ref,
 ) async {
   try {
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}/dialCode/lookup').replace(
+    final dio = ref.read(dioClientProvider);
+    final response = await dio.get(
+      '/dialCode/lookup',
       queryParameters: {
         'PageNumber': '1',
         'Limit': '500', // Fetch enough for the dropdown
         // 'SearchText': '' // Can add search functionality later if needed
       },
     );
-    debugPrint("Fetching Dial Code Lookup: $uri");
-
-    final response = await http.get(uri);
+    debugPrint("Fetching Dial Code Lookup: /dialCode/lookup");
 
     if (response.statusCode == 200) {
-      final decoded = jsonDecode(response.body);
+      final decoded = response.data;
 
       // Robust extraction to handle both flat arrays and paginated objects
       List<dynamic> dataList = [];

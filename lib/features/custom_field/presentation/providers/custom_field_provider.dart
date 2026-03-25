@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_model.dart';
-import 'package:voice_first_admin/features/custom_field/data/service/custom_field_service.dart';
+import 'package:voice_first_admin/features/custom_field/data/repositories/custom_field_repository.dart';
 import 'custom_field_notifier.dart';
 import 'custom_field_state.dart';
 
@@ -10,6 +11,6 @@ final customFieldProvider =
 );
 
 final customFieldDetailProvider = FutureProvider.autoDispose.family<CustomFieldModel, int>((ref, id) async {
-  final service = CustomFieldService();
-  return await service.getById(id);
+  final repository = CustomFieldRepository(ref.read(dioClientProvider));
+  return await repository.getById(id);
 });

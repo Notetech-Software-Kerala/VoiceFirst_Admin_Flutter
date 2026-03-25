@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_filter.dart';
 import 'package:voice_first_admin/features/issue_type/data/service/issue_type_service.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'issue_type_state.dart';
 
 class IssueTypeNotifier extends Notifier<IssueTypeState> {
@@ -9,7 +10,7 @@ class IssueTypeNotifier extends Notifier<IssueTypeState> {
 
   @override
   IssueTypeState build() {
-    _service = IssueTypeService();
+    _service = IssueTypeService(ref.read(dioClientProvider));
     return IssueTypeState.initial();
   }
 
