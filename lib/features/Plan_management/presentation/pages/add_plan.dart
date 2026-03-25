@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/paginated_search_dropdown.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
-import 'package:voice_first_admin/features/Plan%20management/presentation/providers/program_action_link_lookup_provider.dart';
-import '../../models/program_action_link_lookup.dart';
+import 'package:voice_first_admin/features/Plan_management/presentation/providers/program_action_link_lookup_provider.dart';
+import '../../data/models/program_action_link_lookup.dart';
 import '../providers/add_plan_provider.dart';
 
 class AddPlanPage extends ConsumerStatefulWidget {

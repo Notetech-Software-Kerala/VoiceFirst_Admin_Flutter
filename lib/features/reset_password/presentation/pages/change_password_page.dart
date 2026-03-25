@@ -3,11 +3,14 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/pages/forgot_password_page.dart';
+import 'package:voice_first_admin/features/auth/presentation/pages/login_screen.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/providers/password_notifier.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/providers/password_provider.dart';
 
 class ChangePasswordPage extends ConsumerStatefulWidget {
-  const ChangePasswordPage({super.key});
+  final String? grant;
+
+  const ChangePasswordPage({super.key, this.grant});
 
   @override
   ConsumerState<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -21,6 +24,8 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       TextEditingController();
 
   final Color brandColor = const Color(0xFF0D7FF2);
+  bool _obscureOld = true;
+  bool _obscureNew = true;
 
   @override
   void dispose() {
@@ -40,6 +45,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   Widget build(BuildContext context) {
     final passwordState = ref.watch(passwordProvider);
     final passwordNotifier = ref.read(passwordProvider.notifier);
+    final bool isResetFlow = widget.grant != null;
 
     ref.listen(passwordProvider, (previous, next) {
       if (previous?.isLoading == true && next.isLoading == false) {
@@ -48,9 +54,13 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
           _newPasswordController.clear();
           _confirmPasswordController.clear();
 
-          Navigator.of(
-            context,
-          ).pushNamedAndRemoveUntil('/login', (route) => false);
+          // Navigate to the concrete LoginScreen instead of a missing named route
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+            );
+          }
 
           passwordNotifier.clearSuccess();
         } else if (next.errorMessage != null && next.errorMessage!.isNotEmpty) {
@@ -65,6 +75,25 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
         fit: StackFit.expand,
         children: [
           const _BackgroundLayer(),
+          // Back button placed at top-left of the screen
+          Positioned(
+            top: 12,
+            left: 12,
+            child: SafeArea(
+              top: true,
+              bottom: false,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -76,21 +105,11 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: () => Navigator.of(context).maybePop(),
-                          padding: const EdgeInsets.only(right: 8),
-                          constraints: const BoxConstraints(),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Change Password',
-                          style: TextStyle(
+                        Text(
+                          isResetFlow ? 'Reset Password' : 'Change Password',
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -119,54 +138,52 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const Text(
-                                  'Update your account password securely.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xFF9CA3AF),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
                                 const SizedBox(height: 24),
-                                _buildInputLabel('CURRENT PASSWORD'),
-                                const SizedBox(height: 6),
-                                _buildPasswordField(
-                                  controller: _oldPasswordController,
-                                  hint: 'Enter current password',
-                                  validator: (value) {
-                                    if ((value ?? '').isEmpty) {
-                                      return 'Old password is required';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 8),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const ForgotPasswordPage(),
-                                        ),
-                                      );
+                                if (!isResetFlow) ...[
+                                  _buildInputLabel('CURRENT PASSWORD'),
+                                  const SizedBox(height: 6),
+                                  _buildPasswordField(
+                                    controller: _oldPasswordController,
+                                    hint: 'Enter current password',
+                                    validator: (value) {
+                                      if ((value ?? '').isEmpty) {
+                                        return 'Old password is required';
+                                      }
+                                      return null;
                                     },
-                                    child: const Text(
-                                      "Forgot password?",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Color.fromARGB(
-                                          255,
-                                          39,
-                                          104,
-                                          218,
+                                    obscure: _obscureOld,
+                                    onToggle: () => setState(
+                                      () => _obscureOld = !_obscureOld,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const ForgotPasswordPage(),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text(
+                                        "Don't remember your password?",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color.fromARGB(
+                                            255,
+                                            39,
+                                            104,
+                                            218,
+                                          ),
+                                          decoration: TextDecoration.underline,
                                         ),
-                                        decoration: TextDecoration.underline,
                                       ),
                                     ),
                                   ),
-                                ),
+                                ],
                                 const SizedBox(height: 16),
                                 _buildInputLabel('NEW PASSWORD'),
                                 const SizedBox(height: 6),
@@ -189,8 +206,12 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                                     }
                                     return null;
                                   },
+                                  obscure: _obscureNew,
+                                  onToggle: () => setState(
+                                    () => _obscureNew = !_obscureNew,
+                                  ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 24),
                                 _buildInputLabel('CONFIRM PASSWORD'),
                                 const SizedBox(height: 6),
                                 _buildPasswordField(
@@ -211,6 +232,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                                 _buildUpdateButton(
                                   passwordState.isLoading,
                                   passwordNotifier,
+                                  isResetFlow: isResetFlow,
                                 ),
                               ],
                             ),
@@ -247,10 +269,12 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     required TextEditingController controller,
     required String hint,
     String? Function(String?)? validator,
+    bool obscure = true,
+    VoidCallback? onToggle,
   }) {
     return TextFormField(
       controller: controller,
-      obscureText: true,
+      obscureText: obscure,
       style: const TextStyle(fontSize: 14, color: Colors.white),
       decoration: InputDecoration(
         hintText: hint,
@@ -273,12 +297,25 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: brandColor),
         ),
+        suffixIcon: onToggle != null
+            ? IconButton(
+                icon: Icon(
+                  obscure ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.white70,
+                ),
+                onPressed: onToggle,
+              )
+            : null,
       ),
       validator: validator,
     );
   }
 
-  Widget _buildUpdateButton(bool isLoading, PasswordNotifier passwordNotifier) {
+  Widget _buildUpdateButton(
+    bool isLoading,
+    PasswordNotifier passwordNotifier, {
+    required bool isResetFlow,
+  }) {
     return Container(
       height: 52,
       decoration: BoxDecoration(
@@ -297,10 +334,17 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
             : () async {
                 final isValid = _formKey.currentState?.validate();
                 if (isValid != true) return;
-                await passwordNotifier.changePassword(
-                  oldPassword: _oldPasswordController.text,
-                  newPassword: _newPasswordController.text,
-                );
+                if (isResetFlow) {
+                  await passwordNotifier.resetPassword(
+                    grant: widget.grant!,
+                    newPassword: _newPasswordController.text,
+                  );
+                } else {
+                  await passwordNotifier.changePassword(
+                    oldPassword: _oldPasswordController.text,
+                    newPassword: _newPasswordController.text,
+                  );
+                }
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: brandColor,

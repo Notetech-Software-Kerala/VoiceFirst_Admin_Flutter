@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/country/country_service/country_service.dart';
-import 'package:voice_first_admin/features/Country_Management/country/models/country_filter.dart';
+import 'package:voice_first_admin/features/Country_Management/country/data/country_service/country_service.dart';
+import 'package:voice_first_admin/features/Country_Management/country/data/models/country_filter.dart';
 import 'country_state.dart';
 
 final countryProvider = NotifierProvider<CountryNotifier, CountryState>(

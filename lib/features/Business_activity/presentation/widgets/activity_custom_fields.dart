@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/activity_custom_field.dart';
+import '../../data/models/activity_custom_field.dart';
 
 class ActivityCustomFields extends StatelessWidget {
 

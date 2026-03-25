@@ -976,6 +976,7 @@ class _AuditSection extends StatelessWidget {
   }
 }
 
+
 class _HistoryExpansionTile extends StatelessWidget {
   final IconData icon;
   final String title;

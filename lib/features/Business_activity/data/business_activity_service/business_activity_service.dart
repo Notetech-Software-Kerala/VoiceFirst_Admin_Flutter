@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:voice_first_admin/core/config/api_endpoints.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_filter.dart';
-import 'package:voice_first_admin/features/Business_activity/models/business_activity_model.dart';
-import 'package:voice_first_admin/features/Business_activity/models/custom_field_lookup_model.dart';
-import 'package:voice_first_admin/features/Business_activity/models/update_activity_request.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/custom_field_lookup_model.dart';
+import 'package:voice_first_admin/features/Business_activity/data/models/update_activity_request.dart';
 
 class PaginatedResponse<T> {
   final List<T> items;

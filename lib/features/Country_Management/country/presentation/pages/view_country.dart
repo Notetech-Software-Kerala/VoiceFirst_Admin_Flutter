@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
-import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/presentation/pages/view_division1.dart';
 import '../providers/country_provider.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
-import 'package:voice_first_admin/features/Country_Management/country/models/country_filter.dart';
+import 'package:voice_first_admin/features/Country_Management/country/data/models/country_filter.dart';
 import 'country_detail_view.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 // Only listing + navigation to Division 1 required
@@ -62,7 +63,36 @@ class _CountryViewState extends ConsumerState<CountryView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const FilterBottomSheet(),
+      builder: (_) {
+        final state = ref.read(countryProvider);
+        return GlobalFilterBottomSheet(
+          currentFilter: BaseFilterModel(
+            searchText: ref.read(countrySearchQueryProvider),
+          ),
+          onApply: (base) {
+            Navigator.pop(context);
+            try {
+              final b = base as BaseFilterModel;
+              ref
+                  .read(countryProvider.notifier)
+                  .loadAll(
+                    filter: CountryFilter(
+                      pageNumber: state.currentPage,
+                      pageSize: _pageSize,
+                      searchText: b.searchText,
+                    ),
+                  );
+            } catch (_) {}
+          },
+          searchOptions: const {'country': 'Country', 'status': 'Status'},
+          sortOptions: const {
+            'newest': 'Newest',
+            'oldest': 'Oldest',
+            'name_asc': 'Name (A-Z)',
+            'name_desc': 'Name (Z-A)',
+          },
+        );
+      },
     );
   }
 

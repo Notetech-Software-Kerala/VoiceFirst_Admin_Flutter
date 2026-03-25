@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/arrow_breadcrumb.dart';
-import 'package:voice_first_admin/core/widgets/filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Country_Management/country/models/country_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/models/division1_filter.dart';
+import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_filter.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/presentation/providers/division_one_provider.dart';
 import 'package:voice_first_admin/features/Country_Management/division2/presentation/pages/view_division2.dart';
 import 'division1_detail_view.dart';
@@ -51,7 +52,39 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const FilterBottomSheet(),
+      builder: (_) {
+        final state = ref.read(divisionOneProvider(widget.country.id));
+        final notifier = ref.read(
+          divisionOneProvider(widget.country.id).notifier,
+        );
+        return GlobalFilterBottomSheet(
+          currentFilter: BaseFilterModel(
+            searchText: _searchController.text.isEmpty
+                ? null
+                : _searchController.text,
+          ),
+          onApply: (base) {
+            Navigator.pop(context);
+            try {
+              final b = base as BaseFilterModel;
+              notifier.loadAll(
+                filter: DivisionOneFilter(
+                  pageNumber: state.currentPage,
+                  pageSize: _pageSize,
+                  searchText: b.searchText,
+                ),
+              );
+            } catch (_) {}
+          },
+          searchOptions: const {'name': 'Name', 'status': 'Status'},
+          sortOptions: const {
+            'newest': 'Newest',
+            'oldest': 'Oldest',
+            'name_asc': 'Name (A-Z)',
+            'name_desc': 'Name (Z-A)',
+          },
+        );
+      },
     );
   }
 

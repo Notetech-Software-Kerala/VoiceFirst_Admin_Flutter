@@ -162,8 +162,28 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         children: [
           // Immersive Background
           const _BackgroundLayer(),
+          // Back button placed at top-left of the screen
+          Positioned(
+            top: 12,
+            left: 12,
+            child: SafeArea(
+              top: true,
+              bottom: false,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          ),
           SafeArea(
-            child: Center(
+            child: Align(
+              alignment: const Alignment(0, -0.18),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
@@ -174,18 +194,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   children: [
                     // Header
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: () => Navigator.of(context).maybePop(),
-                          padding: const EdgeInsets.only(right: 8),
-                          constraints: const BoxConstraints(),
-                        ),
-                        const SizedBox(width: 4),
                         Text(
                           "Forgot Password",
                           style: const TextStyle(

@@ -4,7 +4,7 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-import '../../models/plan_model.dart';
+import '../../data/models/plan_model.dart';
 import '../providers/plan_provider.dart';
 
 class PlanDetailPage extends ConsumerStatefulWidget {

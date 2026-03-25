@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Business_activity/business_activity_service/business_activity_service.dart';
-import '../../models/custom_field_lookup_model.dart';
+import 'package:voice_first_admin/features/Business_activity/data/business_activity_service/business_activity_service.dart';
+import '../../data/models/custom_field_lookup_model.dart';
 // import '../../services/user_custom_field_service.dart';
 
 class CustomFieldLookupNotifier
