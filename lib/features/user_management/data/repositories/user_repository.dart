@@ -1,27 +1,24 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../../../core/config/api_endpoints.dart';
 import '../models/user_filter_model.dart';
 
 class UserRepository {
+  final Dio _dio;
+  UserRepository(this._dio);
+
   Future<Map<String, dynamic>> getUsers(UserFilterModel filter) async {
     try {
-      final uri = Uri.parse(
-        '${ApiEndpoints.baseUrl}/employee',
-      ).replace(queryParameters: filter.toQueryParams());
-
-      debugPrint("Fetching Users: $uri");
-
-      final response = await http.get(uri);
+      debugPrint("Fetching Users: /employee");
+      final response = await _dio.get(
+        '/employee',
+        queryParameters: filter.toQueryParams(),
+      );
 
       debugPrint("Response Status: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        return response.data as Map<String, dynamic>;
       } else {
-        throw "Failed to load: ${response.statusCode} ${response.body}";
+        throw "Failed to load: ${response.statusCode}";
       }
     } catch (e) {
       debugPrint("Error in getUsers: $e");
@@ -31,23 +28,14 @@ class UserRepository {
 
   Future<Map<String, dynamic>> createUser(Map<String, dynamic> data) async {
     try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/employee');
-      debugPrint("Creating User: $uri");
-
-      final response = await http.post(
-        uri,
-        headers: ApiEndpoints.defaultHeaders,
-        body: jsonEncode(data),
-      );
-
-      debugPrint(
-        "Create Status: ${response.statusCode} - Body: ${response.body}",
-      );
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return jsonDecode(response.body);
+      debugPrint("Creating User: /employee");
+      final response = await _dio.post('/employee', data: data);
+      
+      debugPrint("Create Status: ${response.statusCode}");
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        return response.data as Map<String, dynamic>;
       } else {
-        throw "Failed to create user: ${response.statusCode} ${response.body}";
+        throw "Failed to create user: ${response.statusCode}";
       }
     } catch (e) {
       debugPrint("Error in createUser: $e");
@@ -55,28 +43,16 @@ class UserRepository {
     }
   }
 
-  Future<Map<String, dynamic>> updateUser(
-    int id,
-    Map<String, dynamic> data,
-  ) async {
+  Future<Map<String, dynamic>> updateUser(int id, Map<String, dynamic> data) async {
     try {
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/employee/$id');
-      debugPrint("Updating User: $uri");
+      debugPrint("Updating User: /employee/$id");
+      final response = await _dio.patch('/employee/$id', data: data);
 
-      final response = await http.patch(
-        uri,
-        headers: ApiEndpoints.defaultHeaders,
-        body: jsonEncode(data),
-      );
-
-      debugPrint(
-        "Update Status: ${response.statusCode} - Body: ${response.body}",
-      );
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return jsonDecode(response.body);
+      debugPrint("Update Status: ${response.statusCode}");
+      if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+        return response.data as Map<String, dynamic>;
       } else {
-        throw "Failed to update user: ${response.statusCode} ${response.body}";
+        throw "Failed to update user: ${response.statusCode}";
       }
     } catch (e) {
       debugPrint("Error in updateUser: $e");
@@ -86,25 +62,12 @@ class UserRepository {
 
   Future<void> deleteUser(int id) async {
     try {
-      const storage = FlutterSecureStorage();
-      final accessToken = await storage.read(key: 'access_token');
+      debugPrint("Deleting User: /employee/$id");
+      final response = await _dio.delete('/employee/$id');
 
-      final Map<String, String> headers = {
-        ...ApiEndpoints.defaultHeaders,
-        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      };
-
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/employee/$id');
-      debugPrint("Deleting User: $uri");
-
-      final response = await http.delete(uri, headers: headers);
-
-      debugPrint(
-        "Delete Status: ${response.statusCode} - Body: ${response.body}",
-      );
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw "Failed to delete user: ${response.statusCode} ${response.body}";
+      debugPrint("Delete Status: ${response.statusCode}");
+      if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
+        throw "Failed to delete user: ${response.statusCode}";
       }
     } catch (e) {
       debugPrint("Error in deleteUser: $e");
@@ -114,27 +77,12 @@ class UserRepository {
 
   Future<void> recoverUser(int id) async {
     try {
-      const storage = FlutterSecureStorage();
-      final accessToken = await storage.read(key: 'access_token');
+      debugPrint("Recovering User: /employee/recover/$id");
+      final response = await _dio.patch('/employee/recover/$id');
 
-      final Map<String, String> headers = {
-        ...ApiEndpoints.defaultHeaders,
-        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      };
-
-      final uri = Uri.parse('${ApiEndpoints.baseUrl}/employee/recover/$id');
-      debugPrint("Recovering User: $uri");
-
-      // Assuming it's a PATCH or POST. Based on typical REST for recovering, often PATCH or PUT.
-      // The user just provided the URL, so we'll try PATCH with empty body first, which is standard.
-      final response = await http.patch(uri, headers: headers);
-
-      debugPrint(
-        "Recover Status: ${response.statusCode} - Body: ${response.body}",
-      );
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw "Failed to recover user: ${response.statusCode} ${response.body}";
+      debugPrint("Recover Status: ${response.statusCode}");
+      if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
+        throw "Failed to recover user: ${response.statusCode}";
       }
     } catch (e) {
       debugPrint("Error in recoverUser: $e");

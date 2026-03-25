@@ -1,75 +1,58 @@
-import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Program_Action/models/paginated_response.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_model.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_filter.dart';
 
 class IssueTypeService {
+  final Dio _dio;
+  IssueTypeService(this._dio);
+
   static const String _path = '/issue-type';
 
   Future<(IssueTypeModel, String)> createType({
     required String name,
     String? description,
   }) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
     final body = <String, dynamic>{'issueType': name};
     if (description != null && description.trim().isNotEmpty) {
       body['description'] = description.trim();
     }
 
-    debugPrint('API REQUEST: POST $url');
-    debugPrint('Request Body: ${jsonEncode(body)}');
+    debugPrint('API REQUEST: POST $_path');
+    
+    final response = await _dio.post(_path, data: body);
+    
+    debugPrint('API RESPONSE: POST $_path -> ${response.statusCode}');
 
-    final response = await http.post(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode(body),
-    );
+    final jsonBody = response.data as Map<String, dynamic>;
+    final message = jsonBody['message']?.toString() ?? 'Issue type created successfully';
 
-    debugPrint('API RESPONSE: POST $url -> ${response.statusCode} ${response.body}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-    final message =
-        jsonBody['message']?.toString() ??
-        (response.statusCode == 200 || response.statusCode == 201
-            ? 'Issue type created successfully'
-            : 'Failed to create issue type');
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR (createType): status=${response.statusCode}, body=${response.body}');
+    if (response.statusCode != null && response.statusCode! >= 200 && response.statusCode! < 300) {
+      final data = jsonBody['data'] as Map<String, dynamic>;
+      return (IssueTypeModel.fromJson(data), message);
+    } else {
       throw Exception(message);
     }
-
-    final data = jsonBody['data'] as Map<String, dynamic>;
-    return (IssueTypeModel.fromJson(data), message);
   }
 
   Future<PaginatedResponse<IssueTypeModel>> getAll(IssueTypeFilter filter) async {
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}$_path')
-        .replace(queryParameters: filter.toQueryParams());
+    debugPrint('API REQUEST: GET $_path');
+    
+    final response = await _dio.get(_path, queryParameters: filter.toQueryParams());
+    
+    debugPrint('API RESPONSE: GET $_path -> ${response.statusCode}');
 
-    debugPrint('API REQUEST: GET $uri');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final response = await http.get(uri, headers: ApiEndpoints.defaultHeaders);
-
-    debugPrint('API RESPONSE: GET $uri -> ${response.statusCode}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR BODY (GET issue types): ${response.body}');
+    if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
       final message = jsonBody['message']?.toString() ?? 'Failed to load issue types';
       throw Exception(message);
     }
-    debugPrint('API MESSAGE (GET issue types): ${jsonBody['message']}');
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     final itemsJson = data['items'] as List<dynamic>? ?? <dynamic>[];
-    final items = itemsJson
-        .map((e) => IssueTypeModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    final items = itemsJson.map((e) => IssueTypeModel.fromJson(e as Map<String, dynamic>)).toList();
 
     return PaginatedResponse<IssueTypeModel>(
       items: items,
@@ -81,22 +64,18 @@ class IssueTypeService {
   }
 
   Future<IssueTypeModel> getById(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: GET $_path/$id');
+    
+    final response = await _dio.get('$_path/$id');
+    
+    debugPrint('API RESPONSE: GET $_path/$id -> ${response.statusCode}');
 
-    debugPrint('API REQUEST: GET $url');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
-
-    debugPrint('API RESPONSE: GET $url -> ${response.statusCode}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR BODY (GET issue type by id): ${response.body}');
+    if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
       final message = jsonBody['message']?.toString() ?? 'Failed to load issue type';
       throw Exception(message);
     }
-    debugPrint('API MESSAGE (GET issue type by id): ${jsonBody['message']}');
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     return IssueTypeModel.fromJson(data);
@@ -117,23 +96,15 @@ class IssueTypeService {
     if (description != null) body['description'] = description;
     if (active != null) body['active'] = active;
 
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: PATCH $_path/$id');
+    
+    final response = await _dio.patch('$_path/$id', data: body);
+    
+    debugPrint('API RESPONSE: PATCH $_path/$id -> ${response.statusCode}');
 
-    debugPrint('API REQUEST: PATCH $url');
-    debugPrint('Request Body: ${jsonEncode(body)}');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final response = await http.patch(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode(body),
-    );
-
-    debugPrint('API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR (updateType): status=${response.statusCode}, body=${response.body}');
+    if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
       final message = jsonBody['message']?.toString() ?? 'Failed to update issue type';
       throw Exception(message);
     }
@@ -143,18 +114,15 @@ class IssueTypeService {
   }
 
   Future<IssueTypeModel> deleteType(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: DELETE $_path/$id');
+    
+    final response = await _dio.delete('$_path/$id');
+    
+    debugPrint('API RESPONSE: DELETE $_path/$id -> ${response.statusCode}');
 
-    debugPrint('API REQUEST: DELETE $url');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final response = await http.delete(url, headers: ApiEndpoints.defaultHeaders);
-
-    debugPrint('API RESPONSE: DELETE $url -> ${response.statusCode} ${response.body}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR (deleteType): status=${response.statusCode}, body=${response.body}');
+    if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
       final message = jsonBody['message']?.toString() ?? 'Failed to delete issue type';
       throw Exception(message);
     }
@@ -164,18 +132,15 @@ class IssueTypeService {
   }
 
   Future<IssueTypeModel> recoverType(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/recover/$id');
+    debugPrint('API REQUEST: PATCH $_path/recover/$id');
+    
+    final response = await _dio.patch('$_path/recover/$id');
+    
+    debugPrint('API RESPONSE: PATCH $_path/recover/$id -> ${response.statusCode}');
 
-    debugPrint('API REQUEST: PATCH $url');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final response = await http.patch(url, headers: ApiEndpoints.defaultHeaders);
-
-    debugPrint('API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}');
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR (recoverType): status=${response.statusCode}, body=${response.body}');
+    if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
       final message = jsonBody['message']?.toString() ?? 'Failed to recover issue type';
       throw Exception(message);
     }

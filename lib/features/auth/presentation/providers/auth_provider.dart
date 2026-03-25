@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:uuid/uuid.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/auth/data/models/auth_models.dart';
 import 'package:voice_first_admin/features/auth/data/repositories/auth_repository.dart';
 import '../../../../features/profile/presentation/providers/profile_provider.dart';
@@ -40,7 +41,9 @@ class AuthState {
 }
 
 // --- Provider ---
-final authRepositoryProvider = Provider((ref) => AuthRepository());
+final authRepositoryProvider = Provider((ref) {
+  return AuthRepository(ref.read(dioClientProvider));
+});
 
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
   return AuthNotifier();
