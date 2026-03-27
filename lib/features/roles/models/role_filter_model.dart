@@ -26,7 +26,7 @@ class RoleFilterModel {
     this.deletedFromDate,
     this.deletedToDate,
     this.sortBy,
-    this.sortOrder = 'Desc',
+    this.sortOrder = 'Asc',
     this.active,
     this.deleted,
     this.pageNumber = 1,

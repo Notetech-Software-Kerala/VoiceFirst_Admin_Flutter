@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_filter.dart';
-import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/custom_field/data/models/custom_field_model.dart';
 import 'package:voice_first_admin/features/custom_field/data/repositories/custom_field_repository.dart';
 import 'custom_field_state.dart';
+import 'custom_field_provider.dart';
 
 class CustomFieldNotifier extends Notifier<CustomFieldState> {
   late final CustomFieldRepository _repository;
 
   @override
   CustomFieldState build() {
-    _repository = CustomFieldRepository(ref.read(dioClientProvider));
+    _repository = ref.read(customFieldRepositoryProvider);
     return CustomFieldState.initial();
   }
 

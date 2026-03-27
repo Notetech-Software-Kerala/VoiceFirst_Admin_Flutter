@@ -2,8 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/menu_master_model.dart';
 import '../../data/models/platform_model.dart';
 import '../../data/repositories/menu_repository.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
-final menuMasterRepositoryProvider = Provider((ref) => MenuRepository());
+final menuMasterRepositoryProvider = Provider((ref) => MenuRepository(ref.read(dioClientProvider)));
 
 // State to hold filter criteria
 class MenuMasterFilterState {
