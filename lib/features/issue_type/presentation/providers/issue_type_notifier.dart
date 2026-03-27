@@ -1,16 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_filter.dart';
-import 'package:voice_first_admin/features/issue_type/data/service/issue_type_service.dart';
-import 'package:voice_first_admin/core/network/dio_client.dart';
+import 'package:voice_first_admin/features/issue_type/data/repositories/issue_type_repository.dart';
 import 'issue_type_state.dart';
+import 'issue_type_provider.dart';
 
 class IssueTypeNotifier extends Notifier<IssueTypeState> {
-  late final IssueTypeService _service;
+  late final IssueTypeRepository _repository;
 
   @override
   IssueTypeState build() {
-    _service = IssueTypeService(ref.read(dioClientProvider));
+    _repository = ref.read(issueTypeRepositoryProvider);
     return IssueTypeState.initial();
   }
 
@@ -25,7 +25,7 @@ class IssueTypeNotifier extends Notifier<IssueTypeState> {
       final effectiveFilter =
           filter ?? IssueTypeFilter(pageNumber: 1, pageSize: _defaultPageSize);
 
-      final response = await _service.getAll(effectiveFilter);
+      final response = await _repository.getAll(effectiveFilter);
 
       state = state.copyWith(
         items: response.items,
@@ -68,7 +68,7 @@ class IssueTypeNotifier extends Notifier<IssueTypeState> {
   }
 
   Future<String> add(String name, {String? description}) async {
-    final (_, message) = await _service.createType(
+    final (_, message) = await _repository.createType(
       name: name,
       description: description,
     );
@@ -83,7 +83,7 @@ class IssueTypeNotifier extends Notifier<IssueTypeState> {
     bool? active,
   }) async {
     try {
-      final updated = await _service.updateType(
+      final updated = await _repository.updateType(
         id: id,
         issueType: issueType,
         description: description,
@@ -103,7 +103,7 @@ class IssueTypeNotifier extends Notifier<IssueTypeState> {
 
   Future<String?> delete(int id) async {
     try {
-      final deleted = await _service.deleteType(id);
+      final deleted = await _repository.deleteType(id);
 
       state = state.copyWith(
         items: state.items.map((e) => e.issueTypeId == id ? deleted : e).toList(),
@@ -118,7 +118,7 @@ class IssueTypeNotifier extends Notifier<IssueTypeState> {
 
   Future<String?> recover(int id) async {
     try {
-      final recovered = await _service.recoverType(id);
+      final recovered = await _repository.recoverType(id);
 
       state = state.copyWith(
         items: state.items.map((e) => e.issueTypeId == id ? recovered : e).toList(),

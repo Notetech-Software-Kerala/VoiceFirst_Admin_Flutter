@@ -1,49 +1,38 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/issue_status/data/models/issue_status_model.dart';
+import 'package:voice_first_admin/features/issue_status/data/models/issue_status_filter.dart';
 
-import 'package:voice_first_admin/features/issue_type/data/models/issue_type_model.dart';
-import 'package:voice_first_admin/features/issue_type/data/models/issue_type_filter.dart';
-
-import '../../../Program_Action/data/models/paginated_response.dart'
-    show PaginatedResponse;
-
-class IssueTypeService {
+class IssueStatusRepository {
   final Dio _dio;
-  IssueTypeService(this._dio);
+  IssueStatusRepository(this._dio);
 
-  static const String _path = '/issue-type';
+  static const String _path = '/issue-status';
 
-  Future<(IssueTypeModel, String)> createType({
-    required String name,
-    String? description,
-  }) async {
-    final body = <String, dynamic>{'issueType': name};
-    if (description != null && description.trim().isNotEmpty) {
-      body['description'] = description.trim();
-    }
-
+  Future<(IssueStatusModel, String)> createStatus(String name) async {
     debugPrint('API REQUEST: POST $_path');
 
-    final response = await _dio.post(_path, data: body);
+    final response = await _dio.post(_path, data: {'issueStatus': name});
 
     debugPrint('API RESPONSE: POST $_path -> ${response.statusCode}');
 
     final jsonBody = response.data as Map<String, dynamic>;
     final message =
-        jsonBody['message']?.toString() ?? 'Issue type created successfully';
+        jsonBody['message']?.toString() ?? 'Issue status created successfully';
 
     if (response.statusCode != null &&
         response.statusCode! >= 200 &&
         response.statusCode! < 300) {
       final data = jsonBody['data'] as Map<String, dynamic>;
-      return (IssueTypeModel.fromJson(data), message);
+      return (IssueStatusModel.fromJson(data), message);
     } else {
       throw Exception(message);
     }
   }
 
-  Future<PaginatedResponse<IssueTypeModel>> getAll(
-    IssueTypeFilter filter,
+  Future<PaginatedResponse<IssueStatusModel>> getAll(
+    IssueStatusFilter filter,
   ) async {
     debugPrint('API REQUEST: GET $_path');
 
@@ -60,17 +49,17 @@ class IssueTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to load issue types';
+          jsonBody['message']?.toString() ?? 'Failed to load issue statuses';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     final itemsJson = data['items'] as List<dynamic>? ?? <dynamic>[];
     final items = itemsJson
-        .map((e) => IssueTypeModel.fromJson(e as Map<String, dynamic>))
+        .map((e) => IssueStatusModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    return PaginatedResponse<IssueTypeModel>(
+    return PaginatedResponse<IssueStatusModel>(
       items: items,
       totalCount: data['totalCount'] as int? ?? items.length,
       pageNumber: data['pageNumber'] as int? ?? filter.pageNumber,
@@ -79,7 +68,7 @@ class IssueTypeService {
     );
   }
 
-  Future<IssueTypeModel> getById(int id) async {
+  Future<IssueStatusModel> getById(int id) async {
     debugPrint('API REQUEST: GET $_path/$id');
 
     final response = await _dio.get('$_path/$id');
@@ -92,27 +81,25 @@ class IssueTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to load issue type';
+          jsonBody['message']?.toString() ?? 'Failed to load issue status';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueTypeModel.fromJson(data);
+    return IssueStatusModel.fromJson(data);
   }
 
-  Future<IssueTypeModel> updateType({
+  Future<IssueStatusModel> updateStatus({
     required int id,
-    String? issueType,
-    String? description,
+    String? issueStatus,
     bool? active,
   }) async {
-    if (issueType == null && description == null && active == null) {
+    if (issueStatus == null && active == null) {
       throw Exception('Nothing to update');
     }
 
     final Map<String, dynamic> body = {};
-    if (issueType != null) body['issueType'] = issueType;
-    if (description != null) body['description'] = description;
+    if (issueStatus != null) body['issueStatus'] = issueStatus;
     if (active != null) body['active'] = active;
 
     debugPrint('API REQUEST: PATCH $_path/$id');
@@ -127,15 +114,15 @@ class IssueTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to update issue type';
+          jsonBody['message']?.toString() ?? 'Failed to update issue status';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueTypeModel.fromJson(data);
+    return IssueStatusModel.fromJson(data);
   }
 
-  Future<IssueTypeModel> deleteType(int id) async {
+  Future<IssueStatusModel> deleteStatus(int id) async {
     debugPrint('API REQUEST: DELETE $_path/$id');
 
     final response = await _dio.delete('$_path/$id');
@@ -148,15 +135,15 @@ class IssueTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to delete issue type';
+          jsonBody['message']?.toString() ?? 'Failed to delete issue status';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueTypeModel.fromJson(data);
+    return IssueStatusModel.fromJson(data);
   }
 
-  Future<IssueTypeModel> recoverType(int id) async {
+  Future<IssueStatusModel> recoverStatus(int id) async {
     debugPrint('API REQUEST: PATCH $_path/recover/$id');
 
     final response = await _dio.patch('$_path/recover/$id');
@@ -171,11 +158,11 @@ class IssueTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to recover issue type';
+          jsonBody['message']?.toString() ?? 'Failed to recover issue status';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueTypeModel.fromJson(data);
+    return IssueStatusModel.fromJson(data);
   }
 }

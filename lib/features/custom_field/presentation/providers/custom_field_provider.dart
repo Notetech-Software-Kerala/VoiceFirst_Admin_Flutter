@@ -7,10 +7,16 @@ import 'custom_field_state.dart';
 
 final customFieldProvider =
     NotifierProvider<CustomFieldNotifier, CustomFieldState>(
-  CustomFieldNotifier.new,
-);
+      CustomFieldNotifier.new,
+    );
 
-final customFieldDetailProvider = FutureProvider.autoDispose.family<CustomFieldModel, int>((ref, id) async {
-  final repository = CustomFieldRepository(ref.read(dioClientProvider));
-  return await repository.getById(id);
+final customFieldRepositoryProvider = Provider((ref) {
+  return CustomFieldRepository(ref.read(dioClientProvider));
+});
+final customFieldDetailProvider = FutureProvider.family<CustomFieldModel, int>((
+  ref,
+  id,
+) async {
+  final repository = ref.read(customFieldRepositoryProvider);
+  return repository.getById(id);
 });

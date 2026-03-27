@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/app_menu_model.dart';
 import '../../data/repositories/menu_repository.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
-final menuRepositoryProvider = Provider((ref) => MenuRepository());
+final menuRepositoryProvider = Provider((ref) => MenuRepository(ref.read(dioClientProvider)));
 
 final menuProvider = AsyncNotifierProvider<MenuNotifier, List<AppMenuModel>>(
   MenuNotifier.new,

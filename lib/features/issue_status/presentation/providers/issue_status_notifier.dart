@@ -1,16 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_status/data/models/issue_status_filter.dart';
-import 'package:voice_first_admin/features/issue_status/data/service/issue_status_service.dart';
-import 'package:voice_first_admin/core/network/dio_client.dart';
+import 'package:voice_first_admin/features/issue_status/data/repositories/issue_status_repository.dart';
 import 'issue_status_state.dart';
+import 'issue_status_provider.dart';
 
 class IssueStatusNotifier extends Notifier<IssueStatusState> {
-  late final IssueStatusService _service;
+  late final IssueStatusRepository _repository;
 
   @override
   IssueStatusState build() {
-    _service = IssueStatusService(ref.read(dioClientProvider));
+    _repository = ref.read(issueStatusRepositoryProvider);
     return IssueStatusState.initial();
   }
 
@@ -26,7 +26,7 @@ class IssueStatusNotifier extends Notifier<IssueStatusState> {
           filter ??
           IssueStatusFilter(pageNumber: 1, pageSize: _defaultPageSize);
 
-      final response = await _service.getAll(effectiveFilter);
+      final response = await _repository.getAll(effectiveFilter);
 
       state = state.copyWith(
         items: response.items,
@@ -69,7 +69,7 @@ class IssueStatusNotifier extends Notifier<IssueStatusState> {
   }
 
   Future<String> add(String name) async {
-    final (_, message) = await _service.createStatus(name);
+    final (_, message) = await _repository.createStatus(name);
     await loadAll();
     return message;
   }
@@ -80,15 +80,19 @@ class IssueStatusNotifier extends Notifier<IssueStatusState> {
     bool? active,
   }) async {
     try {
-      final updated = await _service.updateStatus(
+      final updated = await _repository.updateStatus(
         id: id,
         issueStatus: issueStatus,
         active: active,
       );
 
       state = state.copyWith(
-        items: state.items.map((e) => e.issueStatusId == id ? updated : e).toList(),
-        filtered: state.filtered.map((e) => e.issueStatusId == id ? updated : e).toList(),
+        items: state.items
+            .map((e) => e.issueStatusId == id ? updated : e)
+            .toList(),
+        filtered: state.filtered
+            .map((e) => e.issueStatusId == id ? updated : e)
+            .toList(),
       );
       return null;
     } catch (e) {
@@ -99,11 +103,15 @@ class IssueStatusNotifier extends Notifier<IssueStatusState> {
 
   Future<String?> delete(int id) async {
     try {
-      final deleted = await _service.deleteStatus(id);
+      final deleted = await _repository.deleteStatus(id);
 
       state = state.copyWith(
-        items: state.items.map((e) => e.issueStatusId == id ? deleted : e).toList(),
-        filtered: state.filtered.map((e) => e.issueStatusId == id ? deleted : e).toList(),
+        items: state.items
+            .map((e) => e.issueStatusId == id ? deleted : e)
+            .toList(),
+        filtered: state.filtered
+            .map((e) => e.issueStatusId == id ? deleted : e)
+            .toList(),
       );
 
       return null;
@@ -115,11 +123,15 @@ class IssueStatusNotifier extends Notifier<IssueStatusState> {
 
   Future<String?> recover(int id) async {
     try {
-      final recovered = await _service.recoverStatus(id);
+      final recovered = await _repository.recoverStatus(id);
 
       state = state.copyWith(
-        items: state.items.map((e) => e.issueStatusId == id ? recovered : e).toList(),
-        filtered: state.filtered.map((e) => e.issueStatusId == id ? recovered : e).toList(),
+        items: state.items
+            .map((e) => e.issueStatusId == id ? recovered : e)
+            .toList(),
+        filtered: state.filtered
+            .map((e) => e.issueStatusId == id ? recovered : e)
+            .toList(),
       );
 
       return null;
