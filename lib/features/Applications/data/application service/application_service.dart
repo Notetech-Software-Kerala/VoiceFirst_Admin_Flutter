@@ -1,21 +1,25 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
+import 'package:dio/dio.dart';
 import '../models/application_model.dart';
 
 class ApplicationService {
   static const _path = '/platform/lookup';
 
+  final Dio _dio;
+  ApplicationService(this._dio);
+
   Future<List<ApplicationModel>> getAll() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
+    final response = await _dio.get(_path);
 
-    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to load applications');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
+      final jsonBody = response.data;
+      throw Exception(
+        'Failed to load applications: ${response.statusCode} - ${jsonBody?['message'] ?? response.statusMessage}',
+      );
     }
 
-    final body = jsonDecode(response.body);
+    final body = response.data as Map<String, dynamic>;
     final list = body['data'] as List;
 
     return list.map((e) => ApplicationModel.fromJson(e)).toList();

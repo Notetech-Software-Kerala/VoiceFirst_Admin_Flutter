@@ -1,4 +1,5 @@
 import 'package:voice_first_admin/features/Program_Action/data/models/program_action_model.dart';
+import 'package:voice_first_admin/features/Program_Action/data/models/program_action_filter.dart';
 
 class ProgramActionState {
   final List<ProgramActionModel> actions;
@@ -11,7 +12,7 @@ class ProgramActionState {
   final int currentPage;
   final int totalCount;
   final int totalPages;
-
+  final ProgramActionFilter filter;
 
   ProgramActionState({
     required this.actions,
@@ -24,6 +25,7 @@ class ProgramActionState {
     required this.currentPage,
     required this.totalCount,
     required this.totalPages,
+    required this.filter,
   });
 
   factory ProgramActionState.initial() {
@@ -38,6 +40,7 @@ class ProgramActionState {
       currentPage: 1,
       totalCount: 0,
       totalPages: 1,
+      filter: const ProgramActionFilter(),
     );
   }
 
@@ -52,6 +55,7 @@ class ProgramActionState {
     int? currentPage,
     int? totalCount,
     int? totalPages,
+    ProgramActionFilter? filter,
   }) {
     return ProgramActionState(
       actions: actions ?? this.actions,
@@ -64,7 +68,7 @@ class ProgramActionState {
       currentPage: currentPage ?? this.currentPage,
       totalCount: totalCount ?? this.totalCount,
       totalPages: totalPages ?? this.totalPages,
-
+      filter: filter ?? this.filter,
     );
   }
 }

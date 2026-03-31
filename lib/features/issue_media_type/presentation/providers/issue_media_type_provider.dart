@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_model.dart';
 import 'package:voice_first_admin/features/issue_media_type/data/service/media_type_service.dart';
 import 'issue_media_type_notifier.dart';
@@ -11,6 +12,6 @@ final issueMediaTypeProvider =
 
 final issueMediaTypeDetailProvider =
     FutureProvider.family<IssueMediaTypeModel, int>((ref, id) async {
-      final service = MediaTypeService();
+      final service = ref.read(issueMediaTypeServiceProvider);
       return service.getById(id);
     });

@@ -9,6 +9,23 @@ import '../../data/models/lookup_models.dart';
 import '../../data/models/place_requests.dart';
 import '../providers/place_provider.dart';
 
+// Minimal per-dropdown paging container to reduce duplication (file-local)
+class _Paging<T> {
+  List<T> items = [];
+  bool isLoading = false;
+  bool hasMore = true;
+  int page = 1;
+  String search = '';
+
+  void reset() {
+    items = [];
+    isLoading = false;
+    hasMore = true;
+    page = 1;
+    search = '';
+  }
+}
+
 class AddPlacePage extends ConsumerStatefulWidget {
   const AddPlacePage({super.key});
 
@@ -23,44 +40,26 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
   // Ensure only one hierarchy dropdown is open at a time
   final ValueNotifier<String?> _openDropdownId = ValueNotifier<String?>(null);
 
-  // COUNTRY
-  List<CountryLookup> _countries = [];
-  bool _isLoadingCountries = false;
-  bool _hasMoreCountries = true;
-  int _countryPage = 1;
-  String _countrySearchText = '';
+  // COUNTRY (uses _Paging helper)
+  final _Paging<CountryLookup> _countryPaging = _Paging<CountryLookup>();
 
   // DIVISION 1
-  List<DivisionOneLookup> _divOneItems = [];
-  bool _isLoadingDivOne = false;
-  bool _hasMoreDivOne = true;
-  int _divOnePage = 1;
-  String _divOneSearchText = '';
+  final _Paging<DivisionOneLookup> _divOnePaging = _Paging<DivisionOneLookup>();
   int? _divOneCountryId;
 
   // DIVISION 2
-  List<DivisionTwoLookup> _divTwoItems = [];
-  bool _isLoadingDivTwo = false;
-  bool _hasMoreDivTwo = true;
-  int _divTwoPage = 1;
-  String _divTwoSearchText = '';
+  final _Paging<DivisionTwoLookup> _divTwoPaging = _Paging<DivisionTwoLookup>();
   int? _divTwoDivOneId;
 
   // DIVISION 3
-  List<DivisionThreeLookup> _divThreeItems = [];
-  bool _isLoadingDivThree = false;
-  bool _hasMoreDivThree = true;
-  int _divThreePage = 1;
-  String _divThreeSearchText = '';
+  final _Paging<DivisionThreeLookup> _divThreePaging =
+      _Paging<DivisionThreeLookup>();
   int? _divThreeDivTwoId;
 
   // POST OFFICES (ZIP SECTION)
   final ScrollController _postOfficeScrollController = ScrollController();
-  List<PostOfficeLookup> _postOffices = [];
-  bool _isLoadingPostOffices = false;
-  bool _hasMorePostOffices = true;
-  int _postOfficePage = 1;
-  String _postOfficeSearchText = '';
+  final _Paging<PostOfficeLookup> _postOfficePaging =
+      _Paging<PostOfficeLookup>();
   int? _filterCountryId;
   int? _filterDivOneId;
   int? _filterDivTwoId;
@@ -83,38 +82,18 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     });
 
     // Reset local paging/search state
-    _countries = [];
-    _isLoadingCountries = false;
-    _hasMoreCountries = true;
-    _countryPage = 1;
-    _countrySearchText = '';
+    _countryPaging.reset();
 
-    _divOneItems = [];
-    _isLoadingDivOne = false;
-    _hasMoreDivOne = true;
-    _divOnePage = 1;
-    _divOneSearchText = '';
+    _divOnePaging.reset();
     _divOneCountryId = null;
 
-    _divTwoItems = [];
-    _isLoadingDivTwo = false;
-    _hasMoreDivTwo = true;
-    _divTwoPage = 1;
-    _divTwoSearchText = '';
+    _divTwoPaging.reset();
     _divTwoDivOneId = null;
 
-    _divThreeItems = [];
-    _isLoadingDivThree = false;
-    _hasMoreDivThree = true;
-    _divThreePage = 1;
-    _divThreeSearchText = '';
+    _divThreePaging.reset();
     _divThreeDivTwoId = null;
 
-    _postOffices = [];
-    _isLoadingPostOffices = false;
-    _hasMorePostOffices = true;
-    _postOfficePage = 1;
-    _postOfficeSearchText = '';
+    _postOfficePaging.reset();
     _filterCountryId = null;
     _filterDivOneId = null;
     _filterDivTwoId = null;
@@ -130,6 +109,8 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     _postOfficeScrollController.addListener(_onPostOfficeScroll);
   }
 
+  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -143,36 +124,39 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     if (!_postOfficeScrollController.hasClients) return;
     final position = _postOfficeScrollController.position;
     if (position.pixels >= position.maxScrollExtent - 120) {
+      if (_postOfficePaging.isLoading || !_postOfficePaging.hasMore) return;
       _loadPostOffices();
     }
   }
 
   // ================= COUNTRY =================
   Future<void> _loadCountries() async {
-    if (_isLoadingCountries || !_hasMoreCountries) return;
+    if (_countryPaging.isLoading || !_countryPaging.hasMore) return;
 
     setState(() {
-      _isLoadingCountries = true;
+      _countryPaging.isLoading = true;
     });
 
     final service = ref.read(placeLookupServiceProvider);
 
     try {
       final response = await service.getCountriesPaginated(
-        pageNumber: _countryPage,
-        searchText: _countrySearchText.isEmpty ? null : _countrySearchText,
+        pageNumber: _countryPaging.page,
+        searchText: _countryPaging.search.isEmpty
+            ? null
+            : _countryPaging.search,
       );
 
       setState(() {
-        _countries.addAll(response.items);
-        _hasMoreCountries = response.currentPage < response.totalPages;
-        _countryPage = response.currentPage + 1;
-        _isLoadingCountries = false;
+        _countryPaging.items.addAll(response.items);
+        _countryPaging.hasMore = response.currentPage < response.totalPages;
+        _countryPaging.page = response.currentPage + 1;
+        _countryPaging.isLoading = false;
       });
     } catch (e) {
       debugPrint('[AddPlace] Error loading countries: $e');
       setState(() {
-        _isLoadingCountries = false;
+        _countryPaging.isLoading = false;
       });
     }
   }
@@ -182,20 +166,15 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     final form = ref.read(addPlaceFormProvider);
     final countryId = form.countryId;
     if (countryId == null) return;
-
     if (_divOneCountryId != countryId) {
-      // Country changed externally, reset state
       _divOneCountryId = countryId;
-      _divOneItems = [];
-      _divOnePage = 1;
-      _hasMoreDivOne = true;
-      _divOneSearchText = '';
+      _divOnePaging.reset();
     }
 
-    if (_isLoadingDivOne || !_hasMoreDivOne) return;
+    if (_divOnePaging.isLoading || !_divOnePaging.hasMore) return;
 
     setState(() {
-      _isLoadingDivOne = true;
+      _divOnePaging.isLoading = true;
     });
 
     final service = ref.read(placeLookupServiceProvider);
@@ -203,20 +182,20 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     try {
       final response = await service.getDivisionOnePaginated(
         countryId: countryId,
-        pageNumber: _divOnePage,
-        searchText: _divOneSearchText.isEmpty ? null : _divOneSearchText,
+        pageNumber: _divOnePaging.page,
+        searchText: _divOnePaging.search.isEmpty ? null : _divOnePaging.search,
       );
 
       setState(() {
-        _divOneItems.addAll(response.items);
-        _hasMoreDivOne = response.currentPage < response.totalPages;
-        _divOnePage = response.currentPage + 1;
-        _isLoadingDivOne = false;
+        _divOnePaging.items.addAll(response.items);
+        _divOnePaging.hasMore = response.currentPage < response.totalPages;
+        _divOnePaging.page = response.currentPage + 1;
+        _divOnePaging.isLoading = false;
       });
     } catch (e) {
       debugPrint('[AddPlace] Error loading division 1: $e');
       setState(() {
-        _isLoadingDivOne = false;
+        _divOnePaging.isLoading = false;
       });
     }
   }
@@ -226,19 +205,15 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     final form = ref.read(addPlaceFormProvider);
     final divOneId = form.divOneId;
     if (divOneId == null) return;
-
     if (_divTwoDivOneId != divOneId) {
       _divTwoDivOneId = divOneId;
-      _divTwoItems = [];
-      _divTwoPage = 1;
-      _hasMoreDivTwo = true;
-      _divTwoSearchText = '';
+      _divTwoPaging.reset();
     }
 
-    if (_isLoadingDivTwo || !_hasMoreDivTwo) return;
+    if (_divTwoPaging.isLoading || !_divTwoPaging.hasMore) return;
 
     setState(() {
-      _isLoadingDivTwo = true;
+      _divTwoPaging.isLoading = true;
     });
 
     final service = ref.read(placeLookupServiceProvider);
@@ -246,20 +221,20 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     try {
       final response = await service.getDivisionTwoPaginated(
         divOneId: divOneId,
-        pageNumber: _divTwoPage,
-        searchText: _divTwoSearchText.isEmpty ? null : _divTwoSearchText,
+        pageNumber: _divTwoPaging.page,
+        searchText: _divTwoPaging.search.isEmpty ? null : _divTwoPaging.search,
       );
 
       setState(() {
-        _divTwoItems.addAll(response.items);
-        _hasMoreDivTwo = response.currentPage < response.totalPages;
-        _divTwoPage = response.currentPage + 1;
-        _isLoadingDivTwo = false;
+        _divTwoPaging.items.addAll(response.items);
+        _divTwoPaging.hasMore = response.currentPage < response.totalPages;
+        _divTwoPaging.page = response.currentPage + 1;
+        _divTwoPaging.isLoading = false;
       });
     } catch (e) {
       debugPrint('[AddPlace] Error loading division 2: $e');
       setState(() {
-        _isLoadingDivTwo = false;
+        _divTwoPaging.isLoading = false;
       });
     }
   }
@@ -269,19 +244,15 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     final form = ref.read(addPlaceFormProvider);
     final divTwoId = form.divTwoId;
     if (divTwoId == null) return;
-
     if (_divThreeDivTwoId != divTwoId) {
       _divThreeDivTwoId = divTwoId;
-      _divThreeItems = [];
-      _divThreePage = 1;
-      _hasMoreDivThree = true;
-      _divThreeSearchText = '';
+      _divThreePaging.reset();
     }
 
-    if (_isLoadingDivThree || !_hasMoreDivThree) return;
+    if (_divThreePaging.isLoading || !_divThreePaging.hasMore) return;
 
     setState(() {
-      _isLoadingDivThree = true;
+      _divThreePaging.isLoading = true;
     });
 
     final service = ref.read(placeLookupServiceProvider);
@@ -289,20 +260,22 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     try {
       final response = await service.getDivisionThreePaginated(
         divTwoId: divTwoId,
-        pageNumber: _divThreePage,
-        searchText: _divThreeSearchText.isEmpty ? null : _divThreeSearchText,
+        pageNumber: _divThreePaging.page,
+        searchText: _divThreePaging.search.isEmpty
+            ? null
+            : _divThreePaging.search,
       );
 
       setState(() {
-        _divThreeItems.addAll(response.items);
-        _hasMoreDivThree = response.currentPage < response.totalPages;
-        _divThreePage = response.currentPage + 1;
-        _isLoadingDivThree = false;
+        _divThreePaging.items.addAll(response.items);
+        _divThreePaging.hasMore = response.currentPage < response.totalPages;
+        _divThreePaging.page = response.currentPage + 1;
+        _divThreePaging.isLoading = false;
       });
     } catch (e) {
       debugPrint('[AddPlace] Error loading division 3: $e');
       setState(() {
-        _isLoadingDivThree = false;
+        _divThreePaging.isLoading = false;
       });
     }
   }
@@ -331,17 +304,15 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _filterDivTwoId = divTwoId;
       _filterDivThreeId = divThreeId;
       _filterPlaceId = placeId;
-      _postOffices = [];
-      _postOfficePage = 1;
-      _hasMorePostOffices = true;
+      _postOfficePaging.reset();
       _zipCodesByOffice.clear();
       _isLoadingZipByOffice.clear();
     }
 
-    if (_isLoadingPostOffices || !_hasMorePostOffices) return;
+    if (_postOfficePaging.isLoading || !_postOfficePaging.hasMore) return;
 
     setState(() {
-      _isLoadingPostOffices = true;
+      _postOfficePaging.isLoading = true;
     });
 
     final service = ref.read(placeLookupServiceProvider);
@@ -353,22 +324,22 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         divTwoId: divTwoId,
         divThreeId: divThreeId,
         placeId: placeId,
-        pageNumber: _postOfficePage,
-        searchText: _postOfficeSearchText.isEmpty
+        pageNumber: _postOfficePaging.page,
+        searchText: _postOfficePaging.search.isEmpty
             ? null
-            : _postOfficeSearchText,
+            : _postOfficePaging.search,
       );
 
       setState(() {
-        _postOffices.addAll(response.items);
-        _hasMorePostOffices = response.currentPage < response.totalPages;
-        _postOfficePage = response.currentPage + 1;
-        _isLoadingPostOffices = false;
+        _postOfficePaging.items.addAll(response.items);
+        _postOfficePaging.hasMore = response.currentPage < response.totalPages;
+        _postOfficePaging.page = response.currentPage + 1;
+        _postOfficePaging.isLoading = false;
       });
     } catch (e) {
       debugPrint('[AddPlace] Error loading post offices: $e');
       setState(() {
-        _isLoadingPostOffices = false;
+        _postOfficePaging.isLoading = false;
       });
     }
   }
@@ -396,7 +367,9 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         _isLoadingZipByOffice[officeId] = false;
       });
     } catch (e) {
-      debugPrint('[AddPlace] Error loading zip codes for office $officeId: $e');
+      debugPrint(
+        '[AddPlace] Error loading zip codes for office $officeId: $e',
+      );
       setState(() {
         _isLoadingZipByOffice[officeId] = false;
       });
@@ -545,13 +518,9 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     final notifier = ref.read(addPlaceFormProvider.notifier);
     final filter = ref.watch(postOfficeFilterProvider);
 
-    CountryLookup? selectedCountry;
-    for (final c in _countries) {
-      if (c.id == form.countryId) {
-        selectedCountry = c;
-        break;
-      }
-    }
+    final CountryLookup? selectedCountry = _countryPaging.items
+        .cast<CountryLookup?>()
+        .firstWhere((c) => c?.id == form.countryId, orElse: () => null);
 
     String resolveLabel(String? label, String fallback) {
       if (label == null) return fallback;
@@ -601,10 +570,11 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
               openGroup: _openDropdownId,
               label: 'Country',
               hintText: 'Search country...',
-              asyncItems: _isLoadingCountries && _countries.isEmpty
+              asyncItems:
+                  _countryPaging.isLoading && _countryPaging.items.isEmpty
                   ? const AsyncValue<List<CountryLookup>>.loading()
-                  : AsyncValue<List<CountryLookup>>.data(_countries),
-              selectedItem: _countries
+                  : AsyncValue<List<CountryLookup>>.data(_countryPaging.items),
+              selectedItem: _countryPaging.items
                   .where((c) => c.id == form.countryId)
                   .cast<CountryLookup?>()
                   .firstOrNull,
@@ -614,28 +584,17 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 notifier.setCountry(country.id);
 
                 setState(() {
-                  // Reset dependent levels
-                  _divOneItems = [];
-                  _divOnePage = 1;
-                  _hasMoreDivOne = true;
-                  _divOneSearchText = '';
+                  // Reset dependent levels using _Paging helper
+                  _divOnePaging.reset();
                   _divOneCountryId = country.id;
 
-                  _divTwoItems = [];
-                  _divTwoPage = 1;
-                  _hasMoreDivTwo = true;
-                  _divTwoSearchText = '';
+                  _divTwoPaging.reset();
                   _divTwoDivOneId = null;
 
-                  _divThreeItems = [];
-                  _divThreePage = 1;
-                  _hasMoreDivThree = true;
-                  _divThreeSearchText = '';
+                  _divThreePaging.reset();
                   _divThreeDivTwoId = null;
 
-                  _postOffices = [];
-                  _postOfficePage = 1;
-                  _hasMorePostOffices = true;
+                  _postOfficePaging.reset();
                   _filterCountryId = null;
                   _filterDivOneId = null;
                   _filterDivTwoId = null;
@@ -647,10 +606,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
               },
               onSearch: (value) {
                 setState(() {
-                  _countrySearchText = value.trim();
-                  _countries = [];
-                  _countryPage = 1;
-                  _hasMoreCountries = true;
+                  _countryPaging.search = value.trim();
+                  _countryPaging.items = [];
+                  _countryPaging.page = 1;
+                  _countryPaging.hasMore = true;
                 });
                 _loadCountries();
               },
@@ -664,10 +623,13 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 openGroup: _openDropdownId,
                 label: div1Label,
                 hintText: 'Search division...',
-                asyncItems: _isLoadingDivOne && _divOneItems.isEmpty
+                asyncItems:
+                    _divOnePaging.isLoading && _divOnePaging.items.isEmpty
                     ? const AsyncValue<List<DivisionOneLookup>>.loading()
-                    : AsyncValue<List<DivisionOneLookup>>.data(_divOneItems),
-                selectedItem: _divOneItems
+                    : AsyncValue<List<DivisionOneLookup>>.data(
+                        _divOnePaging.items,
+                      ),
+                selectedItem: _divOnePaging.items
                     .where((d) => d.id == form.divOneId)
                     .cast<DivisionOneLookup?>()
                     .firstOrNull,
@@ -677,31 +639,23 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   notifier.setDivOne(division.id);
 
                   setState(() {
-                    _divTwoItems = [];
-                    _divTwoPage = 1;
-                    _hasMoreDivTwo = true;
-                    _divTwoSearchText = '';
+                    _divTwoPaging.reset();
                     _divTwoDivOneId = null;
 
-                    _divThreeItems = [];
-                    _divThreePage = 1;
-                    _hasMoreDivThree = true;
-                    _divThreeSearchText = '';
+                    _divThreePaging.reset();
                     _divThreeDivTwoId = null;
 
-                    _postOffices = [];
-                    _postOfficePage = 1;
-                    _hasMorePostOffices = true;
+                    _postOfficePaging.reset();
                   });
 
                   _loadDivisionTwo();
                 },
                 onSearch: (value) {
                   setState(() {
-                    _divOneSearchText = value.trim();
-                    _divOneItems = [];
-                    _divOnePage = 1;
-                    _hasMoreDivOne = true;
+                    _divOnePaging.search = value.trim();
+                    _divOnePaging.items = [];
+                    _divOnePaging.page = 1;
+                    _divOnePaging.hasMore = true;
                   });
                   _loadDivisionOne();
                 },
@@ -715,10 +669,13 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 openGroup: _openDropdownId,
                 label: div2Label,
                 hintText: 'Search division...',
-                asyncItems: _isLoadingDivTwo && _divTwoItems.isEmpty
+                asyncItems:
+                    _divTwoPaging.isLoading && _divTwoPaging.items.isEmpty
                     ? const AsyncValue<List<DivisionTwoLookup>>.loading()
-                    : AsyncValue<List<DivisionTwoLookup>>.data(_divTwoItems),
-                selectedItem: _divTwoItems
+                    : AsyncValue<List<DivisionTwoLookup>>.data(
+                        _divTwoPaging.items,
+                      ),
+                selectedItem: _divTwoPaging.items
                     .where((d) => d.id == form.divTwoId)
                     .cast<DivisionTwoLookup?>()
                     .firstOrNull,
@@ -728,25 +685,20 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   notifier.setDivTwo(division.id);
 
                   setState(() {
-                    _divThreeItems = [];
-                    _divThreePage = 1;
-                    _hasMoreDivThree = true;
-                    _divThreeSearchText = '';
+                    _divThreePaging.reset();
                     _divThreeDivTwoId = null;
 
-                    _postOffices = [];
-                    _postOfficePage = 1;
-                    _hasMorePostOffices = true;
+                    _postOfficePaging.reset();
                   });
 
                   _loadDivisionThree();
                 },
                 onSearch: (value) {
                   setState(() {
-                    _divTwoSearchText = value.trim();
-                    _divTwoItems = [];
-                    _divTwoPage = 1;
-                    _hasMoreDivTwo = true;
+                    _divTwoPaging.search = value.trim();
+                    _divTwoPaging.items = [];
+                    _divTwoPaging.page = 1;
+                    _divTwoPaging.hasMore = true;
                   });
                   _loadDivisionTwo();
                 },
@@ -760,12 +712,13 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                 openGroup: _openDropdownId,
                 label: div3Label,
                 hintText: 'Search division...',
-                asyncItems: _isLoadingDivThree && _divThreeItems.isEmpty
+                asyncItems:
+                    _divThreePaging.isLoading && _divThreePaging.items.isEmpty
                     ? const AsyncValue<List<DivisionThreeLookup>>.loading()
                     : AsyncValue<List<DivisionThreeLookup>>.data(
-                        _divThreeItems,
+                        _divThreePaging.items,
                       ),
-                selectedItem: _divThreeItems
+                selectedItem: _divThreePaging.items
                     .where((d) => d.id == form.divThreeId)
                     .cast<DivisionThreeLookup?>()
                     .firstOrNull,
@@ -775,19 +728,17 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                   notifier.setDivThree(division.id);
 
                   setState(() {
-                    _postOffices = [];
-                    _postOfficePage = 1;
-                    _hasMorePostOffices = true;
+                    _postOfficePaging.reset();
                   });
 
                   _loadPostOffices();
                 },
                 onSearch: (value) {
                   setState(() {
-                    _divThreeSearchText = value.trim();
-                    _divThreeItems = [];
-                    _divThreePage = 1;
-                    _hasMoreDivThree = true;
+                    _divThreePaging.search = value.trim();
+                    _divThreePaging.items = [];
+                    _divThreePaging.page = 1;
+                    _divThreePaging.hasMore = true;
                   });
                   _loadDivisionThree();
                 },
@@ -812,10 +763,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
-                            _postOfficeSearchText = '';
-                            _postOffices = [];
-                            _postOfficePage = 1;
-                            _hasMorePostOffices = true;
+                            _postOfficePaging.search = '';
+                            _postOfficePaging.items = [];
+                            _postOfficePaging.page = 1;
+                            _postOfficePaging.hasMore = true;
                             _zipCodesByOffice.clear();
                             _isLoadingZipByOffice.clear();
                           });
@@ -831,10 +782,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
               ),
               onChanged: (value) {
                 setState(() {
-                  _postOfficeSearchText = value.trim();
-                  _postOffices = [];
-                  _postOfficePage = 1;
-                  _hasMorePostOffices = true;
+                  _postOfficePaging.search = value.trim();
+                  _postOfficePaging.items = [];
+                  _postOfficePaging.page = 1;
+                  _postOfficePaging.hasMore = true;
                   _zipCodesByOffice.clear();
                   _isLoadingZipByOffice.clear();
                 });
@@ -849,9 +800,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
             // Scrollable Post Office List
             if (!filter.isReady)
               const SizedBox()
-            else if (_isLoadingPostOffices && _postOffices.isEmpty)
+            else if (_postOfficePaging.isLoading &&
+                _postOfficePaging.items.isEmpty)
               const LinearProgressIndicator()
-            else if (_postOffices.isEmpty)
+            else if (_postOfficePaging.items.isEmpty)
               Container(
                 padding: const EdgeInsets.all(16),
                 child: const Text(
@@ -870,9 +822,9 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                     ),
                     child: ListView.builder(
                       controller: _postOfficeScrollController,
-                      itemCount: _postOffices.length,
+                      itemCount: _postOfficePaging.items.length,
                       itemBuilder: (context, index) {
-                        final office = _postOffices[index];
+                        final office = _postOfficePaging.items[index];
                         final officeId = office.postOfficeId;
                         final officeZips =
                             _zipCodesByOffice[officeId] ?? <ZipCodeLookup>[];
@@ -934,7 +886,8 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                       },
                     ),
                   ),
-                  if (_isLoadingPostOffices && _postOffices.isNotEmpty)
+                  if (_postOfficePaging.isLoading &&
+                      _postOfficePaging.items.isNotEmpty)
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
                       child: LinearProgressIndicator(),

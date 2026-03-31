@@ -9,6 +9,7 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
+import 'package:voice_first_admin/features/issue_character_type/data/models/issue_character_type_filter.dart';
 import 'package:voice_first_admin/features/issue_character_type/presentation/dialogs/add_issue_character_type_dialog.dart';
 import 'package:voice_first_admin/features/issue_character_type/presentation/dialogs/edit_issue_character_type_dialog.dart';
 import 'package:voice_first_admin/features/issue_character_type/presentation/providers/issue_character_type_provider.dart';
@@ -48,25 +49,51 @@ class _ViewIssueCharacterTypePageState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => GlobalFilterBottomSheet(
-        currentFilter: const BaseFilterModel(),
-        onApply: (filter) {
-          // Hook into API filters when backend contract is ready
-          Navigator.pop(context);
-        },
-        searchOptions: const {'name': 'Character Type', 'status': 'Status'},
-        sortOptions: const {
-          'newest': 'Newest',
-          'oldest': 'Oldest',
-          'name_asc': 'Name (A-Z)',
-          'name_desc': 'Name (Z-A)',
+      builder: (_) => Builder(
+        builder: (ctx) {
+          final state = ref.read(issueCharacterTypeProvider);
+          final notifier = ref.read(issueCharacterTypeProvider.notifier);
+          return GlobalFilterBottomSheet(
+            currentFilter: state.filter,
+            onApply: (base) {
+              Navigator.pop(ctx);
+              try {
+                final b = base as BaseFilterModel;
+                notifier.loadAll(
+                  filter: IssueCharacterTypeFilter(
+                    pageNumber: 1,
+                    pageSize: _pageSize,
+                    searchText: b.searchText,
+                    searchBy: b.searchBy,
+                    sortBy: b.sortBy,
+                    sortOrder: b.sortOrder,
+                    active: b.active,
+                    deleted: b.deleted,
+                    createdFromDate: b.createdFromDate,
+                    createdToDate: b.createdToDate,
+                    updatedFromDate: b.updatedFromDate,
+                    updatedToDate: b.updatedToDate,
+                    deletedFromDate: b.deletedFromDate,
+                    deletedToDate: b.deletedToDate,
+                  ),
+                );
+              } catch (_) {}
+            },
+            searchOptions: const {'name': 'Character Type', 'status': 'Status'},
+            sortOptions: const {
+              'newest': 'Newest',
+              'oldest': 'Oldest',
+              'name_asc': 'Name (A-Z)',
+              'name_desc': 'Name (Z-A)',
+            },
+          );
         },
       ),
     );
   }
 
   void _goToPage(int page) {
-    ref.read(issueCharacterTypeProvider.notifier).goToPage(page);
+    ref.read(issueCharacterTypeProvider.notifier).loadAll(page: page);
 
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -85,12 +112,12 @@ class _ViewIssueCharacterTypePageState
     final state = ref.watch(issueCharacterTypeProvider);
     final notifier = ref.read(issueCharacterTypeProvider.notifier);
 
-    if (_searchController.text != state.search) {
-      _searchController.text = state.search;
+    final searchText = state.filter.searchText ?? '';
+    if (_searchController.text != searchText) {
+      _searchController.text = searchText;
     }
 
-    final totalPagesFromCount = (state.totalCount / _pageSize).ceil();
-    final safeTotalPages = totalPagesFromCount > 0 ? totalPagesFromCount : 1;
+    final safeTotalPages = state.totalPages > 0 ? state.totalPages : 1;
 
     return StandardPageLayout(
       title: state.isMultiSelect
@@ -127,7 +154,7 @@ class _ViewIssueCharacterTypePageState
               },
               child: const Icon(Icons.add, color: Colors.white),
             ),
-      bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
+      bottomNavigationBar: (state.isLoading || state.items.isEmpty)
           ? null
           : StandardPaginationControls(
               currentPage: state.currentPage,
@@ -139,7 +166,7 @@ class _ViewIssueCharacterTypePageState
           const SliverFillRemaining(
             child: Center(child: CircularProgressIndicator()),
           )
-        else if (state.filtered.isEmpty)
+        else if (state.items.isEmpty)
           SliverFillRemaining(
             child: Center(
               child: Text(
@@ -153,7 +180,7 @@ class _ViewIssueCharacterTypePageState
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final item = state.filtered[index];
+                final item = state.items[index];
                 final selected = state.selectedIds.contains(
                   item.issueCharacterTypeId,
                 );
@@ -299,7 +326,7 @@ class _ViewIssueCharacterTypePageState
                     actions: actions,
                   ),
                 );
-              }, childCount: state.filtered.length),
+              }, childCount: state.items.length),
             ),
           ),
       ],

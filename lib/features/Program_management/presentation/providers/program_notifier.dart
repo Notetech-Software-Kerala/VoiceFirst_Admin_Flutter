@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Program_management/models/create_program_request.dart';
-import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
-import 'package:voice_first_admin/features/Program_management/models/update_program_request.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/create_program_request.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/update_program_request.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_state.dart';
-import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
-import 'package:voice_first_admin/features/Program_management/program_management_service/program_management_service.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_filter.dart';
+import 'package:voice_first_admin/features/Program_management/data/program_management_service/program_management_service.dart';
 
 class ProgramNotifier extends Notifier<ProgramState> {
-  final ProgramManagementService _service = ProgramManagementService();
+  late final ProgramManagementService _service;
 
   @override
   ProgramState build() {
+    _service = ref.read(programManagementServiceProvider);
     debugPrint('[ProgramNotifier] build() -> initial state');
     return ProgramState.initial();
   }
@@ -19,18 +20,18 @@ class ProgramNotifier extends Notifier<ProgramState> {
   // Load all programs with optional filtering
   Future<void> loadAll({ProgramFilter? filter}) async {
     if (state.isLoading) return;
+    final effectiveFilter = (filter ?? state.filter).copyWith(
+      searchText: state.search.isEmpty ? null : state.search,
+    );
 
     debugPrint(
-      '[ProgramNotifier] loadAll() called with filter: '
-      '${filter ?? const ProgramFilter(pageNumber: 1, pageSize: 10)}',
+      '[ProgramNotifier] loadAll() called with filter: ${effectiveFilter.toQueryParams()}',
     );
 
     state = state.copyWith(isLoading: true);
 
     try {
-      final response = await _service.getAll(
-        filter ?? const ProgramFilter(pageNumber: 1, pageSize: 10),
-      );
+      final response = await _service.getAll(effectiveFilter);
 
       state = state.copyWith(
         all: response.items,
@@ -39,30 +40,27 @@ class ProgramNotifier extends Notifier<ProgramState> {
         hasMoreData: response.pageNumber < response.totalPages,
         currentPage: response.pageNumber,
         totalCount: response.totalCount,
+        filter: effectiveFilter.copyWith(pageNumber: response.pageNumber),
       );
 
       debugPrint(
-        '[ProgramNotifier] loadAll() -> '
-        'items: ${response.items.length}, '
-        'page: ${response.pageNumber}/${response.totalPages}, '
-        'totalCount: ${response.totalCount}',
+        '[ProgramNotifier] loadAll() -> items: ${response.items.length}, page: ${response.pageNumber}/${response.totalPages}, totalCount: ${response.totalCount}',
       );
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      debugPrint('Failed to load programs: $e');
+      debugPrint('[ProgramNotifier] loadAll FAILED: $e');
     }
   }
 
   Future<void> search(String query) async {
     debugPrint('[ProgramNotifier] search() -> "$query"');
     state = state.copyWith(search: query);
-    await loadAll(
-      filter: ProgramFilter(
-        pageNumber: 1,
-        pageSize: 10,
-        searchText: query.isEmpty ? null : query,
-      ),
+    final updatedFilter = state.filter.copyWith(
+      pageNumber: 1,
+      limit: 10,
+      searchText: query.isEmpty ? null : query,
     );
+    await loadAll(filter: updatedFilter);
   }
 
   void setApplicationFilter(int? applicationId) {
@@ -76,32 +74,6 @@ class ProgramNotifier extends Notifier<ProgramState> {
     state = state.copyWith(selectedCompanyId: companyId);
     state = state.copyWith(filtered: _applyFilter(state.all));
   }
-
-  //add
-  // Future<void> add(ProgramModel program) async {
-  //   debugPrint('[ProgramNotifier] add() -> validating program');
-  //   _validate(program);
-
-  //   final request = CreateProgramRequest(
-  //     programName: program.programName,
-  //     label: program.labelName,
-  //     route: program.programRoute,
-  //     platformId: program.applicationId,
-  //     companyId: program.companyId ?? 0,
-  //     actionIds: program.activeActionIds,
-  //   );
-
-  //   debugPrint('[ProgramNotifier] add() -> sending create request');
-  //   final created = await _service.create(request);
-
-  //   final list = [created, ...state.all];
-
-  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
-  //   debugPrint(
-  //     '[ProgramNotifier] add() -> created id: '
-  //     '${created.sysProgramId}, total: ${list.length}',
-  //   );
-  // }
 
   Future<void> add(ProgramModel program) async {
     _validate(program);
@@ -146,83 +118,6 @@ class ProgramNotifier extends Notifier<ProgramState> {
     }
   }
 
-  // Future<void> updateProgram({required ProgramModel updated}) async {
-  //   if (updated.sysProgramId == null) {
-  //     throw Exception('Program id is required');
-  //   }
-
-  //   debugPrint(
-  //     '[ProgramNotifier] updateProgram() -> id: ${updated.sysProgramId}',
-  //   );
-
-  //   final originalProgram = state.all.firstWhere(
-  //     (p) => p.sysProgramId == updated.sysProgramId,
-  //   );
-
-  //   // Use the full original action id list from the stored program,
-  //   // so the backend sees the true previous state.
-  //   // final originalIds = List<int>.from(originalProgram.programActionIds);
-  //   final originalActions = originalProgram.actions;
-
-  //   /// ✅ Selected IDs coming from UI
-  //   final selectedIds = updated.activeActionIds;
-
-  //   debugPrint(
-  //     '[ProgramNotifier] updateProgram() original active actions: $originalActions',
-  //   );
-  //   debugPrint(
-  //     '[ProgramNotifier] updateProgram() selected actions: $selectedIds',
-  //   );
-
-  //   final request = UpdateProgramRequest(
-  //     programName: updated.programName != originalProgram.programName
-  //         ? updated.programName
-  //         : null,
-
-  //     label: updated.labelName != originalProgram.labelName
-  //         ? updated.labelName
-  //         : null,
-
-  //     route: updated.programRoute != originalProgram.programRoute
-  //         ? updated.programRoute
-  //         : null,
-
-  //     platformId: updated.applicationId != originalProgram.applicationId
-  //         ? updated.applicationId
-  //         : null,
-
-  //     companyId: updated.companyId != originalProgram.companyId
-  //         ? updated.companyId
-  //         : null,
-
-  //     originalActions: originalActions,
-  //     selectedActionIds: selectedIds.toSet(),
-  //   );
-
-  //   /// 🔥 VERY IMPORTANT
-  //   /// Don't call API if nothing changed
-  //   final requestJson = request.toJson();
-  //   if (requestJson.isEmpty) {
-  //     debugPrint(
-  //       '[ProgramNotifier] updateProgram() -> No changes detected. Skipping API call.',
-  //     );
-  //     return;
-  //   }
-  //   debugPrint(
-  //     '[ProgramNotifier] updateProgram() -> PATCH payload: $requestJson',
-  //   );
-
-  //   final saved = await _service.update(updated.sysProgramId!, request);
-  //   debugPrint(
-  //     '[ProgramNotifier] updateProgram() -> saved id: ${saved.sysProgramId}',
-  //   );
-
-  //   final list = state.all
-  //       .map((p) => p.sysProgramId == saved.sysProgramId ? saved : p)
-  //       .toList();
-
-  //   state = state.copyWith(all: list, filtered: _applyFilter(list));
-  // }
   Future<bool> updateProgram({required ProgramModel updated}) async {
     if (updated.sysProgramId == null) {
       throw Exception('Program id is required');
@@ -391,13 +286,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
     await _service.bulkDelete(ids);
     debugPrint('[ProgramNotifier] deleteSelected() -> bulk delete completed');
     state = state.copyWith(selectedIds: {}, isMultiSelect: false);
-    await loadAll(
-      filter: ProgramFilter(
-        pageNumber: state.currentPage,
-        pageSize: 10,
-        searchText: state.search.isEmpty ? null : state.search,
-      ),
-    );
+    await loadAll(filter: state.filter.copyWith(pageNumber: state.currentPage));
   }
 
   void toggleSelection(int id) {

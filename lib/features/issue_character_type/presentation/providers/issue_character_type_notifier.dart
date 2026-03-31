@@ -7,64 +7,95 @@ import 'issue_character_type_state.dart';
 class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
   late final CharacterTypeService _service;
 
+  IssueCharacterTypeNotifier() {
+    // no-op
+  }
+
   @override
   IssueCharacterTypeState build() {
-    _service = CharacterTypeService();
+    _service = ref.read(issueCharacterTypeServiceProvider);
     return IssueCharacterTypeState.initial();
   }
 
   static const int _defaultPageSize = 10;
 
-  Future<void> loadAll({IssueCharacterTypeFilter? filter}) async {
+  Future<void> loadAll({
+    IssueCharacterTypeFilter? filter,
+    int? page,
+    int? pageSize,
+  }) async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true);
+    final currentPage = page ?? state.currentPage;
+    // final currentPageSize = pageSize ?? _defaultPageSize;
+    final currentPageSize =
+        pageSize ??
+        (state.filter is IssueCharacterTypeFilter
+            ? (state.filter as IssueCharacterTypeFilter).pageSize
+            : _defaultPageSize);
+
+    final IssueCharacterTypeFilter appliedFilter =
+        filter ??
+        IssueCharacterTypeFilter(
+          pageNumber: currentPage,
+          pageSize: currentPageSize,
+          searchText: state.filter.searchText,
+          searchBy: state.filter.searchBy,
+          sortBy: state.filter.sortBy,
+          sortOrder: state.filter.sortOrder,
+          active: state.filter.active,
+          deleted: state.filter.deleted,
+          createdFromDate: state.filter.createdFromDate,
+          createdToDate: state.filter.createdToDate,
+          updatedFromDate: state.filter.updatedFromDate,
+          updatedToDate: state.filter.updatedToDate,
+          deletedFromDate: state.filter.deletedFromDate,
+          deletedToDate: state.filter.deletedToDate,
+        );
+
+    state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final effectiveFilter =
-          filter ??
-          IssueCharacterTypeFilter(pageNumber: 1, pageSize: _defaultPageSize);
-
-      final response = await _service.getAll(effectiveFilter);
+      final response = await _service.getAll(appliedFilter);
 
       state = state.copyWith(
         items: response.items,
-        filtered: response.items,
         isLoading: false,
         hasMoreData: response.pageNumber < response.totalPages,
         currentPage: response.pageNumber,
         totalCount: response.totalCount,
         totalPages: response.totalPages,
+        error: null,
       );
 
       debugPrint(
         'IssueCharacterType PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false);
+      state = state.copyWith(isLoading: false, error: e.toString());
       debugPrint('Failed to load issue character types: $e');
     }
   }
 
-  void search(String value) {
-    state = state.copyWith(search: value);
-    loadAll(
-      filter: IssueCharacterTypeFilter(
-        pageNumber: 1,
-        pageSize: _defaultPageSize,
-        search: value.isEmpty ? null : value,
-      ),
+  Future<void> search(String value) async {
+    final newFilter = IssueCharacterTypeFilter(
+      pageNumber: 1,
+      pageSize: _defaultPageSize,
+      searchText: value.isEmpty ? null : value,
+      searchBy: state.filter.searchBy,
+      sortBy: state.filter.sortBy,
+      sortOrder: state.filter.sortOrder,
+      active: state.filter.active,
+      deleted: state.filter.deleted,
+      createdFromDate: state.filter.createdFromDate,
+      createdToDate: state.filter.createdToDate,
+      updatedFromDate: state.filter.updatedFromDate,
+      updatedToDate: state.filter.updatedToDate,
+      deletedFromDate: state.filter.deletedFromDate,
+      deletedToDate: state.filter.deletedToDate,
     );
-  }
 
-  void goToPage(int page) {
-    loadAll(
-      filter: IssueCharacterTypeFilter(
-        pageNumber: page,
-        pageSize: _defaultPageSize,
-        search: state.search.isEmpty ? null : state.search,
-      ),
-    );
+    await loadAll(filter: newFilter);
   }
 
   // ───────────────── CRUD ─────────────────
@@ -94,9 +125,6 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
         items: state.items
             .map((e) => e.issueCharacterTypeId == id ? updated : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueCharacterTypeId == id ? updated : e)
-            .toList(),
       );
       return null;
     } catch (e) {
@@ -111,9 +139,6 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
       state = state.copyWith(
         items: state.items
-            .map((e) => e.issueCharacterTypeId == id ? deleted : e)
-            .toList(),
-        filtered: state.filtered
             .map((e) => e.issueCharacterTypeId == id ? deleted : e)
             .toList(),
       );
@@ -131,9 +156,6 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
       state = state.copyWith(
         items: state.items
-            .map((e) => e.issueCharacterTypeId == id ? recovered : e)
-            .toList(),
-        filtered: state.filtered
             .map((e) => e.issueCharacterTypeId == id ? recovered : e)
             .toList(),
       );
@@ -160,7 +182,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
     final selected = <int>{};
 
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.issueCharacterTypeId));
+      selected.addAll(state.items.map((e) => e.issueCharacterTypeId));
     }
 
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
@@ -171,6 +193,5 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
   }
 
   bool get allVisibleSelected =>
-      state.filtered.isNotEmpty &&
-      state.selectedIds.length == state.filtered.length;
+      state.items.isNotEmpty && state.selectedIds.length == state.items.length;
 }

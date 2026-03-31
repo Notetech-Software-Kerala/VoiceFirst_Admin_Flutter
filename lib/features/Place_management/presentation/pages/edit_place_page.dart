@@ -20,8 +20,22 @@ class EditPlacePage extends ConsumerStatefulWidget {
   ConsumerState<EditPlacePage> createState() => _EditPlacePageState();
 }
 
+// Grouping provider to move heavy compute out of build()
+final _groupedZipProvider =
+    Provider.family<Map<int, List<EditZipCodeItem>>, List<EditZipCodeItem>>((
+      ref,
+      items,
+    ) {
+      final Map<int, List<EditZipCodeItem>> grouped = {};
+      for (final item in items) {
+        grouped.putIfAbsent(item.postOfficeId, () => []).add(item);
+      }
+      return grouped;
+    });
+
 class _EditPlacePageState extends ConsumerState<EditPlacePage> {
   late TextEditingController _nameController;
+  late final Map<int, PlacePostOffice> _officeMap;
 
   bool _isSubmitting = false;
 
@@ -30,12 +44,14 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
     super.initState();
     // Always start with a fresh edit form state, but
     // delay the mutation until after the first frame
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final notifier = ref.read(editPlaceFormProvider.notifier);
       notifier.reset();
       notifier.initializeFromPlace(widget.place);
     });
     _nameController = TextEditingController(text: widget.place.placeName);
+    // Cache post office map for fast lookup to avoid repeated scanning
+    _officeMap = {for (var o in widget.place.postOffices) o.postOfficeId: o};
   }
 
   @override
@@ -109,11 +125,7 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
     final form = ref.watch(editPlaceFormProvider);
     final formNotifier = ref.read(editPlaceFormProvider.notifier);
 
-    final Map<int, List<EditZipCodeItem>> grouped = {};
-
-    for (final item in form.zipCodeItems) {
-      grouped.putIfAbsent(item.postOfficeId, () => []).add(item);
-    }
+    final grouped = ref.watch(_groupedZipProvider(form.zipCodeItems));
 
     if (grouped.isEmpty) return const [];
 
@@ -139,14 +151,8 @@ class _EditPlacePageState extends ConsumerState<EditPlacePage> {
           child: Text('Failed to load zipcodes'),
         ),
         data: (unlinkedZips) {
-          // Get backend linked count
-          int backendLinkedCount = 0;
-          for (final office in widget.place.postOffices) {
-            if (office.postOfficeId == officeId) {
-              backendLinkedCount = office.zipCodes.length;
-              break;
-            }
-          }
+          // Get backend linked count via cached map for O(1) lookup
+          final backendLinkedCount = _officeMap[officeId]?.zipCodes.length ?? 0;
 
           final allLinked = formNotifier.isOfficeFullyLinked(
             officeId,

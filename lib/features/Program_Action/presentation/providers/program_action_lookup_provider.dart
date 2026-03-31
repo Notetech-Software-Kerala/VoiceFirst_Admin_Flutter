@@ -5,6 +5,6 @@ import 'package:voice_first_admin/features/Program_Action/data/program_action_se
 final programActionLookupProvider = FutureProvider<List<ProgramActionModel>>((
   ref,
 ) async {
-  final service = ProgramActionService();
+  final service = ref.read(programActionServiceProvider);
   return service.getLookup();
 });

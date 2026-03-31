@@ -1,14 +1,14 @@
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
 
-class ProgramActionFilter extends BaseFilterModel {
+class PlanFilter extends BaseFilterModel {
   final int pageNumber;
   final int limit;
 
-  const ProgramActionFilter({
+  const PlanFilter({
     this.pageNumber = 1,
     this.limit = 10,
-    super.searchBy,
     super.searchText,
+    super.searchBy,
     super.sortBy,
     super.sortOrder,
     super.active,
@@ -22,7 +22,7 @@ class ProgramActionFilter extends BaseFilterModel {
   });
 
   @override
-  ProgramActionFilter copyWith({
+  PlanFilter copyWith({
     int? pageNumber,
     int? limit,
     String? searchBy,
@@ -38,7 +38,7 @@ class ProgramActionFilter extends BaseFilterModel {
     DateTime? deletedFromDate,
     DateTime? deletedToDate,
   }) {
-    return ProgramActionFilter(
+    return PlanFilter(
       pageNumber: pageNumber ?? this.pageNumber,
       limit: limit ?? this.limit,
       searchBy: searchBy ?? this.searchBy,
@@ -56,39 +56,38 @@ class ProgramActionFilter extends BaseFilterModel {
     );
   }
 
-  Map<String, dynamic> toQueryParams() {
-    final params = <String, dynamic>{
+  Map<String, String> toQueryParams() {
+    final Map<String, String> params = {
       'PageNumber': pageNumber.toString(),
-      'PageSize': limit.toString(),
+      'Limit': limit.toString(),
     };
-    if (searchBy != null && searchBy!.isNotEmpty) params['SearchBy'] = searchBy;
-    if (searchText != null && searchText!.isNotEmpty) {
-      params['SearchText'] = searchText;
+
+    void add(String key, String? value) {
+      if (value != null && value.isNotEmpty) params[key] = value;
     }
-    if (sortBy != null && sortBy!.isNotEmpty) {
-      params['SortBy'] = sortBy;
-      if (sortOrder.isNotEmpty) params['SortOrder'] = sortOrder;
+
+    void addDate(String key, DateTime? value) {
+      if (value != null) params[key] = value.toIso8601String();
     }
+
+    add('SearchBy', searchBy);
+    add('SearchText', searchText);
+    add('SortBy', sortBy);
+    // Only include SortOrder when SortBy is provided
+    if ((sortBy?.isNotEmpty ?? false) && (sortOrder.isNotEmpty)) {
+      add('SortOrder', sortOrder);
+    }
+
     if (active != null) params['Active'] = active.toString().toLowerCase();
     if (deleted != null) params['Deleted'] = deleted.toString().toLowerCase();
-    if (createdFromDate != null) {
-      params['CreatedFromDate'] = createdFromDate!.toIso8601String();
-    }
-    if (createdToDate != null) {
-      params['CreatedToDate'] = createdToDate!.toIso8601String();
-    }
-    if (updatedFromDate != null) {
-      params['UpdatedFromDate'] = updatedFromDate!.toIso8601String();
-    }
-    if (updatedToDate != null) {
-      params['UpdatedToDate'] = updatedToDate!.toIso8601String();
-    }
-    if (deletedFromDate != null) {
-      params['DeletedFromDate'] = deletedFromDate!.toIso8601String();
-    }
-    if (deletedToDate != null) {
-      params['DeletedToDate'] = deletedToDate!.toIso8601String();
-    }
+
+    addDate('CreatedFromDate', createdFromDate);
+    addDate('CreatedToDate', createdToDate);
+    addDate('UpdatedFromDate', updatedFromDate);
+    addDate('UpdatedToDate', updatedToDate);
+    addDate('DeletedFromDate', deletedFromDate);
+    addDate('DeletedToDate', deletedToDate);
+
     return params;
   }
 }

@@ -1,45 +1,60 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:voice_first_admin/features/Country_Management/division2/data/division2_service/division2_service.dart';
 import 'package:voice_first_admin/features/Country_Management/division2/data/models/division2_filter.dart';
 import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
 import 'division_two_state.dart';
 
-class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
-  final DivisionTwoService _service;
+class DivisionTwoNotifier extends Notifier<DivisionTwoState> {
   final int divisionOneId;
+  DivisionTwoNotifier(this.divisionOneId);
 
-  DivisionTwoNotifier({
-    required this.divisionOneId,
-    required DivisionTwoService service,
-  }) : _service = service,
-       super(DivisionTwoState.initial()) {
-    loadAll(
-      filter: DivisionTwoFilter(
-        divisionOneId: divisionOneId,
-        pageNumber: 1,
-        pageSize: 10,
-      ),
-    );
+  late final DivisionTwoService _service;
+
+  @override
+  DivisionTwoState build() {
+    _service = ref.read(divisionTwoServiceProvider);
+    // IMPORTANT: do not auto-call APIs from build(); UI should trigger loadAll
+
+    return DivisionTwoState.initial();
   }
 
-  Future<void> loadAll({DivisionTwoFilter? filter}) async {
+  Future<void> loadAll({
+    DivisionTwoFilter? filter,
+    int? page,
+    int? pageSize,
+  }) async {
     if (state.isLoading) return;
-    state = state.copyWith(isLoading: true);
+
+    final currentPage = page ?? state.currentPage;
+    final currentPageSize = pageSize ?? 10;
+
+    final DivisionTwoFilter appliedFilter =
+        filter ??
+        DivisionTwoFilter(
+          divisionOneId: divisionOneId,
+          pageNumber: currentPage,
+          pageSize: currentPageSize,
+          searchText: state.filter.searchText,
+          searchBy: state.filter.searchBy,
+          sortBy: state.filter.sortBy,
+          sortOrder: state.filter.sortOrder,
+          active: state.filter.active,
+          deleted: state.filter.deleted,
+          createdFromDate: state.filter.createdFromDate,
+          createdToDate: state.filter.createdToDate,
+          updatedFromDate: state.filter.updatedFromDate,
+          updatedToDate: state.filter.updatedToDate,
+          deletedFromDate: state.filter.deletedFromDate,
+          deletedToDate: state.filter.deletedToDate,
+        );
+
+    state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(
-        filter ??
-            DivisionTwoFilter(
-              divisionOneId: divisionOneId,
-              pageNumber: 1,
-              pageSize: 10,
-            ),
-      );
+      final response = await _service.getAll(appliedFilter);
 
       state = state.copyWith(
-        all: response.items,
-        filtered: response.items,
+        items: response.items,
         isLoading: false,
         hasMoreData: response.pageNumber < response.totalPages,
         currentPage: response.pageNumber,
@@ -48,66 +63,68 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
         error: null,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load divisions',
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
   // 🔍 Backend Search
   Future<void> search(String query) async {
-    state = state.copyWith(search: query);
-    await loadAll(
-      filter: DivisionTwoFilter(
-        divisionOneId: divisionOneId,
-        pageNumber: 1,
-        pageSize: 10,
-        searchText: query.isEmpty ? null : query,
-      ),
+    final newFilter = DivisionTwoFilter(
+      divisionOneId: divisionOneId,
+      pageNumber: 1,
+      pageSize: 10,
+      searchText: query.isEmpty ? null : query,
+      searchBy: state.filter.searchBy,
+      sortBy: state.filter.sortBy,
+      sortOrder: state.filter.sortOrder,
+      active: state.filter.active,
+      deleted: state.filter.deleted,
+      createdFromDate: state.filter.createdFromDate,
+      createdToDate: state.filter.createdToDate,
+      updatedFromDate: state.filter.updatedFromDate,
+      updatedToDate: state.filter.updatedToDate,
+      deletedFromDate: state.filter.deletedFromDate,
+      deletedToDate: state.filter.deletedToDate,
     );
+
+    await loadAll(filter: newFilter);
   }
 
   // ➕ Add
   void add(DivisionTwoModel d) {
-    final list = [...state.all, d];
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+    final list = [...state.items, d];
+    state = state.copyWith(items: list);
   }
 
   // ✏️ Update
   void update(DivisionTwoModel updated) {
-    final list = state.all
+    final list = state.items
         .map((d) => d.id == updated.id ? updated : d)
         .toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+    state = state.copyWith(items: list);
   }
 
   // 🔄 Status
   void toggleStatus(int id, bool status) {
-    final list = state.all
+    final list = state.items
         .map((d) => d.id == id ? d.copyWith(status: status) : d)
         .toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+    state = state.copyWith(items: list);
   }
 
   // ❌ Delete
   void delete(int id) {
-    final list = state.all.where((d) => d.id != id).toList();
-    state = state.copyWith(all: list, filtered: _applyFilter(list));
+    final list = state.items.where((d) => d.id != id).toList();
+    state = state.copyWith(items: list);
   }
 
   // ❌ Delete selected
   void deleteSelected() {
-    final list = state.all
+    final list = state.items
         .where((d) => !state.selectedIds.contains(d.id))
         .toList();
 
-    state = state.copyWith(
-      all: list,
-      filtered: _applyFilter(list),
-      selectedIds: {},
-      isMultiSelect: false,
-    );
+    state = state.copyWith(items: list, selectedIds: {}, isMultiSelect: false);
   }
 
   // ☑️ Selection
@@ -125,7 +142,7 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
     final selected = <int>{};
 
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.id));
+      selected.addAll(state.items.map((e) => e.id));
     }
 
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
@@ -136,13 +153,5 @@ class DivisionTwoNotifier extends StateNotifier<DivisionTwoState> {
   }
 
   bool get allVisibleSelected =>
-      state.filtered.isNotEmpty &&
-      state.selectedIds.length == state.filtered.length;
-
-  List<DivisionTwoModel> _applyFilter(List<DivisionTwoModel> list) {
-    if (state.search.isEmpty) return list;
-    return list
-        .where((d) => d.name.toLowerCase().contains(state.search.toLowerCase()))
-        .toList();
-  }
+      state.items.isNotEmpty && state.selectedIds.length == state.items.length;
 }

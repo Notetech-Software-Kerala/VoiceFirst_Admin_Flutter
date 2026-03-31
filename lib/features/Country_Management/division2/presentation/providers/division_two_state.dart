@@ -1,71 +1,69 @@
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
 
 class DivisionTwoState {
-  final List<DivisionTwoModel> all;
-  final List<DivisionTwoModel> filtered;
+  final List<DivisionTwoModel> items;
+  final BaseFilterModel filter;
+
+  final int totalCount;
+  final int totalPages;
+  final int currentPage;
+  final bool hasMoreData;
+
+  final bool isLoading;
+  final String? error;
   final bool isMultiSelect;
   final Set<int> selectedIds;
-  final String search;
-  final bool isLoading;
-  final int currentPage;
-  final int totalPages;
-  final int totalCount;
-  final bool hasMoreData;
-  final String? error;
 
   DivisionTwoState({
-    required this.all,
-    required this.filtered,
+    required this.items,
+    required this.filter,
+    required this.totalCount,
+    required this.totalPages,
+    required this.currentPage,
+    required this.hasMoreData,
+    required this.isLoading,
+    this.error,
     required this.isMultiSelect,
     required this.selectedIds,
-    required this.search,
-    required this.isLoading,
-    required this.currentPage,
-    required this.totalPages,
-    required this.totalCount,
-    required this.hasMoreData,
-    this.error,
   });
 
   factory DivisionTwoState.initial() => DivisionTwoState(
-    all: [],
-    filtered: [],
+    items: const [],
+    filter: const BaseFilterModel(),
     isMultiSelect: false,
-    selectedIds:<int> {},
-    search: '',
+    selectedIds: <int>{},
     isLoading: false,
-    currentPage: 1,
-    totalPages: 1,
-    totalCount: 0,
-    hasMoreData: true,
     error: null,
+    hasMoreData: true,
+    currentPage: 1,
+    totalCount: 0,
+    totalPages: 0,
   );
 
   DivisionTwoState copyWith({
-    List<DivisionTwoModel>? all,
-    List<DivisionTwoModel>? filtered,
+    List<DivisionTwoModel>? items,
+    BaseFilterModel? filter,
     bool? isMultiSelect,
     Set<int>? selectedIds,
-    String? search,
     bool? isLoading,
+    String? error,
     int? currentPage,
     int? totalPages,
     int? totalCount,
     bool? hasMoreData,
-    String? error,
   }) {
     return DivisionTwoState(
-      all: all ?? this.all,
-      filtered: filtered ?? this.filtered,
+      items: items ?? this.items,
+      filter: filter ?? this.filter,
       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
       selectedIds: selectedIds ?? this.selectedIds,
-      search: search ?? this.search,
       isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       totalCount: totalCount ?? this.totalCount,
       hasMoreData: hasMoreData ?? this.hasMoreData,
-      error: error,
     );
   }
 }

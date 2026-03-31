@@ -1,30 +1,33 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/Program_Action/data/models/program_action_filter.dart';
 import 'package:voice_first_admin/features/Program_Action/data/models/program_action_model.dart';
 import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
 
 class ProgramActionService {
-  ProgramActionService();
+  final Dio _dio;
+
+  ProgramActionService(this._dio);
 
   Future<PaginatedResponse<ProgramActionModel>> getAll(
     ProgramActionFilter filter,
   ) async {
-    final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}/program-action',
-    ).replace(queryParameters: filter.toQueryParams());
+    debugPrint('API REQUEST: GET /program-action');
+    final response = await _dio.get(
+      '/program-action',
+      queryParameters: filter.toQueryParams(),
+    );
 
-    debugPrint('API REQUEST: GET $uri');
-
-    final response = await http.get(uri, headers: ApiEndpoints.defaultHeaders);
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception('Failed to load program actions: ${response.statusCode}');
     }
 
-    final json = jsonDecode(response.body);
+    final json = response.data as Map<String, dynamic>;
     final data = json['data'];
 
     return PaginatedResponse(
@@ -33,26 +36,24 @@ class ProgramActionService {
           .toList(),
       totalCount: data['totalCount'],
       pageNumber: data['pageNumber'],
-      pageSize: data['pageSize'],
+      pageSize: data['pageSize'] ?? data['limit'],
       totalPages: data['totalPages'],
     );
   }
 
-  /// Lightweight lookup list for selectors (non-paginated)
   Future<List<ProgramActionModel>> getLookup() async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/program-action/lookup');
+    debugPrint('API REQUEST: GET /program-action/lookup');
+    final response = await _dio.get('/program-action/lookup');
 
-    debugPrint('API REQUEST: GET $url');
-
-    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception(
         'Failed to load program action lookup: ${response.statusCode}',
       );
     }
 
-    final body = jsonDecode(response.body);
+    final body = response.data as Map<String, dynamic>;
     final list = body['data'] as List<dynamic>? ?? <dynamic>[];
     return list
         .map((e) => ProgramActionModel.fromJson(e as Map<String, dynamic>))
@@ -60,24 +61,22 @@ class ProgramActionService {
   }
 
   Future<ProgramActionModel> create(String name) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/program-action');
-
-    debugPrint('API REQUEST: POST $url');
+    debugPrint('API REQUEST: POST /program-action');
     debugPrint('Request Body: {"actionName":"$name"}');
 
-    final response = await http.post(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode({'actionName': name}),
+    final response = await _dio.post(
+      '/program-action',
+      data: {'actionName': name},
     );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        (response.statusCode! < 200 || response.statusCode! >= 300)) {
       throw Exception(
         'Failed to create program action: ${response.statusCode}',
       );
     }
 
-    final json = jsonDecode(response.body);
+    final json = response.data as Map<String, dynamic>;
     return ProgramActionModel.fromJson(json['data']);
   }
 
@@ -86,43 +85,30 @@ class ProgramActionService {
     String? name,
     bool? active,
   }) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/program-action/$id');
-
-    // Build request body with only provided fields
     final requestBody = <String, dynamic>{};
     if (name != null) requestBody['actionName'] = name;
     if (active != null) requestBody['active'] = active;
 
-    debugPrint('API REQUEST: PATCH $url');
+    debugPrint('API REQUEST: PATCH /program-action/$id');
     debugPrint('Request Body: ${jsonEncode(requestBody)}');
 
-    final response = await http.patch(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode(requestBody),
-    );
+    final response = await _dio.patch('/program-action/$id', data: requestBody);
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == null || response.statusCode! != 200) {
       throw Exception(
         'Failed to update program action: ${response.statusCode}',
       );
     }
 
-    final json = jsonDecode(response.body);
+    final json = response.data as Map<String, dynamic>;
     return ProgramActionModel.fromJson(json['data']);
   }
 
   Future<void> recover(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/program-action/recover/$id');
+    debugPrint('API REQUEST: PATCH /program-action/recover/$id');
+    final response = await _dio.patch('/program-action/recover/$id');
 
-    debugPrint('API REQUEST: PATCH $url');
-
-    final response = await http.patch(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-    );
-
-    if (response.statusCode != 200) {
+    if (response.statusCode == null || response.statusCode! != 200) {
       throw Exception(
         'Failed to recover program action: ${response.statusCode}',
       );
@@ -130,16 +116,10 @@ class ProgramActionService {
   }
 
   Future<void> delete(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/program-action/$id');
+    debugPrint('API REQUEST: DELETE /program-action/$id');
+    final response = await _dio.delete('/program-action/$id');
 
-    debugPrint('API REQUEST: DELETE $url');
-
-    final response = await http.delete(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-    );
-
-    if (response.statusCode != 200) {
+    if (response.statusCode == null || response.statusCode! != 200) {
       throw Exception(
         'Failed to delete program action: ${response.statusCode}',
       );
@@ -147,21 +127,22 @@ class ProgramActionService {
   }
 
   Future<void> bulkDelete(List<int> ids) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}/program-action/bulk-delete');
-
-    debugPrint('API REQUEST: POST $url');
+    debugPrint('API REQUEST: POST /program-action/bulk-delete');
     debugPrint('Request Body: {"ids":$ids}');
 
-    final response = await http.post(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode({'ids': ids}),
+    final response = await _dio.post(
+      '/program-action/bulk-delete',
+      data: {'ids': ids},
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == null || response.statusCode! != 200) {
       throw Exception(
         'Failed to bulk delete program actions: ${response.statusCode}',
       );
     }
   }
 }
+
+final programActionServiceProvider = Provider<ProgramActionService>((ref) {
+  return ProgramActionService(ref.read(dioClientProvider));
+});

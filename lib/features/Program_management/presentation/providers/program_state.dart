@@ -1,4 +1,5 @@
-import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_filter.dart';
 
 class ProgramState {
   final List<ProgramModel> all;
@@ -12,6 +13,7 @@ class ProgramState {
   final bool hasMoreData;
   final int currentPage;
   final int totalCount;
+  final ProgramFilter filter;
 
   const ProgramState({
     required this.all,
@@ -25,6 +27,7 @@ class ProgramState {
     required this.hasMoreData,
     required this.currentPage,
     required this.totalCount,
+    required this.filter,
   });
 
   factory ProgramState.initial() => const ProgramState(
@@ -39,6 +42,7 @@ class ProgramState {
     hasMoreData: true,
     currentPage: 1,
     totalCount: 0,
+    filter: ProgramFilter(),
   );
 
   ProgramState copyWith({
@@ -53,6 +57,7 @@ class ProgramState {
     bool? hasMoreData,
     int? currentPage,
     int? totalCount,
+    ProgramFilter? filter,
   }) {
     return ProgramState(
       all: all ?? this.all,
@@ -67,6 +72,7 @@ class ProgramState {
       hasMoreData: hasMoreData ?? this.hasMoreData,
       currentPage: currentPage ?? this.currentPage,
       totalCount: totalCount ?? this.totalCount,
+      filter: filter ?? this.filter,
     );
   }
 }

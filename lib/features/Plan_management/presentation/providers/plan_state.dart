@@ -1,4 +1,5 @@
 import '../../data/models/plan_model.dart';
+import '../../data/models/plan_filter.dart';
 
 class PlanState {
   final List<Plan> plans;
@@ -9,7 +10,7 @@ class PlanState {
   final int currentPage;
   final int totalCount;
   final int totalPages;
-  final String search;
+  final PlanFilter filter;
 
   const PlanState({
     this.plans = const [],
@@ -20,7 +21,7 @@ class PlanState {
     this.currentPage = 1,
     this.totalCount = 0,
     this.totalPages = 1,
-    this.search = '',
+    this.filter = const PlanFilter(),
   });
 
   PlanState copyWith({
@@ -32,7 +33,7 @@ class PlanState {
     int? currentPage,
     int? totalCount,
     int? totalPages,
-    String? search,
+    PlanFilter? filter,
   }) {
     return PlanState(
       plans: plans ?? this.plans,
@@ -43,7 +44,7 @@ class PlanState {
       currentPage: currentPage ?? this.currentPage,
       totalCount: totalCount ?? this.totalCount,
       totalPages: totalPages ?? this.totalPages,
-      search: search ?? this.search,
+      filter: filter ?? this.filter,
     );
   }
 }

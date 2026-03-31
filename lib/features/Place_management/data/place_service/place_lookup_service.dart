@@ -1,7 +1,5 @@
-import 'dart:convert';
-import 'package:flutter/rendering.dart';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
 
 class PaginatedLookupResponse<T> {
@@ -21,73 +19,65 @@ class PaginatedLookupResponse<T> {
     Map<String, dynamic> json,
     T Function(Map<String, dynamic>) fromJsonT,
   ) {
+    final itemsJson = json['items'] as List<dynamic>? ?? <dynamic>[];
+    final items = itemsJson
+        .map((e) => fromJsonT(e as Map<String, dynamic>))
+        .toList();
+
     return PaginatedLookupResponse(
-      items: (json['items'] as List? ?? [])
-          .map((e) => fromJsonT(e as Map<String, dynamic>))
-          .toList(),
-      totalCount: json['totalCount'] ?? 0,
-      totalPages: json['totalPages'] ?? 1,
-      currentPage: json['pageNumber'] ?? 1,
+      items: items,
+      totalCount: json['totalCount'] as int? ?? items.length,
+      totalPages: json['totalPages'] as int? ?? 1,
+      currentPage: json['pageNumber'] as int? ?? 1,
     );
   }
 }
 
 class PlaceLookupService {
-  final headers = ApiEndpoints.defaultHeaders;
+  final Dio _dio;
 
-  /// Common decoder (enterprise practice)
-  dynamic _decode(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body);
+  PlaceLookupService(this._dio);
+
+  dynamic _decode(Response response) {
+    if (response.statusCode != null &&
+        response.statusCode! >= 200 &&
+        response.statusCode! < 300) {
+      return response.data;
     }
+    debugPrint('API Error: ${response.statusCode}');
     throw Exception('API Error: ${response.statusCode}');
   }
 
-  // ===============================
-  // COUNTRY (simple list, first page only)
-  // ===============================
+  // COUNTRIES
   Future<List<CountryLookup>> getCountries() async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/country/lookup");
-    debugPrint("[getCountries] URL: $uri");
-    final response = await http.get(uri, headers: headers);
-    debugPrint("[getCountries] Status: ${response.statusCode}");
-    debugPrint("[getCountries] Body: ${response.body}");
-    final body = _decode(response);
-    final data = body['data'] as Map<String, dynamic>?;
-    final List items = data?['items'] as List? ?? [];
-    debugPrint("[getCountries] Fetched ${items.length} countries");
-    return items.map((e) => CountryLookup.fromJson(e)).toList();
+    debugPrint('[getCountries] API REQUEST: GET /country/lookup');
+    final response = await _dio.get('/country/lookup');
+    debugPrint('[getCountries] Status: ${response.statusCode}');
+    debugPrint('[getCountries] Body: ${response.data}');
+    final body = _decode(response) as Map<String, dynamic>;
+    final List items = (body['data']?['items'] as List?) ?? [];
+    return items
+        .map((e) => CountryLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  // Paginated countries
   Future<PaginatedLookupResponse<CountryLookup>> getCountriesPaginated({
     int pageNumber = 1,
     String? searchText,
+    int limit = 10,
   }) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/country/lookup").replace(
+    debugPrint('API REQUEST: GET /country/lookup (paginated)');
+    final response = await _dio.get(
+      '/country/lookup',
       queryParameters: {
         'PageNumber': pageNumber.toString(),
         'SearchText': searchText ?? '',
-        'Limit': '10',
+        'Limit': limit.toString(),
       },
     );
 
-    debugPrint('============== COUNTRY REQUEST ==============');
-    debugPrint('URL: $uri');
-    debugPrint('PageNumber: $pageNumber');
-    debugPrint('SearchText: ${searchText ?? ''}');
-    debugPrint('============================================');
-
-    final response = await http.get(uri, headers: headers);
-    final jsonBody = _decode(response);
+    final jsonBody = _decode(response) as Map<String, dynamic>;
     final data = jsonBody['data'] as Map<String, dynamic>;
-
-    debugPrint('============== COUNTRY RESPONSE =============');
-    debugPrint('Status Code: ${response.statusCode}');
-    debugPrint('Items Count: ${(data['items'] as List? ?? []).length}');
-    debugPrint('Total Pages: ${data['totalPages']}');
-    debugPrint('Current Page: ${data['pageNumber']}');
-    debugPrint('============================================');
 
     return PaginatedLookupResponse<CountryLookup>.fromJson(
       data,
@@ -95,62 +85,44 @@ class PlaceLookupService {
     );
   }
 
-  // ===============================
-  // DIVISION 1
-  // ===============================
+  // DIVISION ONE
   Future<List<DivisionOneLookup>> getDivisionOne(int countryId) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/division/one/lookup")
-        .replace(
-          queryParameters: {
-            'CountryId': countryId.toString(),
-            'PageNumber': '1',
-            'SearchText': '',
-            'Limit': '50',
-          },
-        );
-    debugPrint("[getDivisionOne] URL: $uri");
-    final response = await http.get(uri, headers: headers);
-    debugPrint("[getDivisionOne] Status: ${response.statusCode}");
-    debugPrint("[getDivisionOne] Body: ${response.body}");
-    final body = _decode(response);
-    final data = body['data'] as Map<String, dynamic>?;
-    final List items = data?['items'] as List? ?? [];
-    debugPrint("[getDivisionOne] Fetched ${items.length} divisions");
-    return items.map((e) => DivisionOneLookup.fromJson(e)).toList();
+    debugPrint('[getDivisionOne] API REQUEST: GET /division/one/lookup');
+    final response = await _dio.get(
+      '/division/one/lookup',
+      queryParameters: {
+        'CountryId': countryId.toString(),
+        'PageNumber': '1',
+        'SearchText': '',
+        'Limit': '50',
+      },
+    );
+    final body = _decode(response) as Map<String, dynamic>;
+    final List items = (body['data']?['items'] as List?) ?? [];
+    return items
+        .map((e) => DivisionOneLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<PaginatedLookupResponse<DivisionOneLookup>> getDivisionOnePaginated({
     required int countryId,
     int pageNumber = 1,
     String? searchText,
+    int limit = 10,
   }) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/division/one/lookup")
-        .replace(
-          queryParameters: {
-            'CountryId': countryId.toString(),
-            'PageNumber': pageNumber.toString(),
-            'SearchText': searchText ?? '',
-            'Limit': '10',
-          },
-        );
+    debugPrint('API REQUEST: GET /division/one/lookup (paginated)');
+    final response = await _dio.get(
+      '/division/one/lookup',
+      queryParameters: {
+        'CountryId': countryId.toString(),
+        'PageNumber': pageNumber.toString(),
+        'SearchText': searchText ?? '',
+        'Limit': limit.toString(),
+      },
+    );
 
-    debugPrint('============== DIVISION 1 REQUEST ==============');
-    debugPrint('URL: $uri');
-    debugPrint('CountryId: $countryId');
-    debugPrint('PageNumber: $pageNumber');
-    debugPrint('SearchText: ${searchText ?? ''}');
-    debugPrint('=================================================');
-
-    final response = await http.get(uri, headers: headers);
-    final jsonBody = _decode(response);
+    final jsonBody = _decode(response) as Map<String, dynamic>;
     final data = jsonBody['data'] as Map<String, dynamic>;
-
-    debugPrint('============== DIVISION 1 RESPONSE =============');
-    debugPrint('Status Code: ${response.statusCode}');
-    debugPrint('Items Count: ${(data['items'] as List? ?? []).length}');
-    debugPrint('Total Pages: ${data['totalPages']}');
-    debugPrint('Current Page: ${data['pageNumber']}');
-    debugPrint('=================================================');
 
     return PaginatedLookupResponse<DivisionOneLookup>.fromJson(
       data,
@@ -158,62 +130,44 @@ class PlaceLookupService {
     );
   }
 
-  // ===============================
-  // DIVISION 2
-  // ===============================
+  // DIVISION TWO
   Future<List<DivisionTwoLookup>> getDivisionTwo(int divOneId) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/division/two/lookup")
-        .replace(
-          queryParameters: {
-            'DivisionOneId': divOneId.toString(),
-            'PageNumber': '1',
-            'SearchText': '',
-            'Limit': '50',
-          },
-        );
-    debugPrint("[getDivisionTwo] URL: $uri");
-    final response = await http.get(uri, headers: headers);
-    debugPrint("[getDivisionTwo] Status: ${response.statusCode}");
-    debugPrint("[getDivisionTwo] Body: ${response.body}");
-    final body = _decode(response);
-    final data = body['data'] as Map<String, dynamic>?;
-    final List items = data?['items'] as List? ?? [];
-    debugPrint("[getDivisionTwo] Fetched ${items.length} divisions");
-    return items.map((e) => DivisionTwoLookup.fromJson(e)).toList();
+    debugPrint('[getDivisionTwo] API REQUEST: GET /division/two/lookup');
+    final response = await _dio.get(
+      '/division/two/lookup',
+      queryParameters: {
+        'DivisionOneId': divOneId.toString(),
+        'PageNumber': '1',
+        'SearchText': '',
+        'Limit': '50',
+      },
+    );
+    final body = _decode(response) as Map<String, dynamic>;
+    final List items = (body['data']?['items'] as List?) ?? [];
+    return items
+        .map((e) => DivisionTwoLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<PaginatedLookupResponse<DivisionTwoLookup>> getDivisionTwoPaginated({
     required int divOneId,
     int pageNumber = 1,
     String? searchText,
+    int limit = 10,
   }) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/division/two/lookup")
-        .replace(
-          queryParameters: {
-            'DivisionOneId': divOneId.toString(),
-            'PageNumber': pageNumber.toString(),
-            'SearchText': searchText ?? '',
-            'Limit': '10',
-          },
-        );
+    debugPrint('API REQUEST: GET /division/two/lookup (paginated)');
+    final response = await _dio.get(
+      '/division/two/lookup',
+      queryParameters: {
+        'DivisionOneId': divOneId.toString(),
+        'PageNumber': pageNumber.toString(),
+        'SearchText': searchText ?? '',
+        'Limit': limit.toString(),
+      },
+    );
 
-    debugPrint("============== DIVISION 2 REQUEST ==============");
-    debugPrint("URL: $uri");
-    debugPrint("DivisionOneId: $divOneId");
-    debugPrint("PageNumber: $pageNumber");
-    debugPrint("SearchText: ${searchText ?? ''}");
-    debugPrint("=================================================");
-
-    final response = await http.get(uri, headers: headers);
-    final jsonBody = _decode(response);
+    final jsonBody = _decode(response) as Map<String, dynamic>;
     final data = jsonBody['data'] as Map<String, dynamic>;
-
-    debugPrint("============== DIVISION 2 RESPONSE ==============");
-    debugPrint("Status Code: ${response.statusCode}");
-    debugPrint("Items Count: ${(data['items'] as List? ?? []).length}");
-    debugPrint("Total Pages: ${data['totalPages']}");
-    debugPrint("Current Page: ${data['pageNumber']}");
-    debugPrint("=================================================");
 
     return PaginatedLookupResponse<DivisionTwoLookup>.fromJson(
       data,
@@ -221,28 +175,23 @@ class PlaceLookupService {
     );
   }
 
-  // ===============================
-  // DIVISION 3
-  // ===============================
+  // DIVISION THREE
   Future<List<DivisionThreeLookup>> getDivisionThree(int divTwoId) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/division/three/lookup")
-        .replace(
-          queryParameters: {
-            'DivisionTwoId': divTwoId.toString(),
-            'PageNumber': '1',
-            'SearchText': '',
-            'Limit': '50',
-          },
-        );
-    debugPrint("[getDivisionThree] URL: $uri");
-    final response = await http.get(uri, headers: headers);
-    debugPrint("[getDivisionThree] Status: ${response.statusCode}");
-    debugPrint("[getDivisionThree] Body: ${response.body}");
-    final body = _decode(response);
-    final data = body['data'] as Map<String, dynamic>?;
-    final List items = data?['items'] as List? ?? [];
-    debugPrint("[getDivisionThree] Fetched ${items.length} divisions");
-    return items.map((e) => DivisionThreeLookup.fromJson(e)).toList();
+    debugPrint('[getDivisionThree] API REQUEST: GET /division/three/lookup');
+    final response = await _dio.get(
+      '/division/three/lookup',
+      queryParameters: {
+        'DivisionTwoId': divTwoId.toString(),
+        'PageNumber': '1',
+        'SearchText': '',
+        'Limit': '50',
+      },
+    );
+    final body = _decode(response) as Map<String, dynamic>;
+    final List items = (body['data']?['items'] as List?) ?? [];
+    return items
+        .map((e) => DivisionThreeLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<PaginatedLookupResponse<DivisionThreeLookup>>
@@ -250,33 +199,21 @@ class PlaceLookupService {
     required int divTwoId,
     int pageNumber = 1,
     String? searchText,
+    int limit = 10,
   }) async {
-    final uri = Uri.parse("${ApiEndpoints.baseUrl}/division/three/lookup")
-        .replace(
-          queryParameters: {
-            'DivisionTwoId': divTwoId.toString(),
-            'PageNumber': pageNumber.toString(),
-            'SearchText': searchText ?? '',
-            'Limit': '10',
-          },
-        );
-    debugPrint('============== DIVISION 3 REQUEST ==============');
-    debugPrint('URL: $uri');
-    debugPrint('DivisionTwoId: $divTwoId');
-    debugPrint('PageNumber: $pageNumber');
-    debugPrint('SearchText: ${searchText ?? ''}');
-    debugPrint('=================================================');
+    debugPrint('API REQUEST: GET /division/three/lookup (paginated)');
+    final response = await _dio.get(
+      '/division/three/lookup',
+      queryParameters: {
+        'DivisionTwoId': divTwoId.toString(),
+        'PageNumber': pageNumber.toString(),
+        'SearchText': searchText ?? '',
+        'Limit': limit.toString(),
+      },
+    );
 
-    final response = await http.get(uri, headers: headers);
-    final jsonBody = _decode(response);
+    final jsonBody = _decode(response) as Map<String, dynamic>;
     final data = jsonBody['data'] as Map<String, dynamic>;
-
-    debugPrint('============== DIVISION 3 RESPONSE =============');
-    debugPrint('Status Code: ${response.statusCode}');
-    debugPrint('Items Count: ${(data['items'] as List? ?? []).length}');
-    debugPrint('Total Pages: ${data['totalPages']}');
-    debugPrint('Current Page: ${data['pageNumber']}');
-    debugPrint('=================================================');
 
     return PaginatedLookupResponse<DivisionThreeLookup>.fromJson(
       data,
@@ -284,9 +221,7 @@ class PlaceLookupService {
     );
   }
 
-  // ===============================
   // POST OFFICES
-  // ===============================
   Future<List<PostOfficeLookup>> getPostOffices({
     int? countryId,
     int? divOneId,
@@ -294,15 +229,15 @@ class PlaceLookupService {
     int? divThreeId,
     int? placeId,
   }) async {
-    // ✅ SAFETY GUARD (VERY IMPORTANT)
     if (countryId == null ||
         divOneId == null ||
         divTwoId == null ||
-        divThreeId == null) {
+        divThreeId == null)
       return [];
-    }
 
-    final uri = Uri.parse('${ApiEndpoints.baseUrl}/post-office/lookup').replace(
+    debugPrint('[getPostOffices] API REQUEST: GET /post-office/lookup');
+    final response = await _dio.get(
+      '/post-office/lookup',
       queryParameters: {
         'CountryId': countryId.toString(),
         'DivOneId': divOneId.toString(),
@@ -312,18 +247,11 @@ class PlaceLookupService {
       },
     );
 
-    debugPrint("[getPostOffices] URL: $uri");
-
-    final response = await http.get(uri, headers: headers);
-
-    debugPrint("[getPostOffices] Status: ${response.statusCode}");
-    debugPrint("[getPostOffices] Body: ${response.body}");
-
-    final body = _decode(response);
-    final data = body['data'] as Map<String, dynamic>?;
-    final List items = data?['items'] as List? ?? [];
-
-    return items.map((e) => PostOfficeLookup.fromJson(e)).toList();
+    final body = _decode(response) as Map<String, dynamic>;
+    final List items = (body['data']?['items'] as List?) ?? [];
+    return items
+        .map((e) => PostOfficeLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<PaginatedLookupResponse<PostOfficeLookup>> getPostOfficesPaginated({
@@ -336,7 +264,8 @@ class PlaceLookupService {
     int limit = 10,
     String? searchText,
   }) async {
-    final queryParameters = <String, String>{
+    debugPrint('API REQUEST: GET /post-office/lookup (paginated)');
+    final queryParameters = <String, dynamic>{
       'CountryId': countryId.toString(),
       'DivOneId': divOneId.toString(),
       'DivTwoId': divTwoId.toString(),
@@ -344,40 +273,16 @@ class PlaceLookupService {
       'PageNumber': pageNumber.toString(),
       'Limit': limit.toString(),
     };
-
-    if (placeId != null) {
-      queryParameters['PlaceId'] = placeId.toString();
-    }
-    if (searchText != null && searchText.isNotEmpty) {
+    if (placeId != null) queryParameters['PlaceId'] = placeId.toString();
+    if (searchText != null && searchText.isNotEmpty)
       queryParameters['SearchText'] = searchText;
-    }
 
-    final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}/post-office/lookup',
-    ).replace(queryParameters: queryParameters);
-
-    debugPrint('============== POST OFFICES REQUEST ==============');
-    debugPrint('URL: $uri');
-    debugPrint('CountryId: $countryId');
-    debugPrint('DivOneId: $divOneId');
-    debugPrint('DivTwoId: $divTwoId');
-    debugPrint('DivThreeId: $divThreeId');
-    debugPrint('PageNumber: $pageNumber');
-    debugPrint('Limit: $limit');
-    debugPrint('SearchText: ${searchText ?? ''}');
-    debugPrint('==================================================');
-
-    final response = await http.get(uri, headers: headers);
-    final jsonBody = _decode(response);
+    final response = await _dio.get(
+      '/post-office/lookup',
+      queryParameters: queryParameters,
+    );
+    final jsonBody = _decode(response) as Map<String, dynamic>;
     final data = jsonBody['data'] as Map<String, dynamic>;
-
-    debugPrint('============== POST OFFICES RESPONSE =============');
-    debugPrint('Status Code: ${response.statusCode}');
-    debugPrint('Items Count: ${(data['items'] as List? ?? []).length}');
-    debugPrint('Total Pages: ${data['totalPages']}');
-    debugPrint('Current Page: ${data['pageNumber']}');
-    debugPrint('Total Count: ${data['totalCount']}');
-    debugPrint('==================================================');
 
     return PaginatedLookupResponse<PostOfficeLookup>.fromJson(
       data,
@@ -385,57 +290,45 @@ class PlaceLookupService {
     );
   }
 
-  // ===============================
-  // UNLINKED ZIP CODES (NEW API)
-  // ===============================
+  // UNLINKED ZIP CODES
   Future<List<ZipCodeLookup>> getUnlinkedZipCodes({
     required List<int> postOfficeIds,
     required int placeId,
   }) async {
-    final uri =
-        Uri.parse(
-          '${ApiEndpoints.baseUrl}/zipcodes/lookup/post-office-ids',
-        ).replace(
-          queryParameters: {
-            'PostOfficeIds': postOfficeIds.join(','),
-            'PlaceId': placeId.toString(),
-          },
-        );
+    debugPrint(
+      '[getUnlinkedZipCodes] API REQUEST: GET /zipcodes/lookup/post-office-ids',
+    );
+    final response = await _dio.get(
+      '/zipcodes/lookup/post-office-ids',
+      queryParameters: {
+        'PostOfficeIds': postOfficeIds.join(','),
+        'PlaceId': placeId.toString(),
+      },
+    );
 
-    debugPrint('[getUnlinkedZipCodes] URL: $uri');
-
-    final response = await http.get(uri, headers: headers);
-
-    debugPrint('[getUnlinkedZipCodes] Status: ${response.statusCode}');
-    debugPrint('[getUnlinkedZipCodes] Body: ${response.body}');
-
-    final body = _decode(response);
+    final body = _decode(response) as Map<String, dynamic>;
     final List list = body['data'] ?? [];
-
-    return list.map((e) => ZipCodeLookup.fromJson(e)).toList();
+    return list
+        .map((e) => ZipCodeLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  // ===============================
   // ZIP CODES BY POST OFFICE IDS
-  // (used for Add Place page)
-  // ===============================
   Future<List<ZipCodeLookup>> getZipCodesByPostOfficeIds({
     required List<int> postOfficeIds,
   }) async {
-    final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}/zipcodes/lookup/post-office-ids',
-    ).replace(queryParameters: {'PostOfficeIds': postOfficeIds.join(',')});
+    debugPrint(
+      '[getZipCodesByPostOfficeIds] API REQUEST: GET /zipcodes/lookup/post-office-ids',
+    );
+    final response = await _dio.get(
+      '/zipcodes/lookup/post-office-ids',
+      queryParameters: {'PostOfficeIds': postOfficeIds.join(',')},
+    );
 
-    debugPrint('[getZipCodesByPostOfficeIds] URL: $uri');
-
-    final response = await http.get(uri, headers: headers);
-
-    debugPrint('[getZipCodesByPostOfficeIds] Status: ${response.statusCode}');
-    debugPrint('[getZipCodesByPostOfficeIds] Body: ${response.body}');
-
-    final body = _decode(response);
+    final body = _decode(response) as Map<String, dynamic>;
     final List list = body['data'] ?? [];
-
-    return list.map((e) => ZipCodeLookup.fromJson(e)).toList();
+    return list
+        .map((e) => ZipCodeLookup.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

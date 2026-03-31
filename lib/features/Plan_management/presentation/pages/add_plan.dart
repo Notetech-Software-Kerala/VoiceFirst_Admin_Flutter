@@ -7,6 +7,37 @@ import 'package:voice_first_admin/features/Plan_management/presentation/provider
 import '../../data/models/program_action_link_lookup.dart';
 import '../providers/add_plan_provider.dart';
 
+class SelectedAction {
+  final int id;
+  final String name;
+
+  SelectedAction({required this.id, required this.name});
+}
+
+/// Computes selected actions grouped by program using a typed model.
+final groupedSelectedByProgramProvider =
+    Provider<Map<String, List<SelectedAction>>>((ref) {
+      final programs = ref.watch(
+        programLookupProvider.select((s) => s.programs),
+      );
+      final selectedIds = ref.watch(addPlanProvider.select((s) => s.actionIds));
+
+      final Map<String, List<SelectedAction>> grouped = {};
+
+      for (final program in programs) {
+        for (final action in program.actions) {
+          if (selectedIds.contains(action.actionLinkId)) {
+            grouped.putIfAbsent(program.programName, () => []);
+            grouped[program.programName]!.add(
+              SelectedAction(id: action.actionLinkId, name: action.actionName),
+            );
+          }
+        }
+      }
+
+      return grouped;
+    });
+
 class AddPlanPage extends ConsumerStatefulWidget {
   const AddPlanPage({super.key});
 
@@ -17,7 +48,7 @@ class AddPlanPage extends ConsumerStatefulWidget {
 class _AddPlanPageState extends ConsumerState<AddPlanPage> {
   final TextEditingController _nameController = TextEditingController();
 
-  bool _isDropdownOpen = false;
+  DateTime? _lastScrollFetch;
   // final Set<int> _expandedProgramIds = {};
   bool _isSelectedExpanded = true;
   final TextEditingController _searchController = TextEditingController();
@@ -28,14 +59,22 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
   @override
   void initState() {
     super.initState();
-
     _dropdownScrollController.addListener(() {
+      if (!_dropdownScrollController.hasClients) return;
+
+      final extentAfter = _dropdownScrollController.position.extentAfter;
       final notifier = ref.read(programLookupProvider.notifier);
       final state = ref.read(programLookupProvider);
 
-      if (_dropdownScrollController.position.extentAfter < 200 &&
-          !state.isLoading &&
-          state.hasMore) {
+      final now = DateTime.now();
+      if (_lastScrollFetch != null &&
+          now.difference(_lastScrollFetch!) <
+              const Duration(milliseconds: 600)) {
+        return;
+      }
+
+      if (extentAfter < 200 && !state.isLoading && state.hasMore) {
+        _lastScrollFetch = now;
         notifier.loadNextPage();
       }
     });
@@ -57,7 +96,10 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
     final notifier = ref.read(addPlanProvider.notifier);
 
     if (_nameController.text != state.planName) {
-      _nameController.text = state.planName;
+      _nameController.value = TextEditingValue(
+        text: state.planName,
+        selection: TextSelection.collapsed(offset: state.planName.length),
+      );
     }
 
     return StandardPageLayout(
@@ -78,33 +120,7 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
     );
   }
 
-  // Skeleton Widget for loading
-
-  // Widget _buildSkeletonTile() {
-  //   return Container(
-  //     margin: const EdgeInsets.symmetric(vertical: 6),
-  //     padding: const EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       borderRadius: BorderRadius.circular(12),
-  //       color: Colors.grey.shade300,
-  //     ),
-  //     height: 60,
-  //   );
-  // }
-  // Widget _buildSkeletonTile() {
-  //   return Shimmer.fromColors(
-  //     baseColor: Colors.grey.shade300,
-  //     highlightColor: Colors.grey.shade100,
-  //     child: Container(
-  //       margin: const EdgeInsets.symmetric(vertical: 6),
-  //       height: 60,
-  //       decoration: BoxDecoration(
-  //         borderRadius: BorderRadius.circular(12),
-  //         color: Colors.white,
-  //       ),
-  //     ),
-  //   );
-  // }
+  // Skeleton placeholders removed — keep UI focused and simple.
 
   ////////////////////////////////////////////////////////////
   /// BASIC INFO
@@ -152,22 +168,10 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
     AddPlanNotifier notifier,
   ) {
     final lookupState = ref.watch(programLookupProvider);
+    // programs list used only by dropdown; grouped selection is provided
     final programs = lookupState.programs;
 
-    /// GROUP SELECTED BY PROGRAM
-    final Map<String, List<Map<String, dynamic>>> grouped = {};
-
-    for (final program in programs) {
-      for (final action in program.actions) {
-        if (state.actionIds.contains(action.actionLinkId)) {
-          grouped.putIfAbsent(program.programName, () => []);
-          grouped[program.programName]!.add({
-            "id": action.actionLinkId,
-            "name": action.actionName,
-          });
-        }
-      }
-    }
+    final grouped = ref.watch(groupedSelectedByProgramProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -231,8 +235,8 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
                             dense: true,
                             value: true,
                             onChanged: (_) =>
-                                notifier.removeActionId(action["id"]),
-                            title: Text(action["name"]),
+                                notifier.removeActionId(action.id),
+                            title: Text(action.name),
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
                         ),
@@ -278,6 +282,9 @@ class _AddPlanPageState extends ConsumerState<AddPlanPage> {
       ),
     );
   }
+
+  // Grouping logic moved to `groupedSelectedByProgramProvider` to avoid
+  // recomputation on every rebuild and keep UI declarative.
 
   ////////////////////////////////////////////////////////////
   /// EXPANSION TILE
