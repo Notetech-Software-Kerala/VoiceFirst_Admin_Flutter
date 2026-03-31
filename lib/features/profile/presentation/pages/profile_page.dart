@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/pages/change_password_page.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/auth/presentation/pages/login_screen.dart';
@@ -11,210 +13,115 @@ class ProfilePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final secondaryText = theme.colorScheme.onSurfaceVariant;
-
+    final profileState = ref.watch(profileProvider);
+    final profileNotifier = ref.read(profileProvider.notifier);
     final themeMode = ref.watch(themeModeProvider);
     final isDarkMode =
         themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
-    // Watch the profile state
-    final profileState = ref.watch(profileProvider);
-    final profileNotifier = ref.read(profileProvider.notifier);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return SafeArea(
       bottom: false,
       child: Column(
         children: [
-          // --- Custom Sticky Header ---
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.scaffoldBackgroundColor.withValues(alpha: 0.95),
-              border: Border(bottom: BorderSide(color: theme.dividerColor)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                InkWell(
-                  onTap: () {
-                    Scaffold.of(context).openDrawer();
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Icon(
-                      Icons.menu,
-                      color: theme.textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                ),
-                const Text(
-                  "Settings",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    "Done",
-                    style: TextStyle(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // ── Sticky Header ─────────────────────────────────────────────────
+          _ProfileHeader(),
 
-          // --- Scrollable Content ---
+          // ── Scrollable Body ───────────────────────────────────────────────
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 100),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 120),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 16),
+                  // 1. Hero — glowing avatar + name + role badge
+                  _HeroSection(profileState: profileState),
+                  const SizedBox(height: 40),
 
-                  // Profile Section (Now using Riverpod state)
+                  // 2. Bento cards — stacked vertically so long text is always visible
+                  Column(
+                    children: [
+                      _BentoCard(
+                        category: 'Personal',
+                        icon: Icons.badge_outlined,
+                        iconColor: colors.tertiary,
+                        children: [
+                          _InfoRow(
+                            icon: Icons.male,
+                            label: 'Gender',
+                            value: 'Male',
+                          ),
+                          const SizedBox(height: 16),
+                          _InfoRow(
+                            icon: Icons.calendar_today_outlined,
+                            label: 'Birth Year',
+                            value: '1989',
+                          ),
+                          const SizedBox(height: 16),
+                          _InfoRow(
+                            icon: Icons.tag,
+                            label: 'User ID',
+                            value: '#${profileState.userId}',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      _BentoCard(
+                        category: 'Contact',
+                        icon: Icons.contact_mail_outlined,
+                        iconColor: colors.primary,
+                        children: [
+                          _InfoRow(
+                            icon: Icons.alternate_email,
+                            label: 'Email',
+                            value: profileState.userName,
+                          ),
+                          const SizedBox(height: 16),
+                          _InfoRow(
+                            icon: Icons.call_outlined,
+                            label: 'Platform',
+                            value: 'Admin Console',
+                          ),
+                          const SizedBox(height: 16),
+                          _InfoRow(
+                            icon: Icons.shield_outlined,
+                            label: 'Status',
+                            value: 'Active',
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  // 3. Preferences section
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: InkWell(
-                      onTap: () => _showEditDialog(context, ref, profileState),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.dividerColor),
-                        ),
-                        child: Row(
-                          children: [
-                            Stack(
-                              children: [
-                                Container(
-                                  width: 64,
-                                  height: 64,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    image: DecorationImage(
-                                      image: NetworkImage(
-                                        profileState.profileImageUrl,
-                                      ),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    width: 16,
-                                    height: 16,
-                                    decoration: BoxDecoration(
-                                      color: Colors.green,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: theme.cardColor,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    profileState.userName,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    profileState.userRole,
-                                    style: TextStyle(
-                                      color: secondaryText,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    "ID: ${profileState.userId}",
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.grey[500]
-                                          : Colors.grey[400],
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: theme.primaryColor.withValues(
-                                  alpha: 0.1,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                color: theme.primaryColor,
-                                size: 18,
-                              ),
-                            ),
-                          ],
-                        ),
+                    padding: const EdgeInsets.only(left: 4, bottom: 14),
+                    child: Text(
+                      'Preferences',
+                      style: GoogleFonts.manrope(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-
-                  // General Section
-                  _buildSectionHeader("General", secondaryText),
-                  _buildSectionContainer(
-                    context,
+                  _PreferencesCard(
                     children: [
-                      _buildTile(
-                        context,
-                        icon: Icons.branding_watermark,
-                        iconColor: theme.primaryColor,
-                        title: "App Name",
-                        trailing: _buildTrailingText(context, "Admin Console"),
-                      ),
-                      _buildTile(
-                        context,
-                        icon: Icons.language,
-                        iconColor: Colors.orange,
-                        title: "Language",
-                        trailing: _buildTrailingText(context, "English (US)"),
-                      ),
-                      _buildTile(
-                        context,
-                        icon: Icons.schedule,
-                        iconColor: Colors.purple,
-                        title: "Time Zone",
-                        trailing: _buildTrailingText(context, "UTC-5"),
-                      ),
-                      _buildTile(
-                        context,
-                        icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                        iconColor: Colors.indigo,
-                        title: "Dark Mode",
-                        isLast: true,
-                        trailing: Switch.adaptive(
+                      _SettingsTile(
+                        icon: isDarkMode
+                            ? Icons.dark_mode
+                            : Icons.light_mode_outlined,
+                        iconColor: colors.primary,
+                        title: 'Dark Mode',
+                        subtitle: isDarkMode
+                            ? 'Optimized for night environments'
+                            : 'Light theme active',
+                        trailing: _PillSwitch(
                           value: isDarkMode,
-                          activeTrackColor: theme.primaryColor,
                           onChanged: (val) {
                             ref
                                 .read(themeModeProvider.notifier)
@@ -223,136 +130,147 @@ class ProfilePage extends ConsumerWidget {
                                 );
                           },
                         ),
+                        showDivider: true,
                       ),
-                    ],
-                  ),
-
-                  // Notifications Section (Now using Riverpod methods)
-                  _buildSectionHeader("Notifications", secondaryText),
-                  _buildSectionContainer(
-                    context,
-                    children: [
-                      _buildTile(
-                        context,
-                        icon: Icons.notifications,
-                        iconColor: Colors.red,
-                        title: "Push Notifications",
-                        trailing: Switch.adaptive(
+                      _SettingsTile(
+                        icon: Icons.notifications_active_outlined,
+                        iconColor: colors.onSurfaceVariant,
+                        title: 'Push Notifications',
+                        subtitle: profileState.pushNotifications
+                            ? 'Enabled — stay updated with alerts'
+                            : 'Disabled',
+                        trailing: _PillSwitch(
                           value: profileState.pushNotifications,
-                          activeTrackColor: theme.primaryColor,
-                          onChanged: (v) =>
+                          onChanged: (_) =>
                               profileNotifier.togglePushNotifications(),
                         ),
+                        showDivider: true,
                       ),
-                      _buildTile(
-                        context,
-                        icon: Icons.mail,
-                        iconColor: Colors.blue,
-                        title: "Email Alerts",
-                        trailing: Switch.adaptive(
+                      _SettingsTile(
+                        icon: Icons.mail_outline,
+                        iconColor: colors.onSurfaceVariant,
+                        title: 'Email Alerts',
+                        subtitle: profileState.emailAlerts
+                            ? 'Enabled'
+                            : 'Disabled',
+                        trailing: _PillSwitch(
                           value: profileState.emailAlerts,
-                          activeTrackColor: theme.primaryColor,
-                          onChanged: (v) => profileNotifier.toggleEmailAlerts(),
+                          onChanged: (_) => profileNotifier.toggleEmailAlerts(),
                         ),
-                        isLast: true,
+                        showDivider: true,
+                      ),
+                      _SettingsTile(
+                        icon: Icons.language,
+                        iconColor: colors.onSurfaceVariant,
+                        title: 'Language',
+                        subtitle: 'English (US)',
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        showDivider: false,
                       ),
                     ],
                   ),
+                  const SizedBox(height: 32),
 
-                  // Security Section
-                  _buildSectionHeader("Security & Access", secondaryText),
-                  _buildSectionContainer(
-                    context,
+                  // 4. Security
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 14),
+                    child: Text(
+                      'Security',
+                      style: GoogleFonts.manrope(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  _PreferencesCard(
                     children: [
-                      _buildTile(
-                        context,
-                        icon: Icons.verified_user,
-                        iconColor: Colors.green,
-                        title: "Two-Factor Auth",
+                      _SettingsTile(
+                        icon: Icons.lock_outline,
+                        iconColor: colors.primary,
+                        title: 'Change Password',
+                        subtitle: 'Update your credentials',
+                        trailing: Icon(
+                          Icons.chevron_right,
+                          color: colors.onSurfaceVariant,
+                        ),
+                        showDivider: true,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChangePasswordPage(),
+                          ),
+                        ),
+                      ),
+                      _SettingsTile(
+                        icon: Icons.verified_user_outlined,
+                        iconColor: colors.onSurfaceVariant,
+                        title: 'Two-Factor Auth',
+                        subtitle: 'Enabled',
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
-                              "Enabled",
+                            Text(
+                              'On',
                               style: TextStyle(
-                                color: Colors.green,
+                                color: Colors.greenAccent[400],
                                 fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                fontSize: 13,
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             Icon(
                               Icons.chevron_right,
-                              color: theme.iconTheme.color,
+                              color: colors.onSurfaceVariant,
                             ),
                           ],
                         ),
-                      ),
-                      _buildTile(
-                        context,
-                        icon: Icons.lock,
-                        iconColor: Colors.indigo,
-                        title: "Change Password",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ChangePasswordPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildTile(
-                        context,
-                        icon: Icons.manage_accounts,
-                        iconColor: Colors.indigo,
-                        title: "User Roles",
-                        isLast: true,
+                        showDivider: false,
                       ),
                     ],
                   ),
+                  const SizedBox(height: 32),
 
-                  // Logout Button
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 32,
-                    ),
-                    child: InkWell(
-                      onTap: () async {
-                        await ref.read(authProvider.notifier).logout();
-                        if (context.mounted) {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (_) => const LoginScreen(),
-                            ),
-                            (route) => false,
-                          );
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        decoration: BoxDecoration(
-                          color: theme.cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: theme.dividerColor),
+                  // 5. Sign Out
+                  InkWell(
+                    onTap: () async {
+                      await ref.read(authProvider.notifier).logout();
+                      if (context.mounted) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colors.error.withValues(alpha: 0.15),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.logout, color: Colors.red, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              "Log Out",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.logout, color: colors.error),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Sign Out',
+                            style: GoogleFonts.manrope(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: colors.error,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -364,165 +282,405 @@ class ProfilePage extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildSectionHeader(String title, Color color) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.0,
-        ),
-      ),
-    );
-  }
+// ─────────────────────────────────────────────────────────────────────────────
+// Sticky Header
+// ─────────────────────────────────────────────────────────────────────────────
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader();
 
-  Widget _buildSectionContainer(
-    BuildContext context, {
-    required List<Widget> children,
-  }) {
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.dividerColor),
-        ),
-        child: Column(children: children),
-      ),
-    );
-  }
-
-  Widget _buildTile(
-    BuildContext context, {
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    Widget? trailing,
-    bool isLast = false,
-    VoidCallback? onTap, // 👈 ADD THIS
-  }) {
-    final theme = Theme.of(context);
-
-    return InkWell(
-      // 👈 WRAP WITH INKWELL
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: const BoxConstraints(minHeight: 56),
-        decoration: BoxDecoration(
-          border: isLast
-              ? null
-              : Border(
-                  bottom: BorderSide(
-                    color: theme.dividerColor.withValues(alpha: 0.5),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.9),
+            border: Border(
+              bottom: BorderSide(
+                color: theme.dividerColor.withValues(alpha: 0.4),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back, color: theme.colorScheme.primary),
+                onPressed: () {
+                  if (Navigator.canPop(context)) Navigator.pop(context);
+                },
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Profile',
+                    style: GoogleFonts.manrope(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                 ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: iconColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 18, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+              IconButton(
+                icon: Icon(Icons.edit, color: theme.colorScheme.primary),
+                onPressed: () {},
               ),
-            ),
-            if (trailing != null)
-              trailing
-            else
-              Icon(Icons.chevron_right, color: theme.iconTheme.color),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildTrailingText(BuildContext context, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero Section — glowing avatar, name, verified role badge
+// ─────────────────────────────────────────────────────────────────────────────
+class _HeroSection extends StatelessWidget {
+  const _HeroSection({required this.profileState});
+  final ProfileState profileState;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
       children: [
-        Text(
-          text,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Icon(Icons.chevron_right, color: Theme.of(context).iconTheme.color),
-      ],
-    );
-  }
-
-  void _showEditDialog(
-    BuildContext context,
-    WidgetRef ref,
-    ProfileState profile,
-  ) {
-    final nameController = TextEditingController(text: profile.userName);
-    final roleController = TextEditingController(text: profile.userRole);
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Profile"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: "Name",
-                  hintText: "Enter your name",
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            // Glow ring
+            Container(
+              width: 136,
+              height: 136,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [colors.primary, colors.primaryContainer],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.primary.withValues(alpha: 0.3),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+            // Avatar
+            Container(
+              width: 128,
+              height: 128,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colors.surface,
+                border: Border.all(
+                  color: colors.surfaceContainerHighest,
+                  width: 4,
+                ),
+                image: DecorationImage(
+                  image: NetworkImage(profileState.profileImageUrl),
+                  fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: roleController,
-                decoration: const InputDecoration(
-                  labelText: "Role",
-                  hintText: "Enter your role",
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text(
+          profileState.userName,
+          style: GoogleFonts.manrope(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        // Verified role badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: colors.primary.withValues(alpha: 0.1),
+            border: Border.all(color: colors.primary.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.verified, color: colors.primary, size: 16),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'NOTETECH • ${profileState.userRole.toUpperCase()}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: colors.primary,
+                    letterSpacing: 0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bento Card
+// ─────────────────────────────────────────────────────────────────────────────
+class _BentoCard extends StatelessWidget {
+  const _BentoCard({
+    required this.category,
+    required this.icon,
+    required this.iconColor,
+    required this.children,
+  });
+  final String category;
+  final IconData icon;
+  final Color iconColor;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                category.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurfaceVariant,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              Icon(icon, color: iconColor, size: 18),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Info Row inside bento card
+// ─────────────────────────────────────────────────────────────────────────────
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 15, color: colors.onSurfaceVariant),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Preferences / Settings card container
+// ─────────────────────────────────────────────────────────────────────────────
+class _PreferencesCard extends StatelessWidget {
+  const _PreferencesCard({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.4)),
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings tile
+// ─────────────────────────────────────────────────────────────────────────────
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    required this.showDivider,
+    this.onTap,
+  });
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final bool showDivider;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          border: showDivider
+              ? Border(
+                  bottom: BorderSide(
+                    color: theme.dividerColor.withValues(alpha: 0.3),
+                  ),
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            ElevatedButton(
-              onPressed: () {
-                ref
-                    .read(profileProvider.notifier)
-                    .updateProfile(nameController.text, roleController.text);
-                Navigator.pop(context);
-              },
-              child: const Text("Save"),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
+            trailing,
           ],
-        );
-      },
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animated Pill Switch
+// ─────────────────────────────────────────────────────────────────────────────
+class _PillSwitch extends StatelessWidget {
+  const _PillSwitch({required this.value, required this.onChanged});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 48,
+        height: 26,
+        padding: const EdgeInsets.all(3),
+        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+        decoration: BoxDecoration(
+          color: value ? colors.primary : colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(13),
+        ),
+        child: Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: value
+                ? colors.onPrimaryContainer
+                : colors.onSurfaceVariant.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
     );
   }
 }
