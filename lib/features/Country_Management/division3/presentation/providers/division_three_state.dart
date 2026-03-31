@@ -1,61 +1,70 @@
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division3/data/models/division_three_model.dart';
 
 class DivisionThreeState {
   final List<DivisionThreeModel> items;
-  final int currentPage;
-  final int totalPages;
+  final BaseFilterModel filter;
+
   final int totalCount;
-  final int pageSize;
-  final bool isLoading;
+  final int totalPages;
+  final int currentPage;
   final bool hasMoreData;
-  final String search;
+
+  final bool isLoading;
   final String? error;
 
-  const DivisionThreeState({
+  final bool isMultiSelect;
+  final Set<int> selectedIds;
+
+  DivisionThreeState({
     required this.items,
-    required this.currentPage,
-    required this.totalPages,
+    required this.filter,
     required this.totalCount,
-    required this.pageSize,
-    required this.isLoading,
+    required this.totalPages,
+    required this.currentPage,
     required this.hasMoreData,
-    required this.search,
+    required this.isLoading,
     this.error,
+    required this.isMultiSelect,
+    required this.selectedIds,
   });
 
-  factory DivisionThreeState.initial() => const DivisionThreeState(
-    items: [],
-    currentPage: 1,
-    totalPages: 1,
-    totalCount: 0,
-    pageSize: 10,
+  factory DivisionThreeState.initial() => DivisionThreeState(
+    items: const [],
+    filter: const BaseFilterModel(),
+    isMultiSelect: false,
+    selectedIds: <int>{},
     isLoading: false,
-    hasMoreData: false,
-    search: '',
     error: null,
+    hasMoreData: true,
+    currentPage: 1,
+    totalCount: 0,
+    totalPages: 0,
   );
 
   DivisionThreeState copyWith({
     List<DivisionThreeModel>? items,
+    BaseFilterModel? filter,
+    bool? isMultiSelect,
+    Set<int>? selectedIds,
+    bool? isLoading,
+    String? error,
     int? currentPage,
     int? totalPages,
     int? totalCount,
-    int? pageSize,
-    bool? isLoading,
     bool? hasMoreData,
-    String? search,
-    String? error,
   }) {
     return DivisionThreeState(
       items: items ?? this.items,
+      filter: filter ?? this.filter,
+      isMultiSelect: isMultiSelect ?? this.isMultiSelect,
+      selectedIds: selectedIds ?? this.selectedIds,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
       currentPage: currentPage ?? this.currentPage,
       totalPages: totalPages ?? this.totalPages,
       totalCount: totalCount ?? this.totalCount,
-      pageSize: pageSize ?? this.pageSize,
-      isLoading: isLoading ?? this.isLoading,
       hasMoreData: hasMoreData ?? this.hasMoreData,
-      search: search ?? this.search,
-      error: error,
     );
   }
 }

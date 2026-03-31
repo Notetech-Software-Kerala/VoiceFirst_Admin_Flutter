@@ -1,11 +1,12 @@
 import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_model.dart';
+import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_filter.dart';
 
 class IssueMediaTypeState {
   final List<IssueMediaTypeModel> items;
-  final List<IssueMediaTypeModel> filtered;
+  final IssueMediaTypeFilter filter;
+  final String? error;
   final Set<int> selectedIds;
   final bool isMultiSelect;
-  final String search;
   final bool isLoading;
   final bool hasMoreData;
   final int currentPage;
@@ -14,10 +15,10 @@ class IssueMediaTypeState {
 
   IssueMediaTypeState({
     required this.items,
-    required this.filtered,
+    required this.filter,
     required this.selectedIds,
     required this.isMultiSelect,
-    required this.search,
+    required this.error,
     required this.isLoading,
     required this.hasMoreData,
     required this.currentPage,
@@ -28,10 +29,10 @@ class IssueMediaTypeState {
   factory IssueMediaTypeState.initial() {
     return IssueMediaTypeState(
       items: const [],
-      filtered: const [],
+      filter: const IssueMediaTypeFilter(),
+      error: null,
       selectedIds: <int>{},
       isMultiSelect: false,
-      search: '',
       isLoading: false,
       hasMoreData: true,
       currentPage: 1,
@@ -42,10 +43,11 @@ class IssueMediaTypeState {
 
   IssueMediaTypeState copyWith({
     List<IssueMediaTypeModel>? items,
-    List<IssueMediaTypeModel>? filtered,
+    IssueMediaTypeFilter? filter,
+    String? error,
+    bool clearError = false, // ✅ ADD THIS
     Set<int>? selectedIds,
     bool? isMultiSelect,
-    String? search,
     bool? isLoading,
     bool? hasMoreData,
     int? currentPage,
@@ -54,10 +56,10 @@ class IssueMediaTypeState {
   }) {
     return IssueMediaTypeState(
       items: items ?? this.items,
-      filtered: filtered ?? this.filtered,
+      filter: filter ?? this.filter,
+      error: clearError ? null : (error ?? this.error),
       selectedIds: selectedIds ?? this.selectedIds,
       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
-      search: search ?? this.search,
       isLoading: isLoading ?? this.isLoading,
       hasMoreData: hasMoreData ?? this.hasMoreData,
       currentPage: currentPage ?? this.currentPage,

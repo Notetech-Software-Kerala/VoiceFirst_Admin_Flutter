@@ -1,52 +1,51 @@
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
 
 class DivisionOneState {
-  final List<DivisionOneModel> all;
-  final List<DivisionOneModel> filtered;
-  final bool isMultiSelect;
-  final Set<int> selectedIds;
-  final String search;
-  final bool isLoading;
-  final String? error;
-  final bool hasMoreData;
-  final int currentPage;
+  final List<DivisionOneModel> items;
+  final BaseFilterModel filter;
+
   final int totalCount;
   final int totalPages;
+  final int currentPage;
+  final bool hasMoreData;
+
+  final bool isLoading;
+  final String? error;
+  final bool isMultiSelect;
+  final Set<int> selectedIds;
 
   DivisionOneState({
-    required this.all,
-    required this.filtered,
-    required this.isMultiSelect,
-    required this.selectedIds,
-    required this.search,
-    required this.isLoading,
-    this.error,
-    required this.hasMoreData,
-    required this.currentPage,
+    required this.items,
+    required this.filter,
     required this.totalCount,
     required this.totalPages,
+    required this.currentPage,
+    required this.hasMoreData,
+    required this.isLoading,
+    this.error,
+    required this.isMultiSelect,
+    required this.selectedIds,
   });
 
   factory DivisionOneState.initial() => DivisionOneState(
-    all: [],
-    filtered: [],
+    items: const [],
+    filter: const BaseFilterModel(),
     isMultiSelect: false,
     selectedIds: <int>{},
-    search: '',
     isLoading: false,
     error: null,
     hasMoreData: true,
     currentPage: 1,
     totalCount: 0,
-    totalPages: 1,
+    totalPages: 0,
   );
 
   DivisionOneState copyWith({
-    List<DivisionOneModel>? all,
-    List<DivisionOneModel>? filtered,
+    List<DivisionOneModel>? items,
+    BaseFilterModel? filter,
     bool? isMultiSelect,
     Set<int>? selectedIds,
-    String? search,
     bool? isLoading,
     String? error,
     bool? hasMoreData,
@@ -55,13 +54,12 @@ class DivisionOneState {
     int? totalPages,
   }) {
     return DivisionOneState(
-      all: all ?? this.all,
-      filtered: filtered ?? this.filtered,
+      items: items ?? this.items,
+      filter: filter ?? this.filter,
       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
       selectedIds: selectedIds ?? this.selectedIds,
-      search: search ?? this.search,
       isLoading: isLoading ?? this.isLoading,
-      error: error ?? this.error,
+      error: error,
       hasMoreData: hasMoreData ?? this.hasMoreData,
       currentPage: currentPage ?? this.currentPage,
       totalCount: totalCount ?? this.totalCount,

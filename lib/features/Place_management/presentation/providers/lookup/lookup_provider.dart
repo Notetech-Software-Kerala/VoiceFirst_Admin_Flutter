@@ -2,10 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
 import 'package:voice_first_admin/features/Place_management/data/models/post_office_lookup_filter.dart';
 import 'package:voice_first_admin/features/Place_management/data/place_service/place_lookup_service.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
 /// SERVICE
 final placeLookupServiceProvider = Provider<PlaceLookupService>((ref) {
-  return PlaceLookupService();
+  return PlaceLookupService(ref.read(dioClientProvider));
 });
 
 // ===============================

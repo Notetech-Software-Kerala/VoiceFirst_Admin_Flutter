@@ -1,44 +1,30 @@
-class BusinessActivityFilter {
-  final String? searchBy;
-  final String? searchText;
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
 
-  final String? sortBy;
-  final String? sortOrder;
-
-  final bool? active;
-  final bool? deleted;
-
+class BusinessActivityFilter extends BaseFilterModel {
   final int pageNumber;
-  final int limit;
-
-  final DateTime? createdFromDate;
-  final DateTime? createdToDate;
-  final DateTime? updatedFromDate;
-  final DateTime? updatedToDate;
-  final DateTime? deletedFromDate;
-  final DateTime? deletedToDate;
+  final int pageSize;
 
   const BusinessActivityFilter({
-    this.searchBy,
-    this.searchText,
-    this.sortBy,
-    this.sortOrder,
-    this.active,
-    this.deleted,
-    required this.pageNumber,
-    required this.limit,
-    this.createdFromDate,
-    this.createdToDate,
-    this.updatedFromDate,
-    this.updatedToDate,
-    this.deletedFromDate,
-    this.deletedToDate,
+    this.pageNumber = 1,
+    this.pageSize = 10,
+    super.searchText,
+    super.searchBy,
+    super.sortBy,
+    super.sortOrder,
+    super.active,
+    super.deleted,
+    super.createdFromDate,
+    super.createdToDate,
+    super.updatedFromDate,
+    super.updatedToDate,
+    super.deletedFromDate,
+    super.deletedToDate,
   });
 
   Map<String, String> toQueryParams() {
     final Map<String, String> params = {
       'PageNumber': pageNumber.toString(),
-      'PageSize': limit.toString(),
+      'PageSize': pageSize.toString(),
     };
 
     void add(String key, String? value) {
@@ -75,4 +61,3 @@ class BusinessActivityFilter {
     return params;
   }
 }
-

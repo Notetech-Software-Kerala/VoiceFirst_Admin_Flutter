@@ -1,42 +1,57 @@
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import '../../data/models/plan_model.dart';
 import '../../data/plan_service/plan_service.dart';
+import '../../data/models/plan_filter.dart';
 import 'plan_state.dart';
 
 class PlanNotifier extends Notifier<PlanState> {
   late final PlanService _service;
 
+
   @override
   PlanState build() {
-    _service = PlanService(baseUrl: ApiEndpoints.baseUrl);
+    _service = ref.read(planServiceProvider);
     return const PlanState();
   }
 
   //////////////////////////////////////////////////////
   /// LOAD LIST
   //////////////////////////////////////////////////////
-  Future<void> loadPlans({
-    int page = 1,
-    int pageSize = 10,
-    String? search,
-  }) async {
+  Future<void> loadPlans({PlanFilter? filter}) async {
+    if (state.isLoading) return;
+
+    final effectiveFilter = filter ?? state.filter;
+
+    // Prevent duplicate same-request calls when data already present
+    final currentSearch = state.filter.searchText ?? '';
+    final nextSearch = effectiveFilter.searchText ?? '';
+    if (effectiveFilter.pageNumber == state.filter.pageNumber &&
+        nextSearch == currentSearch &&
+        state.plans.isNotEmpty) {
+      return;
+    }
+
+    if (state.totalPages > 0 && effectiveFilter.pageNumber > state.totalPages) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final response = await _service.getPlans(
-        page: page,
-        pageSize: pageSize,
-        search: search,
+        queryParams: effectiveFilter.toQueryParams(),
       );
+
+      final safePage = min(response.currentPage, response.totalPages);
 
       state = state.copyWith(
         plans: response.items,
         isLoading: false,
-        currentPage: response.currentPage,
+        currentPage: safePage,
         totalCount: response.totalCount,
         totalPages: response.totalPages,
-        search: search ?? '',
+        filter: effectiveFilter.copyWith(pageNumber: safePage),
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -47,12 +62,9 @@ class PlanNotifier extends Notifier<PlanState> {
   /// LOAD DETAIL (SMART CACHE)
   //////////////////////////////////////////////////////
 
-
   Future<void> selectPlan(int id) async {
-    final existing = state.plans.cast<Plan?>().firstWhere(
-      (p) => p?.planId == id,
-      orElse: () => null,
-    );
+    final idx = state.plans.indexWhere((p) => p.planId == id);
+    final Plan? existing = idx == -1 ? null : state.plans[idx];
 
     /// ✅ If already detailed — use cache
     if (existing?.programPlanDetails != null) {

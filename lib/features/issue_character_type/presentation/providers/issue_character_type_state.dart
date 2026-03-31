@@ -1,68 +1,71 @@
+import 'package:voice_first_admin/core/models/base_filter_model.dart';
+import 'package:voice_first_admin/features/issue_character_type/data/models/issue_character_type_filter.dart';
 import 'package:voice_first_admin/features/issue_character_type/data/models/issue_charactertype_model.dart';
 
 class IssueCharacterTypeState {
   final List<IssueCharacterTypeModel> items;
-  final List<IssueCharacterTypeModel> filtered;
-  final Set<int> selectedIds;
-  final bool isMultiSelect;
-  final String search;
-  final bool isLoading;
-  final bool hasMoreData;
-  final int currentPage;
+  final IssueCharacterTypeFilter filter;
+
   final int totalCount;
   final int totalPages;
+  final int currentPage;
+  final bool hasMoreData;
+
+  final bool isLoading;
+  final String? error;
+
+  final bool isMultiSelect;
+  final Set<int> selectedIds;
 
   IssueCharacterTypeState({
     required this.items,
-    required this.filtered,
-    required this.selectedIds,
-    required this.isMultiSelect,
-    required this.search,
-    required this.isLoading,
-    required this.hasMoreData,
-    required this.currentPage,
+    required this.filter,
     required this.totalCount,
     required this.totalPages,
+    required this.currentPage,
+    required this.hasMoreData,
+    required this.isLoading,
+    this.error,
+    required this.isMultiSelect,
+    required this.selectedIds,
   });
 
-  factory IssueCharacterTypeState.initial() {
-    return IssueCharacterTypeState(
-      items: const [],
-      filtered: const [],
-      selectedIds: <int>{},
-      isMultiSelect: false,
-      search: '',
-      isLoading: false,
-      hasMoreData: true,
-      currentPage: 1,
-      totalCount: 0,
-      totalPages: 1,
-    );
-  }
+  factory IssueCharacterTypeState.initial() => IssueCharacterTypeState(
+    items: const [],
+    filter: const IssueCharacterTypeFilter(),
+    isMultiSelect: false,
+    selectedIds: <int>{},
+    isLoading: false,
+    error: null,
+    hasMoreData: true,
+    currentPage: 1,
+    totalCount: 0,
+    totalPages: 0,
+  );
 
   IssueCharacterTypeState copyWith({
     List<IssueCharacterTypeModel>? items,
-    List<IssueCharacterTypeModel>? filtered,
-    Set<int>? selectedIds,
+    IssueCharacterTypeFilter? filter,
     bool? isMultiSelect,
-    String? search,
+    Set<int>? selectedIds,
     bool? isLoading,
-    bool? hasMoreData,
+    String? error,
     int? currentPage,
     int? totalCount,
     int? totalPages,
+    bool? hasMoreData,
   }) {
     return IssueCharacterTypeState(
       items: items ?? this.items,
-      filtered: filtered ?? this.filtered,
-      selectedIds: selectedIds ?? this.selectedIds,
+      filter: filter ?? this.filter,
       isMultiSelect: isMultiSelect ?? this.isMultiSelect,
-      search: search ?? this.search,
+      selectedIds: selectedIds ?? this.selectedIds,
       isLoading: isLoading ?? this.isLoading,
-      hasMoreData: hasMoreData ?? this.hasMoreData,
+      error: error ?? this.error,
       currentPage: currentPage ?? this.currentPage,
       totalCount: totalCount ?? this.totalCount,
       totalPages: totalPages ?? this.totalPages,
+      hasMoreData: hasMoreData ?? this.hasMoreData,
     );
   }
 }

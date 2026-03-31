@@ -28,7 +28,7 @@ class CountryDetailPage extends ConsumerWidget {
     }
 
     CountryModel? country;
-    for (final c in state.countries) {
+    for (final c in state.items) {
       if (c.id == countryId) {
         country = c;
         break;

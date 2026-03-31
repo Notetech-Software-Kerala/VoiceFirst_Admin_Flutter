@@ -6,7 +6,7 @@ class ActionLinkItem {
 
   factory ActionLinkItem.fromJson(Map<String, dynamic> json) {
     return ActionLinkItem(
-      actionLinkId: json['actionLinkId'] as int,
+      actionLinkId: (json['actionLinkId'] as num).toInt(),
       actionName: json['actionName'] as String? ?? '',
     );
   }
@@ -26,7 +26,7 @@ class ProgramActionLinkProgram {
   factory ProgramActionLinkProgram.fromJson(Map<String, dynamic> json) {
     final list = (json['action'] as List<dynamic>? ?? <dynamic>[]);
     return ProgramActionLinkProgram(
-      programId: json['programId'] as int,
+      programId: (json['programId'] as num).toInt(),
       programName: json['programName'] as String? ?? '',
       actions: list
           .map((e) => ActionLinkItem.fromJson(e as Map<String, dynamic>))

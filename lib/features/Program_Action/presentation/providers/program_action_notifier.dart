@@ -5,40 +5,49 @@ import 'package:voice_first_admin/features/Program_Action/data/program_action_se
 import 'program_action_state.dart';
 
 class ProgramActionNotifier extends Notifier<ProgramActionState> {
-  final ProgramActionService _service = ProgramActionService();
+  late final ProgramActionService _service;
 
   @override
   ProgramActionState build() {
-    // _service = ProgramActionService();
+    _service = ref.read(programActionServiceProvider);
     return ProgramActionState.initial();
   }
 
   Future<void> loadAll({ProgramActionFilter? filter}) async {
     if (state.isLoading) return;
 
+    final effectiveFilter = (filter ?? state.filter).copyWith(
+      searchText: state.search.isEmpty ? null : state.search,
+    );
+
+    if (effectiveFilter.pageNumber == state.currentPage &&
+        (effectiveFilter.searchText ?? '') == state.search &&
+        state.actions.isNotEmpty) {
+      return;
+    }
+
+    if (state.totalPages > 0 && effectiveFilter.pageNumber > state.totalPages) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true);
 
     try {
-      final response = await _service.getAll(
-        filter ?? ProgramActionFilter(pageNumber: 1, pageSize: 10),
-      );
+      final response = await _service.getAll(effectiveFilter);
 
       state = state.copyWith(
         actions: response.items,
-        filtered: response.items, // backend already filtered
+        filtered: response.items,
         isLoading: false,
-        // hasMoreData: response.items.length >= (filter?.pageSize ?? 10),
         hasMoreData: response.pageNumber < response.totalPages,
         currentPage: response.pageNumber,
         totalCount: response.totalCount,
         totalPages: response.totalPages,
-      );
-      debugPrint(
-        'PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
+        filter: effectiveFilter.copyWith(pageNumber: response.pageNumber),
       );
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      debugPrint('💥 Failed to load program actions: $e');
+      debugPrint('[ProgramAction] loadAll error: $e');
     }
   }
 
@@ -72,7 +81,6 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // Add
   Future<String?> add(String name) async {
     debugPrint('Starting add operation for: "$name"');
 
@@ -84,8 +92,8 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
       await loadAll(
         filter: ProgramActionFilter(
           pageNumber: state.currentPage,
-          pageSize: 10,
-          search: state.search.isEmpty ? null : state.search,
+          limit: 10,
+          searchText: state.search.isEmpty ? null : state.search,
         ),
       );
 
@@ -98,7 +106,6 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // Update name
   Future<String?> update(int id, String name) async {
     try {
       await _service.updateAction(id, name: name);
@@ -107,8 +114,8 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
       await loadAll(
         filter: ProgramActionFilter(
           pageNumber: state.currentPage,
-          pageSize: 10,
-          search: state.search.isEmpty ? null : state.search,
+          limit: 10,
+          searchText: state.search.isEmpty ? null : state.search,
         ),
       );
 
@@ -120,27 +127,6 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     }
   }
 
-  // Toggle status
-  // Future<String?> toggleStatus(int id, bool active) async {
-  //   try {
-  //     await _service.updateAction(id, active: active);
-
-  //     // Reload the current page to get fresh data
-  //     await loadAll(
-  //       filter: ProgramActionFilter(
-  //         pageNumber: state.currentPage,
-  //         pageSize: 10,
-  //         search: state.search.isEmpty ? null : state.search,
-  //       ),
-  //     );
-
-  //     debugPrint('✅ Status toggled for program action ID: $id');
-  //     return null; // success
-  //   } catch (e) {
-  //     debugPrint('💥 Failed to toggle status: $e');
-  //     return 'Failed to toggle status';
-  //   }
-  // }
   Future<String?> toggleStatus(int id, bool active) async {
     // ✅ Backup for rollback
     final previousActions = state.actions;
@@ -188,8 +174,8 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
       await loadAll(
         filter: ProgramActionFilter(
           pageNumber: state.currentPage,
-          pageSize: 10,
-          search: state.search.isEmpty ? null : state.search,
+          limit: 10,
+          searchText: state.search.isEmpty ? null : state.search,
         ),
       );
 
@@ -214,8 +200,8 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
       await loadAll(
         filter: ProgramActionFilter(
           pageNumber: state.currentPage,
-          pageSize: 10,
-          search: state.search.isEmpty ? null : state.search,
+          limit: 10,
+          searchText: state.search.isEmpty ? null : state.search,
         ),
       );
 
@@ -223,7 +209,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
       return null; // success
     } catch (e) {
       debugPrint('💥 Failed to delete selected program actions: $e');
-      return 'Failed to delete program actions';
+      return 'Some items could not be deleted';
     }
   }
 

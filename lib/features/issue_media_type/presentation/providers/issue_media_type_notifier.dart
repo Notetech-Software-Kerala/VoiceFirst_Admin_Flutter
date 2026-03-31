@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_filter.dart';
 import 'package:voice_first_admin/features/issue_media_type/data/service/media_type_service.dart';
+// dio client is accessed via service providers; notifier shouldn't read dio directly
 import 'issue_media_type_state.dart';
 
 class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
@@ -9,62 +11,80 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
 
   @override
   IssueMediaTypeState build() {
-    _service = MediaTypeService();
+    _service = ref.read(issueMediaTypeServiceProvider);
     return IssueMediaTypeState.initial();
   }
 
-  static const int _defaultPageSize = 10;
-
-  Future<void> loadAll({IssueMediaTypeFilter? filter}) async {
+  Future<void> loadAll({
+    IssueMediaTypeFilter? filter,
+    int? page,
+    int? pageSize,
+  }) async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true);
+    final currentPage = page ?? state.currentPage;
+    final currentPageSize = pageSize ?? state.filter.pageSize;
+
+    final IssueMediaTypeFilter appliedFilter =
+        filter ??
+        state.filter.copyWith(
+          pageNumber: currentPage,
+          pageSize: currentPageSize,
+        );
+
+    // state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
+    state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
+
+    if (currentPage < 1) {
+      state = state.copyWith(isLoading: false);
+      return;
+    }
 
     try {
-      final effectiveFilter =
-          filter ??
-          IssueMediaTypeFilter(pageNumber: 1, pageSize: _defaultPageSize);
+      final response = await _service.getAll(appliedFilter);
 
-      final response = await _service.getAll(effectiveFilter);
+      final safePage = response.pageNumber > response.totalPages
+          ? response.totalPages
+          : response.pageNumber;
 
       state = state.copyWith(
         items: response.items,
-        filtered: response.items,
+        selectedIds: {},
+        isMultiSelect: false,
         isLoading: false,
         hasMoreData: response.pageNumber < response.totalPages,
-        currentPage: response.pageNumber,
+        currentPage: safePage,
         totalCount: response.totalCount,
         totalPages: response.totalPages,
+        error: null,
       );
 
-      debugPrint(
-        'IssueMediaType PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          'IssueMediaType PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
+        );
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false);
-      debugPrint('Failed to load issue media types: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+      if (kDebugMode) debugPrint('Failed to load issue media types: $e');
     }
   }
 
-  void search(String value) {
-    state = state.copyWith(search: value);
-    loadAll(
-      filter: IssueMediaTypeFilter(
-        pageNumber: 1,
-        pageSize: _defaultPageSize,
-        search: value.isEmpty ? null : value,
-      ),
+  Future<void> search(String value) async {
+    final newFilter = state.filter.copyWith(
+      pageNumber: 1,
+      pageSize: state.filter.pageSize,
+      searchText: value.trim().isEmpty ? null : value,
     );
+
+    await loadAll(filter: newFilter, page: 1);
   }
 
   void goToPage(int page) {
-    loadAll(
-      filter: IssueMediaTypeFilter(
-        pageNumber: page,
-        pageSize: _defaultPageSize,
-        search: state.search.isEmpty ? null : state.search,
-      ),
-    );
+    loadAll(filter: state.filter.copyWith(pageNumber: page));
   }
 
   Future<String> add(String name) async {
@@ -89,13 +109,10 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
         items: state.items
             .map((e) => e.issueMediaTypeId == id ? updated : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueMediaTypeId == id ? updated : e)
-            .toList(),
       );
       return null;
     } catch (e) {
-      debugPrint('Failed to update issue media type: $e');
+      if (kDebugMode) debugPrint('Failed to update issue media type: $e');
       return e.toString().replaceFirst('Exception: ', '');
     }
   }
@@ -103,19 +120,14 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
   Future<String?> delete(int id) async {
     try {
       final deleted = await _service.deleteMediaType(id);
-
       state = state.copyWith(
         items: state.items
             .map((e) => e.issueMediaTypeId == id ? deleted : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueMediaTypeId == id ? deleted : e)
-            .toList(),
       );
-
       return null;
     } catch (e) {
-      debugPrint('Failed to delete issue media type: $e');
+      if (kDebugMode) debugPrint('Failed to delete issue media type: $e');
       return e.toString().replaceFirst('Exception: ', '');
     }
   }
@@ -123,19 +135,14 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
   Future<String?> recover(int id) async {
     try {
       final recovered = await _service.recoverMediaType(id);
-
       state = state.copyWith(
         items: state.items
             .map((e) => e.issueMediaTypeId == id ? recovered : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueMediaTypeId == id ? recovered : e)
-            .toList(),
       );
-
       return null;
     } catch (e) {
-      debugPrint('Failed to recover issue media type: $e');
+      if (kDebugMode) debugPrint('Failed to recover issue media type: $e');
       return e.toString().replaceFirst('Exception: ', '');
     }
   }
@@ -154,7 +161,7 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
     final selected = <int>{};
 
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.issueMediaTypeId));
+      selected.addAll(state.items.map((e) => e.issueMediaTypeId));
     }
 
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
@@ -165,6 +172,5 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
   }
 
   bool get allVisibleSelected =>
-      state.filtered.isNotEmpty &&
-      state.selectedIds.length == state.filtered.length;
+      state.items.isNotEmpty && state.selectedIds.length == state.items.length;
 }

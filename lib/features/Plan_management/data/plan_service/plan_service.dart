@@ -1,6 +1,9 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
 import '../models/plan_model.dart';
 import '../models/program_action_link_lookup.dart';
@@ -41,43 +44,35 @@ class PaginatedResponse<T> {
   }
 }
 
+final planServiceProvider = Provider<PlanService>((ref) {
+  return PlanService(ref.read(dioClientProvider));
+});
+
 ////////////////////////////////////////////////////////////
 /// SERVICE
 ////////////////////////////////////////////////////////////
 
 class PlanService {
-  final String baseUrl;
-  final Map<String, String> defaultHeaders;
+  final Dio _dio;
 
-  PlanService({
-    required this.baseUrl,
-    this.defaultHeaders = const {'Content-Type': 'application/json'},
-  });
+  PlanService(this._dio);
 
   ////////////////////////////////////////////////////////////
   /// GET ALL
   ////////////////////////////////////////////////////////////
 
   Future<PaginatedResponse<Plan>> getPlans({
-    int page = 1,
-    int pageSize = 10,
-    String? search,
+    Map<String, String>? queryParams,
   }) async {
-    final uri = Uri.parse('$baseUrl/plan').replace(
-      queryParameters: {
-        'pageNumber': page.toString(),
-        'pageSize': pageSize.toString(),
-        if (search != null && search.isNotEmpty) 'searchText': search,
-      },
-    );
+    final response = await _dio.get('/plan', queryParameters: queryParams);
 
-    final response = await http.get(uri, headers: defaultHeaders);
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception('Failed to load plans: ${response.statusCode}');
     }
 
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
 
     return PaginatedResponse<Plan>.fromJson(
       jsonBody['data'],
@@ -90,15 +85,15 @@ class PlanService {
   ////////////////////////////////////////////////////////////
 
   Future<Plan> getPlanById(int id) async {
-    final uri = Uri.parse('$baseUrl/plan/$id');
+    final response = await _dio.get('/plan/$id');
 
-    final response = await http.get(uri, headers: defaultHeaders);
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception('Failed to load plan detail: ${response.statusCode}');
     }
 
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
 
     return Plan.fromJson(jsonBody['data']);
   }
@@ -111,26 +106,24 @@ class PlanService {
     required String planName,
     required List<int> actionIds,
   }) async {
-    final uri = Uri.parse('$baseUrl/plan');
-    debugPrint('[CREATE PLAN] URI: $uri');
-    debugPrint('[CREATE PLAN] HEADERS: $defaultHeaders');
+    debugPrint('[CREATE PLAN] POST /plan');
     debugPrint(
       '[CREATE PLAN] BODY: ${jsonEncode({"planName": planName, "programActionLinkIds": actionIds})}',
     );
-    final response = await http.post(
-      uri,
-      headers: defaultHeaders,
-      body: jsonEncode({
-        "planName": planName,
-        "programActionLinkIds": actionIds,
-      }),
+
+    final response = await _dio.post(
+      '/plan',
+      data: {"planName": planName, "programActionLinkIds": actionIds},
     );
+
     debugPrint('[CREATE PLAN] STATUS: ${response.statusCode}');
-    debugPrint('[CREATE PLAN] RESPONSE BODY: ${response.body}');
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    debugPrint('[CREATE PLAN] RESPONSE BODY: ${response.data}');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception('Failed to create plan: ${response.statusCode}');
     }
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
     return Plan.fromJson(jsonBody['data']);
   }
 
@@ -139,16 +132,16 @@ class PlanService {
   ////////////////////////////////////////////////////////////
 
   Future<Plan> deletePlan(int id) async {
-    final uri = Uri.parse('$baseUrl/plan/$id');
-    debugPrint('[DELETE PLAN] URI: $uri');
-    debugPrint('[DELETE PLAN] HEADERS: $defaultHeaders');
-    final response = await http.delete(uri, headers: defaultHeaders);
+    debugPrint('[DELETE PLAN] DELETE /plan/$id');
+    final response = await _dio.delete('/plan/$id');
     debugPrint('[DELETE PLAN] STATUS: ${response.statusCode}');
-    debugPrint('[DELETE PLAN] BODY: ${response.body}');
-    if (response.statusCode != 200) {
+    debugPrint('[DELETE PLAN] BODY: ${response.data}');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception('Failed to delete plan: ${response.statusCode}');
     }
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
     return Plan.fromJson(jsonBody['data']);
   }
 
@@ -157,18 +150,18 @@ class PlanService {
   ////////////////////////////////////////////////////////////
 
   Future<Plan> recoverPlan(int id) async {
-    final uri = Uri.parse('$baseUrl/plan/recover/$id');
-    debugPrint('[RECOVER PLAN] URI: $uri');
-    debugPrint('[RECOVER PLAN] HEADERS: $defaultHeaders');
-    final response = await http.patch(uri, headers: defaultHeaders);
+    debugPrint('[RECOVER PLAN] PATCH /plan/recover/$id');
+    final response = await _dio.patch('/plan/recover/$id');
     debugPrint('[RECOVER PLAN] STATUS: ${response.statusCode}');
-    debugPrint('[RECOVER PLAN] BODY: ${response.body}');
-    if (response.statusCode < 200 || response.statusCode >= 300) {
+    debugPrint('[RECOVER PLAN] BODY: ${response.data}');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       throw Exception(
-        'Failed to recover plan: ${response.statusCode} ${response.body}',
+        'Failed to recover plan: ${response.statusCode} ${response.data}',
       );
     }
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
     return Plan.fromJson(jsonBody['data']);
   }
 
@@ -176,32 +169,15 @@ class PlanService {
   /// PROGRAM ACTION LOOKUP
   ////////////////////////////////////////////////////////////
 
-  // Future<List<ProgramActionLinkProgram>> getProgramActionLinkLookup() async {
-  //   final uri = Uri.parse('$baseUrl/program/for-plan');
-  //   debugPrint('[GET PROGRAM ACTION LINK LOOKUP] URI: $uri');
-  //   debugPrint('[GET PROGRAM ACTION LINK LOOKUP] HEADERS: $defaultHeaders');
-  //   final response = await http.get(uri, headers: defaultHeaders);
-  //   debugPrint(
-  //     '[GET PROGRAM ACTION LINK LOOKUP] STATUS: ${response.statusCode}',
-  //   );
-  //   debugPrint('[GET PROGRAM ACTION LINK LOOKUP] BODY: ${response.body}');
-  //   if (response.statusCode != 200 && response.statusCode != 201) {
-  //     throw Exception(
-  //       'Failed to load program/action links: ${response.statusCode}',
-  //     );
-  //   }
-  //   final jsonBody = jsonDecode(response.body);
-  //   final list = (jsonBody['data'] as List? ?? []);
-  //   return list.map((e) => ProgramActionLinkProgram.fromJson(e)).toList();
-  // }
-
   Future<PaginatedResponse<ProgramActionLinkProgram>>
   getProgramActionLinkLookupPaginated({
     required int page,
     required int pageSize,
     String? search,
   }) async {
-    final uri = Uri.parse('$baseUrl/program/for-plan').replace(
+    debugPrint('[PROGRAM ACTION PAGINATED] GET /program/for-plan');
+    final response = await _dio.get(
+      '/program/for-plan',
       queryParameters: {
         'PageNumber': page.toString(),
         'Limit': pageSize.toString(),
@@ -209,22 +185,14 @@ class PlanService {
       },
     );
 
-    debugPrint('[PROGRAM ACTION PAGINATED] URI: $uri');
-    debugPrint('[PROGRAM ACTION PAGINATED] HEADERS: $defaultHeaders');
-    debugPrint(
-      '[PROGRAM ACTION PAGINATED] PAGE: $page, PAGE SIZE: $pageSize, SEARCH: $search',
-    );
-
-    final response = await http.get(uri, headers: defaultHeaders);
-
     debugPrint('[PROGRAM ACTION PAGINATED] STATUS: ${response.statusCode}');
-    debugPrint('[PROGRAM ACTION PAGINATED] RESPONSE BODY: ${response.body}');
+    debugPrint('[PROGRAM ACTION PAGINATED] RESPONSE BODY: ${response.data}');
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == null || response.statusCode! < 200) {
       throw Exception('Failed to load program/action links');
     }
 
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
 
     final paginated = PaginatedResponse<ProgramActionLinkProgram>.fromJson(
       jsonBody['data'],

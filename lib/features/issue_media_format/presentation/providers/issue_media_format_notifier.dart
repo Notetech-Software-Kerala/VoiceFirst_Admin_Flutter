@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_filter.dart';
 import 'package:voice_first_admin/features/issue_media_format/data/service/media_format_service.dart';
@@ -9,62 +10,98 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
 
   @override
   IssueMediaFormatState build() {
-    _service = MediaFormatService();
+    _service = ref.read(issueMediaFormatServiceProvider);
     return IssueMediaFormatState.initial();
   }
 
   static const int _defaultPageSize = 10;
-
-  Future<void> loadAll({IssueMediaFormatFilter? filter}) async {
+  Future<void> loadAll({
+    IssueMediaFormatFilter? filter,
+    int? page,
+    int? pageSize,
+  }) async {
     if (state.isLoading) return;
 
-    state = state.copyWith(isLoading: true);
+    final currentPage = page ?? state.currentPage;
+    final currentPageSize = pageSize ?? state.filter.pageSize;
+
+    final IssueMediaFormatFilter appliedFilter =
+        filter ??
+        IssueMediaFormatFilter(
+          pageNumber: currentPage,
+          pageSize: currentPageSize,
+          searchText: state.filter.searchText,
+          searchBy: state.filter.searchBy,
+          sortBy: state.filter.sortBy,
+          sortOrder: state.filter.sortOrder,
+          active: state.filter.active,
+          deleted: state.filter.deleted,
+          createdFromDate: state.filter.createdFromDate,
+          createdToDate: state.filter.createdToDate,
+          updatedFromDate: state.filter.updatedFromDate,
+          updatedToDate: state.filter.updatedToDate,
+          deletedFromDate: state.filter.deletedFromDate,
+          deletedToDate: state.filter.deletedToDate,
+        );
+
+    if (currentPage < 1) return;
+
+    state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final effectiveFilter =
-          filter ??
-          IssueMediaFormatFilter(pageNumber: 1, pageSize: _defaultPageSize);
+      final response = await _service.getAll(appliedFilter);
 
-      final response = await _service.getAll(effectiveFilter);
+      final safePage = response.pageNumber > response.totalPages
+          ? response.totalPages
+          : response.pageNumber;
 
       state = state.copyWith(
         items: response.items,
-        filtered: response.items,
+        selectedIds: {},
+        isMultiSelect: false,
         isLoading: false,
         hasMoreData: response.pageNumber < response.totalPages,
-        currentPage: response.pageNumber,
+        currentPage: safePage,
         totalCount: response.totalCount,
         totalPages: response.totalPages,
+        error: null,
       );
 
-      debugPrint(
-        'IssueMediaFormat PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          'IssueMediaFormat PAGE=${response.pageNumber}, TOTAL_PAGES=${response.totalPages}, ITEMS=${response.items.length}',
+        );
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false);
-      debugPrint('Failed to load issue media formats: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst('Exception: ', ''),
+      );
+      if (kDebugMode) {
+        debugPrint('Failed to load issue media formats: $e');
+      }
     }
   }
 
-  void search(String value) {
-    state = state.copyWith(search: value);
-    loadAll(
-      filter: IssueMediaFormatFilter(
-        pageNumber: 1,
-        pageSize: _defaultPageSize,
-        search: value.isEmpty ? null : value,
-      ),
+  Future<void> search(String value) async {
+    final newFilter = IssueMediaFormatFilter(
+      pageNumber: 1,
+      pageSize: _defaultPageSize,
+      searchText: value.isEmpty ? null : value,
+      searchBy: state.filter.searchBy,
+      sortBy: state.filter.sortBy,
+      sortOrder: state.filter.sortOrder,
+      active: state.filter.active,
+      deleted: state.filter.deleted,
+      createdFromDate: state.filter.createdFromDate,
+      createdToDate: state.filter.createdToDate,
+      updatedFromDate: state.filter.updatedFromDate,
+      updatedToDate: state.filter.updatedToDate,
+      deletedFromDate: state.filter.deletedFromDate,
+      deletedToDate: state.filter.deletedToDate,
     );
-  }
 
-  void goToPage(int page) {
-    loadAll(
-      filter: IssueMediaFormatFilter(
-        pageNumber: page,
-        pageSize: _defaultPageSize,
-        search: state.search.isEmpty ? null : state.search,
-      ),
-    );
+    await loadAll(filter: newFilter, page: 1);
   }
 
   /// Returns the API success message on success.
@@ -91,13 +128,13 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
         items: state.items
             .map((e) => e.issueMediaFormatId == id ? updated : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueMediaFormatId == id ? updated : e)
-            .toList(),
       );
+      await loadAll();
       return null;
     } catch (e) {
-      debugPrint('Failed to update issue media format: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to update issue media format: $e');
+      }
       return e.toString().replaceFirst('Exception: ', '');
     }
   }
@@ -110,14 +147,15 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
         items: state.items
             .map((e) => e.issueMediaFormatId == id ? deleted : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueMediaFormatId == id ? deleted : e)
-            .toList(),
       );
+
+      await loadAll();
 
       return null;
     } catch (e) {
-      debugPrint('Failed to delete issue media format: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to delete issue media format: $e');
+      }
       return e.toString().replaceFirst('Exception: ', '');
     }
   }
@@ -130,14 +168,15 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
         items: state.items
             .map((e) => e.issueMediaFormatId == id ? recovered : e)
             .toList(),
-        filtered: state.filtered
-            .map((e) => e.issueMediaFormatId == id ? recovered : e)
-            .toList(),
       );
+
+      await loadAll();
 
       return null;
     } catch (e) {
-      debugPrint('Failed to recover issue media format: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to recover issue media format: $e');
+      }
       return e.toString().replaceFirst('Exception: ', '');
     }
   }
@@ -156,7 +195,7 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
     final selected = <int>{};
 
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.issueMediaFormatId));
+      selected.addAll(state.items.map((e) => e.issueMediaFormatId));
     }
 
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
@@ -167,6 +206,5 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
   }
 
   bool get allVisibleSelected =>
-      state.filtered.isNotEmpty &&
-      state.selectedIds.length == state.filtered.length;
+      state.items.isNotEmpty && state.selectedIds.length == state.items.length;
 }

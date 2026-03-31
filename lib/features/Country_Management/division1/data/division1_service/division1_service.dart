@@ -1,25 +1,33 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
+import 'package:dio/dio.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_filter.dart';
 import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 
 class DivisionOneService {
+  final Dio _dio;
+
+  DivisionOneService(this._dio);
+
   Future<PaginatedResponse<DivisionOneModel>> getAll(
-    int countryId,
     DivisionOneFilter filter,
   ) async {
-    final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}/division/one',
-    ).replace(queryParameters: filter.toQueryParams(countryId));
+    final response = await _dio.get(
+      '/division/one',
+      queryParameters: filter.toQueryParams(),
+    );
 
-    final response = await http.get(uri, headers: ApiEndpoints.defaultHeaders);
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to load division one: ${response.statusCode}');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
+      final jsonBody = response.data;
+      throw Exception(
+        'Failed to load division one: ${response.statusCode} - ${jsonBody?['message'] ?? response.statusMessage}',
+      );
     }
 
-    final jsonBody = jsonDecode(response.body);
+    final jsonBody = response.data as Map<String, dynamic>;
     final data = jsonBody['data'];
 
     if (data is List) {
@@ -46,3 +54,7 @@ class DivisionOneService {
     );
   }
 }
+
+final divisionOneServiceProvider = Provider<DivisionOneService>((ref) {
+  return DivisionOneService(ref.read(dioClientProvider));
+});

@@ -10,6 +10,7 @@ import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/dialogs/add_issue_media_type_dialog.dart';
+import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_filter.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/dialogs/edit_issue_media_type_dialog.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/pages/issue_media_type_detail_page.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/providers/issue_media_type_provider.dart';
@@ -24,7 +25,6 @@ class ViewIssueMediaTypePage extends ConsumerStatefulWidget {
 
 class _ViewIssueMediaTypePageState
     extends ConsumerState<ViewIssueMediaTypePage> {
-  static const int _pageSize = 10;
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
@@ -49,9 +49,33 @@ class _ViewIssueMediaTypePageState
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => GlobalFilterBottomSheet(
-        currentFilter: const BaseFilterModel(),
-        onApply: (filter) {
+        currentFilter: ref.read(issueMediaTypeProvider).filter,
+        onApply: (base) {
           Navigator.pop(context);
+          if (base is! BaseFilterModel) return;
+
+          final applied = ref
+              .read(issueMediaTypeProvider)
+              .filter
+              .copyWith(
+                pageNumber: 1,
+                searchText: base.searchText,
+                searchBy: base.searchBy,
+                sortBy: base.sortBy,
+                sortOrder: base.sortOrder,
+                active: base.active,
+                deleted: base.deleted,
+                createdFromDate: base.createdFromDate,
+                createdToDate: base.createdToDate,
+                updatedFromDate: base.updatedFromDate,
+                updatedToDate: base.updatedToDate,
+                deletedFromDate: base.deletedFromDate,
+                deletedToDate: base.deletedToDate,
+              );
+
+          ref
+              .read(issueMediaTypeProvider.notifier)
+              .loadAll(filter: applied, page: 1);
         },
         searchOptions: const {'name': 'Media Type', 'status': 'Status'},
         sortOptions: const {
@@ -84,11 +108,12 @@ class _ViewIssueMediaTypePageState
     final state = ref.watch(issueMediaTypeProvider);
     final notifier = ref.read(issueMediaTypeProvider.notifier);
 
-    if (_searchController.text != state.search) {
-      _searchController.text = state.search;
+    if (_searchController.text != (state.filter.searchText ?? '')) {
+      _searchController.text = state.filter.searchText ?? '';
     }
 
-    final totalPagesFromCount = (state.totalCount / _pageSize).ceil();
+    final totalPagesFromCount = (state.totalCount / state.filter.pageSize)
+        .ceil();
     final safeTotalPages = totalPagesFromCount > 0 ? totalPagesFromCount : 1;
 
     return StandardPageLayout(
@@ -101,7 +126,7 @@ class _ViewIssueMediaTypePageState
         hintText: 'Search media types...',
         onSearchChanged: notifier.search,
         onFilterTap: _openFilterSheet,
-        onRefresh: () => notifier.loadAll(),
+        onRefresh: () => notifier.loadAll(page: 1),
       ),
       actions: [
         if (!state.isMultiSelect)
@@ -126,7 +151,7 @@ class _ViewIssueMediaTypePageState
               },
               child: const Icon(Icons.add, color: Colors.white),
             ),
-      bottomNavigationBar: (state.isLoading || state.filtered.isEmpty)
+      bottomNavigationBar: (state.isLoading || state.items.isEmpty)
           ? null
           : StandardPaginationControls(
               currentPage: state.currentPage,
@@ -138,7 +163,7 @@ class _ViewIssueMediaTypePageState
           const SliverFillRemaining(
             child: Center(child: CircularProgressIndicator()),
           )
-        else if (state.filtered.isEmpty)
+        else if (state.items.isEmpty)
           SliverFillRemaining(
             child: Center(
               child: Text(
@@ -152,7 +177,7 @@ class _ViewIssueMediaTypePageState
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final item = state.filtered[index];
+                final item = state.items[index];
                 final selected = state.selectedIds.contains(
                   item.issueMediaTypeId,
                 );
@@ -292,7 +317,7 @@ class _ViewIssueMediaTypePageState
                     actions: actions,
                   ),
                 );
-              }, childCount: state.filtered.length),
+              }, childCount: state.items.length),
             ),
           ),
       ],

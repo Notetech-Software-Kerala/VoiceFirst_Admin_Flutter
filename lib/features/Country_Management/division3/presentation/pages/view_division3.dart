@@ -11,6 +11,7 @@ import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart
 import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
 import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
+import 'package:voice_first_admin/features/Country_Management/division3/data/models/division3_filter.dart';
 import 'package:voice_first_admin/features/Country_Management/division3/presentation/pages/division3_detail_view.dart';
 import 'package:voice_first_admin/features/Country_Management/division3/presentation/providers/division_three_provider.dart';
 
@@ -50,12 +51,24 @@ class _DivisionThreeViewState extends ConsumerState<DivisionThreeView> {
           divisionThreeProvider(widget.divisionTwo.id).notifier,
         );
         return GlobalFilterBottomSheet(
-          currentFilter: const BaseFilterModel(),
-          onApply: (filter) {
+          currentFilter: state.filter,
+          onApply: (base) {
             Navigator.pop(context);
             try {
-              // If you have a DivisionThreeFilter, cast and apply; otherwise refresh
-              notifier.fetchPage(state.currentPage);
+              final b = base as BaseFilterModel;
+              notifier.loadAll(
+                filter: DivisionThreeFilter(
+                  divisionTwoId: widget.divisionTwo.id,
+                  pageNumber: 1,
+                  pageSize: 10,
+                  searchText: b.searchText,
+                  searchBy: b.searchBy,
+                  sortBy: b.sortBy,
+                  sortOrder: b.sortOrder,
+                  active: b.active,
+                  deleted: b.deleted,
+                ),
+              );
             } catch (_) {}
           },
           searchOptions: const {'name': 'Name', 'status': 'Status'},
@@ -79,8 +92,7 @@ class _DivisionThreeViewState extends ConsumerState<DivisionThreeView> {
 
     final theme = Theme.of(context);
     final label = widget.country.divisionThreeLabel ?? 'Division 3';
-    final totalPages = (state.totalCount / state.pageSize).ceil();
-    final safeTotalPages = totalPages > 0 ? totalPages : 1;
+    final safeTotalPages = state.totalPages > 0 ? state.totalPages : 1;
 
     return StandardPageLayout(
       title: label,
@@ -124,7 +136,7 @@ class _DivisionThreeViewState extends ConsumerState<DivisionThreeView> {
             hintText: 'Search $label...',
             onSearchChanged: notifier.search,
             onFilterTap: _openFilterSheet,
-            onRefresh: () => notifier.fetchPage(state.currentPage),
+            onRefresh: () => notifier.loadAll(page: state.currentPage),
           ),
         ],
       ),
@@ -211,7 +223,7 @@ class _DivisionThreeViewState extends ConsumerState<DivisionThreeView> {
           : StandardPaginationControls(
               currentPage: state.currentPage,
               totalPages: safeTotalPages,
-              onPageChanged: notifier.fetchPage,
+              onPageChanged: (p) => notifier.loadAll(page: p),
             ),
     );
   }

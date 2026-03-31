@@ -1,33 +1,61 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/data/division1_service/division1_service.dart';
 import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_filter.dart';
 import 'division_one_state.dart';
 
-class DivisionOneNotifier extends StateNotifier<DivisionOneState> {
-  final DivisionOneService _service;
+class DivisionOneNotifier extends Notifier<DivisionOneState> {
   final int countryId;
+  DivisionOneNotifier(this.countryId);
 
-  DivisionOneNotifier({
-    required this.countryId,
-    required DivisionOneService service,
-  }) : _service = service,
-       super(DivisionOneState.initial()) {
-    loadAll(filter: const DivisionOneFilter(pageNumber: 1, pageSize: 10));
+  late final DivisionOneService _service;
+
+  @override
+  DivisionOneState build() {
+    _service = ref.read(divisionOneServiceProvider);
+
+    // IMPORTANT: do not auto-call APIs from build(); UI should trigger loadAll
+
+    return DivisionOneState.initial();
   }
 
-  Future<void> loadAll({DivisionOneFilter? filter}) async {
+  Future<void> loadAll({
+    DivisionOneFilter? filter,
+    int? page,
+    int? pageSize,
+  }) async {
     if (state.isLoading) return;
-    state = state.copyWith(isLoading: true);
+
+    final currentPage = page ?? state.currentPage;
+    final currentPageSize = pageSize ?? 10;
+
+    final DivisionOneFilter appliedFilter =
+        filter ??
+        DivisionOneFilter(
+          countryId: countryId,
+          pageNumber: currentPage,
+          pageSize: currentPageSize,
+          searchText: state.filter.searchText,
+          searchBy: state.filter.searchBy,
+          sortBy: state.filter.sortBy,
+          sortOrder: state.filter.sortOrder,
+          active: state.filter.active,
+          deleted: state.filter.deleted,
+          createdFromDate: state.filter.createdFromDate,
+          createdToDate: state.filter.createdToDate,
+          updatedFromDate: state.filter.updatedFromDate,
+          updatedToDate: state.filter.updatedToDate,
+          deletedFromDate: state.filter.deletedFromDate,
+          deletedToDate: state.filter.deletedToDate,
+        );
+
+    // Save filter into state before API call
+    state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(
-        countryId,
-        filter ?? const DivisionOneFilter(pageNumber: 1, pageSize: 10),
-      );
+      final response = await _service.getAll(appliedFilter);
 
       state = state.copyWith(
-        all: response.items,
-        filtered: response.items,
+        items: response.items,
         isLoading: false,
         hasMoreData: response.pageNumber < response.totalPages,
         currentPage: response.pageNumber,
@@ -36,23 +64,31 @@ class DivisionOneNotifier extends StateNotifier<DivisionOneState> {
         error: null,
       );
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load divisions',
-      );
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
-  // 🔍 Search
+  // 🔍 Backend search only
   Future<void> search(String query) async {
-    state = state.copyWith(search: query);
-    await loadAll(
-      filter: DivisionOneFilter(
-        pageNumber: 1,
-        pageSize: 10,
-        searchText: query.isEmpty ? null : query,
-      ),
+    final newFilter = DivisionOneFilter(
+      countryId: countryId,
+      pageNumber: 1,
+      pageSize: 10,
+      searchText: query.isEmpty ? null : query,
+      searchBy: state.filter.searchBy,
+      sortBy: state.filter.sortBy,
+      sortOrder: state.filter.sortOrder,
+      active: state.filter.active,
+      deleted: state.filter.deleted,
+      createdFromDate: state.filter.createdFromDate,
+      createdToDate: state.filter.createdToDate,
+      updatedFromDate: state.filter.updatedFromDate,
+      updatedToDate: state.filter.updatedToDate,
+      deletedFromDate: state.filter.deletedFromDate,
+      deletedToDate: state.filter.deletedToDate,
     );
+
+    await loadAll(filter: newFilter);
   }
 
   // ☑️ Selection
@@ -70,7 +106,7 @@ class DivisionOneNotifier extends StateNotifier<DivisionOneState> {
     final selected = <int>{};
 
     if (selectAll) {
-      selected.addAll(state.filtered.map((e) => e.id));
+      selected.addAll(state.items.map((e) => e.id));
     }
 
     state = state.copyWith(isMultiSelect: true, selectedIds: selected);
@@ -81,6 +117,5 @@ class DivisionOneNotifier extends StateNotifier<DivisionOneState> {
   }
 
   bool get allVisibleSelected =>
-      state.filtered.isNotEmpty &&
-      state.selectedIds.length == state.filtered.length;
+      state.items.isNotEmpty && state.selectedIds.length == state.items.length;
 }

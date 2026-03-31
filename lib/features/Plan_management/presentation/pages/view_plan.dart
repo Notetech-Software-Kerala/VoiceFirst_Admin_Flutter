@@ -13,6 +13,7 @@ import 'package:voice_first_admin/features/Plan_management/data/models/plan_mode
 import 'package:voice_first_admin/features/Plan_management/presentation/pages/add_plan.dart';
 import 'package:voice_first_admin/features/Plan_management/presentation/pages/plan_detail_page.dart';
 import 'package:voice_first_admin/features/Plan_management/presentation/providers/plan_provider.dart';
+import 'package:voice_first_admin/features/Plan_management/data/models/plan_filter.dart';
 
 class ViewPlanPage extends ConsumerStatefulWidget {
   const ViewPlanPage({super.key});
@@ -31,7 +32,9 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
     super.initState();
     _searchController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(planProvider.notifier).loadPlans(page: 1, pageSize: _pageSize);
+      ref
+          .read(planProvider.notifier)
+          .loadPlans(filter: PlanFilter(pageNumber: 1, limit: _pageSize));
     });
   }
 
@@ -42,11 +45,9 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
   }
 
   void _goToPage(int page) {
-    final currentSearch = ref.read(planProvider).search;
-
-    ref
-        .read(planProvider.notifier)
-        .loadPlans(page: page, pageSize: _pageSize, search: currentSearch);
+    final currentFilter = ref.read(planProvider).filter;
+    final updated = currentFilter.copyWith(pageNumber: page);
+    ref.read(planProvider.notifier).loadPlans(filter: updated);
   }
 
   void _openFilterSheet() {
@@ -81,8 +82,9 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
     final safeTotalPages = totalPages > 0 ? totalPages : 1;
 
     // Keep search controller in sync (if provider persists search)
-    if (_searchController.text != (state.search)) {
-      _searchController.text = state.search;
+    final currentSearchText = state.filter.searchText ?? '';
+    if (_searchController.text != currentSearchText) {
+      _searchController.text = currentSearchText;
     }
 
     return StandardPageLayout(
@@ -91,21 +93,17 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
       bottom: AdvancedSearchHeader(
         searchController: _searchController,
         hintText: 'Search plans...',
-        onSearchChanged: (q) =>
-            notifier.loadPlans(page: 1, pageSize: _pageSize, search: q),
-        onFilterTap: _openFilterSheet,
-        onRefresh: () => notifier.loadPlans(
-          page: state.currentPage,
-          pageSize: _pageSize,
-          search: state.search,
+        onSearchChanged: (q) => notifier.loadPlans(
+          filter: ref
+              .read(planProvider)
+              .filter
+              .copyWith(pageNumber: 1, searchText: q),
         ),
+        onFilterTap: _openFilterSheet,
+        onRefresh: () => notifier.loadPlans(filter: state.filter),
       ),
       onRefresh: () async {
-        await notifier.loadPlans(
-          page: state.currentPage,
-          pageSize: _pageSize,
-          search: state.search,
-        );
+        await notifier.loadPlans(filter: state.filter);
       },
       floatingActionButton: FloatingActionButton(
         heroTag: 'plan_fab',
@@ -116,11 +114,7 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
             context,
             MaterialPageRoute(builder: (_) => const AddPlanPage()),
           ).then((_) {
-            notifier.loadPlans(
-              page: state.currentPage,
-              pageSize: _pageSize,
-              search: state.search,
-            );
+            notifier.loadPlans(filter: state.filter);
           });
         },
         child: const Icon(Icons.add),
@@ -240,11 +234,7 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
                         builder: (_) => PlanDetailPage(plan: plan),
                       ),
                     ).then((_) {
-                      notifier.loadPlans(
-                        page: state.currentPage,
-                        pageSize: _pageSize,
-                        search: state.search,
-                      );
+                      notifier.loadPlans(filter: state.filter);
                     });
                   },
                 );

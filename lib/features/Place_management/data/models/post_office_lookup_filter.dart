@@ -17,12 +17,8 @@ class PostOfficeLookupFilter extends Equatable {
 
   /// Only call lookup when all required IDs exist
   bool get isReady =>
-    countryId != null &&
-    divOneId != null &&
-    divTwoId != null &&
-    divThreeId != null;
+      [countryId, divOneId, divTwoId, divThreeId].every((e) => e != null);
 
-  
   /// Optional helper (VERY useful in UI resets)
   const PostOfficeLookupFilter.empty()
     : countryId = null,

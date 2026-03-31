@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Program_management/models/create_program_request.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/create_program_request.dart';
 
 void main() {
   group('CreateProgramRequest', () {
