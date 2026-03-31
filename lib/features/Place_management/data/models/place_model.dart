@@ -41,11 +41,11 @@ class PlaceModel {
       // postOffices: (json['postOffices'] as List<dynamic>? ?? [])
       //     .map((e) => PlacePostOffice.fromJson(e as Map<String, dynamic>))
       //     .toList(),
-      postOffices: json['postOffices'] == null
-          ? const []
-          : (json['postOffices'] as List)
-                .map((e) => PlacePostOffice.fromJson(e))
-                .toList(),
+      postOffices:
+          (json['postOffices'] as List?)
+              ?.map((e) => PlacePostOffice.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 
@@ -76,7 +76,6 @@ class PlaceModel {
       postOffices: postOffices ?? this.postOffices,
     );
   }
-
 }
 
 class PlacePostOffice {
@@ -109,16 +108,18 @@ class PlacePostOffice {
       // postOfficeId: json['postOfficeId'] as int,
       postOfficeId: (json['postOfficeId'] as num).toInt(),
       postOfficeName: json['postOfficeName'] as String? ?? '',
-      countryName: json['countryName'] as String? ?? 'Unknown',
+      countryName: _clean(json['countryName']),
       divisionOneLabel: json['divisionOneLabel'] as String?,
       divisionTwoLabel: json['divisionTwoLabel'] as String?,
       divisionThreeLabel: json['divisionThreeLabel'] as String?,
       divisionOneName: json['divisionOneName'] as String?,
       divisionTwoName: json['divisionTwoName'] as String?,
       divisionThreeName: json['divisionThreeName'] as String?,
-      zipCodes: (json['zipCodes'] as List<dynamic>? ?? [])
-          .map((e) => PlaceZipCodeLink.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      zipCodes:
+          (json['zipCodes'] as List?)
+              ?.map((e) => PlaceZipCodeLink.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
   }
 }

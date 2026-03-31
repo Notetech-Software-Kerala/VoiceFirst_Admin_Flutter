@@ -178,7 +178,7 @@ class _CountryViewState extends ConsumerState<CountryView> {
               ],
             ),
           )
-        else if (state.filtered.isEmpty)
+        else if (state.items.isEmpty)
           SliverFillRemaining(
             child: Center(
               child: Column(
@@ -208,7 +208,7 @@ class _CountryViewState extends ConsumerState<CountryView> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final c = state.filtered[index];
+                final c = state.items[index];
 
                 final d1 = (c.divisionOneLabel ?? '').trim();
                 final d2 = (c.divisionTwoLabel ?? '').trim();
@@ -255,11 +255,11 @@ class _CountryViewState extends ConsumerState<CountryView> {
                     );
                   },
                 );
-              }, childCount: state.filtered.length),
+              }, childCount: state.items.length),
             ),
           ),
       ],
-      bottomNavigationBar: state.filtered.isEmpty
+      bottomNavigationBar: state.items.isEmpty
           ? null
           : StandardPaginationControls(
               currentPage: state.currentPage,

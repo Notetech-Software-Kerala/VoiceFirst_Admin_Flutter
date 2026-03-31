@@ -67,11 +67,7 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
           divisionTwoProvider(widget.divisionOne.id).notifier,
         );
         return GlobalFilterBottomSheet(
-          currentFilter: BaseFilterModel(
-            searchText: _searchController.text.isEmpty
-                ? null
-                : _searchController.text,
-          ),
+          currentFilter: state.filter,
           onApply: (base) {
             Navigator.pop(context);
             try {
@@ -79,9 +75,20 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
               notifier.loadAll(
                 filter: DivisionTwoFilter(
                   divisionOneId: widget.divisionOne.id,
-                  pageNumber: state.currentPage,
+                  pageNumber: 1,
                   pageSize: _pageSize,
                   searchText: b.searchText,
+                  searchBy: b.searchBy,
+                  sortBy: b.sortBy,
+                  sortOrder: b.sortOrder,
+                  active: b.active,
+                  deleted: b.deleted,
+                  createdFromDate: b.createdFromDate,
+                  createdToDate: b.createdToDate,
+                  updatedFromDate: b.updatedFromDate,
+                  updatedToDate: b.updatedToDate,
+                  deletedFromDate: b.deletedFromDate,
+                  deletedToDate: b.deletedToDate,
                 ),
               );
             } catch (_) {}
@@ -107,8 +114,7 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
 
     final theme = Theme.of(context);
     final label = widget.country.divisionTwoLabel ?? 'Division 2';
-    final totalPages = (state.totalCount / _pageSize).ceil();
-    final safeTotalPages = totalPages > 0 ? totalPages : 1;
+    final safeTotalPages = state.totalPages > 0 ? state.totalPages : 1;
 
     return StandardPageLayout(
       title: state.isMultiSelect
@@ -176,7 +182,7 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
           )
         else if (state.error != null)
           SliverFillRemaining(child: Center(child: Text(state.error!)))
-        else if (state.filtered.isEmpty)
+        else if (state.items.isEmpty)
           SliverFillRemaining(
             child: Center(
               child: Column(
@@ -203,7 +209,7 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final DivisionTwoModel d = state.filtered[index];
+                final DivisionTwoModel d = state.items[index];
                 final bool selected = state.selectedIds.contains(d.id);
 
                 final leadingWidget = state.isMultiSelect
@@ -260,11 +266,11 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
                     ],
                   ),
                 );
-              }, childCount: state.filtered.length),
+              }, childCount: state.items.length),
             ),
           ),
       ],
-      bottomNavigationBar: state.filtered.isEmpty
+      bottomNavigationBar: state.items.isEmpty
           ? null
           : StandardPaginationControls(
               currentPage: state.currentPage,

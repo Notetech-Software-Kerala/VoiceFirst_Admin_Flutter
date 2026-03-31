@@ -34,9 +34,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
     Future.microtask(() {
       ref
           .read(programActionProvider.notifier)
-          .loadAll(
-            filter: const ProgramActionFilter(pageNumber: 1, pageSize: 10),
-          );
+          .loadAll(filter: const ProgramActionFilter(pageNumber: 1, limit: 10));
     });
   }
 
@@ -51,7 +49,7 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
     ref
         .read(programActionProvider.notifier)
         .loadAll(
-          filter: ProgramActionFilter(pageNumber: page, pageSize: _pageSize),
+          filter: ProgramActionFilter(pageNumber: page, limit: _pageSize),
         );
 
     if (_scrollController.hasClients) {
@@ -110,18 +108,18 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
         onSearchChanged: (value) {
           notifier.loadAll(
             filter: ProgramActionFilter(
-              search: value,
+              searchText: value,
               pageNumber: 1,
-              pageSize: _pageSize,
+              limit: _pageSize,
             ),
           );
         },
         onFilterTap: _openFilterSheet,
         onRefresh: () => notifier.loadAll(
           filter: ProgramActionFilter(
-            search: state.search.isEmpty ? null : state.search,
+            searchText: state.search.isEmpty ? null : state.search,
             pageNumber: state.currentPage,
-            pageSize: _pageSize,
+            limit: _pageSize,
           ),
         ),
       ),
@@ -164,8 +162,8 @@ class _ProgramActionViewState extends ConsumerState<ProgramActionView> {
         await notifier.loadAll(
           filter: ProgramActionFilter(
             pageNumber: state.currentPage,
-            pageSize: _pageSize,
-            search: state.search.isEmpty ? null : state.search,
+            limit: _pageSize,
+            searchText: state.search.isEmpty ? null : state.search,
           ),
         );
       },

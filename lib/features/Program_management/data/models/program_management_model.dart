@@ -76,7 +76,8 @@ class ProgramModel {
       actions.where((a) => a.active).map((a) => a.actionId).toList();
 
   factory ProgramModel.fromJson(Map<String, dynamic> json) {
-    final actionList = (json['action'] as List<dynamic>? ?? [])
+    final rawActions = (json['actions'] ?? json['action'] ?? []) as List;
+    final actionList = rawActions
         .map((e) => ProgramActionSummary.fromJson(e as Map<String, dynamic>))
         .toList();
 

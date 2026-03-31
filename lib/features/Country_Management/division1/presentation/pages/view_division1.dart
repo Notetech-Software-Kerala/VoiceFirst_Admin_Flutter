@@ -36,13 +36,13 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
 
   void _goToPage(int page) {
     final notifier = ref.read(divisionOneProvider(widget.country.id).notifier);
+    final state = ref.read(divisionOneProvider(widget.country.id));
     notifier.loadAll(
       filter: DivisionOneFilter(
+        countryId: widget.country.id,
         pageNumber: page,
         pageSize: _pageSize,
-        searchText: _searchController.text.isEmpty
-            ? null
-            : _searchController.text,
+        searchText: state.filter.searchText,
       ),
     );
   }
@@ -58,20 +58,28 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
           divisionOneProvider(widget.country.id).notifier,
         );
         return GlobalFilterBottomSheet(
-          currentFilter: BaseFilterModel(
-            searchText: _searchController.text.isEmpty
-                ? null
-                : _searchController.text,
-          ),
+          currentFilter: state.filter,
           onApply: (base) {
             Navigator.pop(context);
             try {
               final b = base as BaseFilterModel;
               notifier.loadAll(
                 filter: DivisionOneFilter(
-                  pageNumber: state.currentPage,
+                  countryId: widget.country.id,
+                  pageNumber: 1,
                   pageSize: _pageSize,
                   searchText: b.searchText,
+                  searchBy: b.searchBy,
+                  sortBy: b.sortBy,
+                  sortOrder: b.sortOrder,
+                  active: b.active,
+                  deleted: b.deleted,
+                  createdFromDate: b.createdFromDate,
+                  createdToDate: b.createdToDate,
+                  updatedFromDate: b.updatedFromDate,
+                  updatedToDate: b.updatedToDate,
+                  deletedFromDate: b.deletedFromDate,
+                  deletedToDate: b.deletedToDate,
                 ),
               );
             } catch (_) {}
@@ -163,7 +171,7 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
           )
         else if (state.error != null)
           SliverFillRemaining(child: Center(child: Text(state.error!)))
-        else if (state.filtered.isEmpty)
+        else if (state.items.isEmpty)
           SliverFillRemaining(
             child: Center(
               child: Column(
@@ -190,7 +198,7 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
-                final DivisionOneModel d = state.filtered[index];
+                final DivisionOneModel d = state.items[index];
                 final bool selected = state.selectedIds.contains(d.id);
 
                 final leadingWidget = state.isMultiSelect
@@ -244,11 +252,11 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
                     ],
                   ),
                 );
-              }, childCount: state.filtered.length),
+              }, childCount: state.items.length),
             ),
           ),
       ],
-      bottomNavigationBar: state.filtered.isEmpty
+      bottomNavigationBar: state.items.isEmpty
           ? null
           : StandardPaginationControls(
               currentPage: state.currentPage,

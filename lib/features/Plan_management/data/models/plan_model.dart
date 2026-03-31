@@ -39,7 +39,7 @@ class Plan {
     }
 
     return Plan(
-      planId: json['planId'],
+      planId: (json['planId'] as num).toInt(),
       planName: json['planName'] ?? '',
       active: json['active'] ?? false,
       deleted: json['deleted'] ?? false,
@@ -50,7 +50,7 @@ class Plan {
       deletedUser: clean(json['deletedUser']),
       deletedDate: parse(json['deletedDate']),
       programPlanDetails: (json['programPlanDetails'] as List?)
-          ?.map((e) => ProgramPlanDetail.fromJson(e))
+          ?.map((e) => ProgramPlanDetail.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }
@@ -127,7 +127,7 @@ class ProgramActionDetail {
     }
 
     return ProgramActionDetail(
-      actionLinkId: json['actionLinkId'] as int,
+      actionLinkId: (json['actionLinkId'] as num).toInt(),
       actionName: json['actionName'] as String? ?? '',
       active: json['active'] as bool? ?? false,
       deleted: json['deleted'] as bool?,
@@ -155,7 +155,7 @@ class ProgramPlanDetail {
   factory ProgramPlanDetail.fromJson(Map<String, dynamic> json) {
     final actionsJson = (json['actions'] as List<dynamic>? ?? []);
     return ProgramPlanDetail(
-      programId: json['programId'] as int,
+      programId: (json['programId'] as num).toInt(),
       programName: json['programName'] as String? ?? '',
       actions: actionsJson
           .map((e) => ProgramActionDetail.fromJson(e as Map<String, dynamic>))

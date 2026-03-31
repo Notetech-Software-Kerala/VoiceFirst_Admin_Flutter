@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
 import 'package:voice_first_admin/features/Plan_management/presentation/providers/plan_provider.dart';
-
 import '../../data/models/plan_model.dart';
 import '../../data/plan_service/plan_service.dart';
 
@@ -50,9 +48,10 @@ class AddPlanNotifier extends Notifier<AddPlanState> {
 
   @override
   AddPlanState build() {
-    _service = PlanService(baseUrl: ApiEndpoints.baseUrl);
+    _service = ref.read(planServiceProvider);
     return const AddPlanState();
   }
+
 
   ////////////////////////////////////////////////////////////
   /// NAME
@@ -86,9 +85,11 @@ class AddPlanNotifier extends Notifier<AddPlanState> {
   Future<Plan?> submit() async {
     /// Prevent double submission
     if (state.isSubmitting) return null;
+    // Trim once
+    final name = state.planName.trim();
 
-    /// Validation
-    if (state.planName.trim().isEmpty) {
+    // Validation
+    if (name.isEmpty) {
       state = state.copyWith(error: 'Plan name is required');
       return null;
     }
@@ -102,11 +103,11 @@ class AddPlanNotifier extends Notifier<AddPlanState> {
 
     try {
       final created = await _service.createPlan(
-        planName: state.planName.trim(),
+        planName: name,
         actionIds: state.actionIds,
       );
 
-      /// 🔥 AUTO UPDATE MAIN CACHE
+      // AUTO UPDATE MAIN CACHE
       ref.read(planProvider.notifier).insert(created);
 
       state = state.copyWith(isSubmitting: false, created: created);

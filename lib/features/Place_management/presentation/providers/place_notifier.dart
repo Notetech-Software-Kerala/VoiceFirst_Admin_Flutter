@@ -1,17 +1,17 @@
+import 'dart:math' show min;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
-
 import '../../data/models/place_model.dart';
 import '../../data/models/place_requests.dart';
 import '../../data/place_service/place_service.dart';
 import 'place_state.dart';
+
 
 class PlaceNotifier extends Notifier<PlaceState> {
   late final PlaceService _service;
 
   @override
   PlaceState build() {
-    _service = PlaceService(baseUrl: ApiEndpoints.baseUrl);
+    _service = ref.read(placeServiceProvider);
     return const PlaceState();
   }
 
@@ -20,22 +20,37 @@ class PlaceNotifier extends Notifier<PlaceState> {
     int pageSize = 10,
     String? search,
   }) async {
+    final effectiveSearch = search ?? state.search;
+
+    // Combined guard: avoid loading when already loading or requesting pages beyond known totalPages
+    if (state.isLoading || (state.totalPages > 0 && page > state.totalPages))
+      return;
+
+    // Prevent duplicate calls when page/search unchanged (allow first load)
+    if (page == state.currentPage &&
+        effectiveSearch == state.search &&
+        state.places.isNotEmpty) {
+      return;
+    }
+
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final response = await _service.getPlaces(
         page: page,
         pageSize: pageSize,
-        search: search,
+        search: effectiveSearch, // ✅ FIXED
       );
+
+      final safePage = min(response.currentPage, response.totalPages);
 
       state = state.copyWith(
         places: response.items,
         isLoading: false,
-        currentPage: response.currentPage,
+        currentPage: safePage,
         totalPages: response.totalPages,
         totalCount: response.totalCount,
-        search: search ?? '',
+        search: effectiveSearch,
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -43,12 +58,15 @@ class PlaceNotifier extends Notifier<PlaceState> {
   }
 
   Future<void> selectPlace(int id) async {
-    final cached = state.places.cast<PlaceModel?>().firstWhere(
-      (p) => p?.placeId == id,
-      orElse: () => null,
-    );
+    PlaceModel? cached;
+    for (final p in state.places) {
+      if (p.placeId == id) {
+        cached = p;
+        break;
+      }
+    }
 
-    if (cached?.postOffices.isNotEmpty == true) {
+    if (cached != null && cached.postOffices.isNotEmpty) {
       state = state.copyWith(selectedPlace: cached);
       return;
     }
@@ -94,8 +112,6 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
   }
 
-  
-
   Future<bool> deletePlace(int id) async {
     // ⭐ OPTIMISTIC UI UPDATE (instant delete feel)
     final index = state.places.indexWhere((p) => p.placeId == id);
@@ -140,7 +156,6 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
   }
 
-  
   void _sync(PlaceModel updated) {
     final newPlaces = state.places
         .map((p) => p.placeId == updated.placeId ? updated : p)

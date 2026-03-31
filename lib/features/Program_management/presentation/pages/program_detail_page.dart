@@ -4,7 +4,7 @@ import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
 import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_lookup_provider.dart';
@@ -621,12 +621,14 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
 
                               if (error != null) {
                                 CustomSnackbar.show(
+                                  // ignore: use_build_context_synchronously
                                   context,
                                   message: error,
                                   type: SnackBarType.error,
                                 );
                               } else {
                                 CustomSnackbar.show(
+                                  // ignore: use_build_context_synchronously
                                   context,
                                   message: 'Program recovered',
                                   type: SnackBarType.success,
@@ -722,6 +724,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                 if (!mounted) return;
 
                                 CustomSnackbar.show(
+                                  // ignore: use_build_context_synchronously
                                   context,
                                   message: 'Program deleted successfully',
                                   type: SnackBarType.success,
@@ -730,6 +733,7 @@ class _ProgramDetailPageState extends ConsumerState<ProgramDetailPage> {
                                 if (!mounted) return;
 
                                 CustomSnackbar.show(
+                                  // ignore: use_build_context_synchronously
                                   context,
                                   message: 'Failed to delete program',
                                   type: SnackBarType.error,
@@ -975,7 +979,6 @@ class _AuditSection extends StatelessWidget {
     );
   }
 }
-
 
 class _HistoryExpansionTile extends StatelessWidget {
   final IconData icon;

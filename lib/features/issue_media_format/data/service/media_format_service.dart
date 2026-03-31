@@ -1,42 +1,39 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:voice_first_admin/core/config/api_endpoints.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
 import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_model.dart';
 import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_filter.dart';
 
 class MediaFormatService {
+  final Dio _dio;
+  MediaFormatService(this._dio);
+
   static const String _path = '/issue-media-format';
 
   Future<(IssueMediaFormatModel, String)> createMediaFormat(String name) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path');
-
-    debugPrint('API REQUEST: POST $url');
+    debugPrint('API REQUEST: POST $_path');
     debugPrint('Request Body: {"issueMediaFormat":"$name"}');
 
-    final response = await http.post(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode({'issueMediaFormat': name}),
-    );
+    final response = await _dio.post(_path, data: {'issueMediaFormat': name});
 
-    debugPrint(
-      'API RESPONSE: POST $url -> ${response.statusCode} ${response.body}',
-    );
+    debugPrint('API RESPONSE: POST $_path -> ${response.statusCode}');
 
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (createMediaFormat): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (createMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
       final errorMessage =
           jsonBody['message']?.toString() ??
           'Failed to create issue media format';
       throw Exception(errorMessage);
     }
+
     final message =
         jsonBody['message']?.toString() ??
         'Issue media format created successfully';
@@ -47,20 +44,21 @@ class MediaFormatService {
   Future<PaginatedResponse<IssueMediaFormatModel>> getAll(
     IssueMediaFormatFilter filter,
   ) async {
-    final uri = Uri.parse(
-      '${ApiEndpoints.baseUrl}$_path',
-    ).replace(queryParameters: filter.toQueryParams());
+    debugPrint('API REQUEST: GET $_path');
 
-    debugPrint('API REQUEST: GET $uri');
+    final response = await _dio.get(
+      _path,
+      queryParameters: filter.toQueryParams(),
+    );
 
-    final response = await http.get(uri, headers: ApiEndpoints.defaultHeaders);
+    debugPrint('API RESPONSE: GET $_path -> ${response.statusCode}');
 
-    debugPrint('API RESPONSE: GET $uri -> ${response.statusCode}');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint('API ERROR BODY (GET issue media formats): ${response.body}');
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
+      debugPrint('API ERROR BODY (GET issue media formats): $jsonBody');
       final message =
           jsonBody['message']?.toString() ??
           'Failed to load issue media formats';
@@ -84,20 +82,18 @@ class MediaFormatService {
   }
 
   Future<IssueMediaFormatModel> getById(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: GET $_path/$id');
 
-    debugPrint('API REQUEST: GET $url');
+    final response = await _dio.get('$_path/$id');
 
-    final response = await http.get(url, headers: ApiEndpoints.defaultHeaders);
+    debugPrint('API RESPONSE: GET $_path/$id -> ${response.statusCode}');
 
-    debugPrint('API RESPONSE: GET $url -> ${response.statusCode}');
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      debugPrint(
-        'API ERROR BODY (GET issue media format by id): ${response.body}',
-      );
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
+      debugPrint('API ERROR BODY (GET issue media format by id): $jsonBody');
       final message =
           jsonBody['message']?.toString() ??
           'Failed to load issue media format';
@@ -116,73 +112,55 @@ class MediaFormatService {
     String? issueMediaFormat,
     bool? active,
   }) async {
-    if (issueMediaFormat == null && active == null) {
+    if (issueMediaFormat == null && active == null)
       throw Exception('Nothing to update');
-    }
 
     final Map<String, dynamic> body = {};
+    if (issueMediaFormat != null) body['issueMediaFormat'] = issueMediaFormat;
+    if (active != null) body['active'] = active;
 
-    if (issueMediaFormat != null) {
-      body['issueMediaFormat'] = issueMediaFormat;
-    }
-    if (active != null) {
-      body['active'] = active;
-    }
+    debugPrint('API REQUEST: PATCH $_path/$id');
+    debugPrint('Request Body: $body');
 
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    final response = await _dio.patch('$_path/$id', data: body);
 
-    debugPrint('API REQUEST: PATCH $url');
-    debugPrint('Request Body: ${jsonEncode(body)}');
+    debugPrint('API RESPONSE: PATCH $_path/$id -> ${response.statusCode}');
 
-    final response = await http.patch(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-      body: jsonEncode(body),
-    );
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    debugPrint(
-      'API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}',
-    );
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
-
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (updateMediaFormat): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (updateMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
       final message =
           jsonBody['message']?.toString() ??
           'Failed to update issue media format';
       throw Exception(message);
     }
+
     final data = jsonBody['data'] as Map<String, dynamic>;
     return IssueMediaFormatModel.fromJson(data);
   }
 
   Future<IssueMediaFormatModel> deleteMediaFormat(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/$id');
+    debugPrint('API REQUEST: DELETE $_path/$id');
 
-    debugPrint('API REQUEST: DELETE $url');
+    final response = await _dio.delete('$_path/$id');
 
-    final response = await http.delete(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-    );
+    debugPrint('API RESPONSE: DELETE $_path/$id -> ${response.statusCode}');
 
-    debugPrint(
-      'API RESPONSE: DELETE $url -> ${response.statusCode} ${response.body}',
-    );
-
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final jsonBody = response.data as Map<String, dynamic>;
     final message =
         jsonBody['message']?.toString() ??
-        (response.statusCode == 200 || response.statusCode == 201
-            ? 'Issue media format deleted successfully'
-            : 'Failed to delete issue media format');
+        'Failed to delete issue media format';
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (deleteMediaFormat): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (deleteMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
       throw Exception(message);
     }
@@ -191,27 +169,22 @@ class MediaFormatService {
     return IssueMediaFormatModel.fromJson(data);
   }
 
-  // Future<IssueMediaFormatModel> recoverMediaFormat(int id) async {}
-
   Future<IssueMediaFormatModel> recoverMediaFormat(int id) async {
-    final url = Uri.parse('${ApiEndpoints.baseUrl}$_path/recover/$id');
+    debugPrint('API REQUEST: PATCH $_path/recover/$id');
 
-    debugPrint('API REQUEST: PATCH $url');
-
-    final response = await http.patch(
-      url,
-      headers: ApiEndpoints.defaultHeaders,
-    );
+    final response = await _dio.patch('$_path/recover/$id');
 
     debugPrint(
-      'API RESPONSE: PATCH $url -> ${response.statusCode} ${response.body}',
+      'API RESPONSE: PATCH $_path/recover/$id -> ${response.statusCode}',
     );
 
-    final jsonBody = jsonDecode(response.body) as Map<String, dynamic>;
+    final jsonBody = response.data as Map<String, dynamic>;
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
+    if (response.statusCode == null ||
+        response.statusCode! < 200 ||
+        response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (recoverMediaFormat): status=${response.statusCode}, body=${response.body}',
+        'API ERROR (recoverMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
       final message =
           jsonBody['message']?.toString() ??
@@ -222,3 +195,7 @@ class MediaFormatService {
     return IssueMediaFormatModel.fromJson(data);
   }
 }
+
+final issueMediaFormatServiceProvider = Provider<MediaFormatService>((ref) {
+  return MediaFormatService(ref.read(dioClientProvider));
+});

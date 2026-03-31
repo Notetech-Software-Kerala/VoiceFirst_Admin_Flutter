@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Program_management/models/program_management_model.dart';
-import 'package:voice_first_admin/features/Program_management/models/update_program_request.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/update_program_request.dart';
 
 void main() {
   group('UpdateProgramRequest.toJson', () {

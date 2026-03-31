@@ -4,6 +4,7 @@ import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/Business_activity/data/models/update_activity_request.dart';
 import '../../data/business_activity_service/business_activity_service.dart';
+import 'business_activity_provider.dart';
 import 'business_activity_state.dart';
 
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
@@ -11,7 +12,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
   @override
   BusinessActivityState build() {
-    _service = BusinessActivityService();
+    _service = ref.read(businessActivityServiceProvider);
     return BusinessActivityState.initial();
   }
 
@@ -22,14 +23,14 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
     int pageSize,
   ) {
     return BusinessActivityFilter(
-      searchBy: filter.searchBy,
+      pageNumber: pageNumber,
+      pageSize: pageSize,
       searchText: filter.searchText,
+      searchBy: filter.searchBy,
       sortBy: filter.sortBy,
       sortOrder: filter.sortOrder,
       active: filter.active,
       deleted: filter.deleted,
-      pageNumber: pageNumber,
-      limit: pageSize,
       createdFromDate: filter.createdFromDate,
       createdToDate: filter.createdToDate,
       updatedFromDate: filter.updatedFromDate,
@@ -41,43 +42,59 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
   // ───────────────── LOAD ─────────────────
 
-  Future<void> load({BaseFilterModel? filter, int? page}) async {
+  Future<void> loadAll({
+    BaseFilterModel? filter,
+    int? page,
+    int? pageSize,
+  }) async {
     if (state.isLoading) return;
 
-    final currentFilter = filter ?? state.filter;
+    final appliedFilter = filter ?? state.filter;
     final currentPage = page ?? state.currentPage;
+    final currentPageSize = pageSize ?? 10;
 
+    // Update central filter in state before calling API
     state = state.copyWith(
       isLoading: true,
-      filter: currentFilter,
+      filter: appliedFilter,
       currentPage: currentPage,
     );
 
     try {
-      final apiFilter = _mapToApiFilter(currentFilter, currentPage, 10);
+      final apiFilter = _mapToApiFilter(
+        appliedFilter,
+        currentPage,
+        currentPageSize,
+      );
 
       debugPrint(
-        '[Notifier] load: apiFilter=${apiFilter.toQueryParams()} page=$currentPage',
+        '[Notifier] loadAll: apiFilter=${apiFilter.toQueryParams()} page=$currentPage',
       );
 
       final response = await _service.getAllActivities(apiFilter);
 
       debugPrint(
-        '[Notifier] load: received ${response.items.length} items, totalCount=${response.totalCount}',
+        '[Notifier] loadAll: received ${response.items.length} items, totalCount=${response.totalCount}',
       );
 
-      state = state.copyWith(
-        items: response.items,
-        totalCount: response.totalCount,
-        currentPage: response.currentPage,
-        isLoading: false,
-      );
+     state = state.copyWith(
+  items: response.items,
+  totalCount: response.totalCount,
+  totalPages: response.totalPages,
+  currentPage: response.currentPage,
+  hasMoreData: response.currentPage < response.totalPages,
+  isLoading: false,
+  error: null,
+);
     } catch (e) {
-      debugPrint('[Notifier] load error: $e');
-      state = state.copyWith(isLoading: false);
+      debugPrint('[Notifier] loadAll error: ${e.toString()}');
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
+  Future<void> load({BaseFilterModel? filter, int? page, int? pageSize}) async {
+    await loadAll(filter: filter, page: page, pageSize: pageSize);
+  }
   // ───────────────── CRUD ─────────────────
 
   Future<String?> add(String name, {List<int>? customFieldIds}) async {
@@ -86,7 +103,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       await _service.createActivity(name, customFieldIds: customFieldIds);
       debugPrint('[Notifier] add: createActivity succeeded for name=$name');
       // Reload to respect sort order and pagination
-      await load();
+      await loadAll();
       return null;
     } catch (e) {
       debugPrint('[Notifier] add error: $e');
@@ -134,7 +151,6 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       return 'Failed to update activity';
     }
   }
- 
 
   Future<String?> delete(int id) async {
     try {
@@ -187,7 +203,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
       debugPrint('[Notifier] deleteSelected: ids=${state.selectedIds}');
       await _service.bulkDelete(state.selectedIds.toList());
       debugPrint('[Notifier] deleteSelected: bulkDelete succeeded');
-      await load();
+      await loadAll();
       return null;
     } catch (e) {
       debugPrint('[Notifier] deleteSelected error: $e');

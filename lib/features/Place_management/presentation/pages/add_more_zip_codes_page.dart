@@ -76,7 +76,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
     _searchController = TextEditingController();
 
     // Ensure a fresh edit form hierarchy each time this page is created
-    Future.microtask(() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(editPlaceFormProvider.notifier).clearHierarchy();
     });
 
@@ -360,7 +360,9 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
         _isLoadingPostOffices = false;
       });
     } catch (e) {
-      debugPrint('[AddMoreZipCodes] Error loading post offices: $e');
+      debugPrint(
+        '[AddMoreZipCodes] Error loading post offices: $e',
+      );
       setState(() {
         _isLoadingPostOffices = false;
       });
@@ -390,8 +392,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       });
     } catch (e) {
       debugPrint(
-        '[AddMoreZipCodes] Error loading zip codes for office '
-        '$officeId: $e',
+        '[AddMoreZipCodes] Error loading zip codes for office $officeId: $e',
       );
       setState(() {
         _isLoadingZipByOffice[officeId] = false;
@@ -498,13 +499,9 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
     final notifier = ref.read(editPlaceFormProvider.notifier);
 
     // Resolve labels from selected country in the locally cached list
-    CountryLookup? selectedCountry;
-    for (final c in _countries) {
-      if (c.id == form.countryId) {
-        selectedCountry = c;
-        break;
-      }
-    }
+    final CountryLookup? selectedCountry = _countries
+        .cast<CountryLookup?>()
+        .firstWhere((c) => c?.id == form.countryId, orElse: () => null);
 
     String resolveLabel(String? label, String fallback) {
       if (label == null) return fallback;

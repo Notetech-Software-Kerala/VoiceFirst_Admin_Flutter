@@ -13,7 +13,7 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/program_detail_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
-import 'package:voice_first_admin/features/Program_management/models/program_filter.dart';
+import 'package:voice_first_admin/features/Program_management/data/models/program_filter.dart';
 
 class ProgramManagementView extends ConsumerStatefulWidget {
   const ProgramManagementView({super.key});
@@ -35,7 +35,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
       ref
           .read(programProvider.notifier)
           .loadAll(
-            filter: const ProgramFilter(pageNumber: 1, pageSize: _pageSize),
+            filter: const ProgramFilter(pageNumber: 1, limit: _pageSize),
           );
     });
   }
@@ -53,7 +53,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
         .loadAll(
           filter: ProgramFilter(
             pageNumber: page,
-            pageSize: _pageSize,
+            limit: _pageSize,
             searchText: currentSearch.isEmpty ? null : currentSearch,
           ),
         );
@@ -109,7 +109,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
         onRefresh: () => notifier.loadAll(
           filter: ProgramFilter(
             pageNumber: state.currentPage,
-            pageSize: _pageSize,
+            limit: _pageSize,
             searchText: state.search.isEmpty ? null : state.search,
           ),
         ),
@@ -146,7 +146,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
         await notifier.loadAll(
           filter: ProgramFilter(
             pageNumber: state.currentPage,
-            pageSize: _pageSize,
+            limit: _pageSize,
             searchText: currentSearch.isEmpty ? null : currentSearch,
           ),
         );
