@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
-import 'package:voice_first_admin/features/Business_activity/presentation/providers/business_activity_state.dart';
+import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_state.dart';
 
 void main() {
   group('BusinessActivityState', () {

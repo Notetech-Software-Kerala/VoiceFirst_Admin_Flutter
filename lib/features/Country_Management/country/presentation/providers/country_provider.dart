@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/country_service/country_service.dart';
+import 'package:voice_first_admin/features/country_management/country/data/repositories/country_repository.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
-import '../../data/models/country_filter.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_filter.dart';
 import 'country_state.dart';
 
 /// Provider that constructs the CountryService using the centralized Dio client.

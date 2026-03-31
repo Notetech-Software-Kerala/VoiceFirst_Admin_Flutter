@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
 import '../providers/country_provider.dart';
 
 class CountryDetailPage extends ConsumerWidget {

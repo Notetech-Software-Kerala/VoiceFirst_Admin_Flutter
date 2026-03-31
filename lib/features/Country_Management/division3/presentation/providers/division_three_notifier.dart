@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/data/division3_service/division3_service.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/data/models/division3_filter.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/presentation/providers/division_three_state.dart';
+import 'package:voice_first_admin/features/country_management/division3/data/repositories/division_three_repository.dart';
+import 'package:voice_first_admin/features/country_management/division3/data/models/division3_filter.dart';
+import 'package:voice_first_admin/features/country_management/division3/presentation/providers/division_three_state.dart';
 
 class DivisionThreeNotifier extends Notifier<DivisionThreeState> {
   final int divisionTwoId;

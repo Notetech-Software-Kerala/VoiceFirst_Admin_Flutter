@@ -8,7 +8,7 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
+import 'package:voice_first_admin/features/applications/providers/application_provider.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/pages/program_detail_page.dart';

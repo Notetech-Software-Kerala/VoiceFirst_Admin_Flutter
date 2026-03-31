@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/division1_service/division1_service.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_filter.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/repositories/division_one_repository.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/models/division1_filter.dart';
 import 'division_one_state.dart';
 
 class DivisionOneNotifier extends Notifier<DivisionOneState> {

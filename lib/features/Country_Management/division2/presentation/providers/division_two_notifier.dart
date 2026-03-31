@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/division2_service/division2_service.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/models/division2_filter.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/repositories/division_two_repository.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division2_filter.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
 import 'division_two_state.dart';
 
 class DivisionTwoNotifier extends Notifier<DivisionTwoState> {

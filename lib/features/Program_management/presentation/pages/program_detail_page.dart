@@ -6,7 +6,7 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
 import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
-import 'package:voice_first_admin/features/Applications/Providers/application_provider.dart';
+import 'package:voice_first_admin/features/applications/providers/application_provider.dart';
 import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_lookup_provider.dart';
 
 class ProgramDetailPage extends ConsumerStatefulWidget {

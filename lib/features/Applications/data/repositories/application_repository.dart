@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import '../models/application_model.dart';
 
-class ApplicationService {
+class ApplicationRepository {
   static const _path = '/platform/lookup';
 
   final Dio _dio;
-  ApplicationService(this._dio);
+  ApplicationRepository(this._dio);
 
   Future<List<ApplicationModel>> getAll() async {
     final response = await _dio.get(_path);

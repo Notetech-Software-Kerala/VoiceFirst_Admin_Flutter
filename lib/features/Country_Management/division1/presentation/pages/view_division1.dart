@@ -8,11 +8,11 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_filter.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/presentation/providers/division_one_provider.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/presentation/pages/view_division2.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/models/division1_filter.dart';
+import 'package:voice_first_admin/features/country_management/division1/presentation/providers/division_one_provider.dart';
+import 'package:voice_first_admin/features/country_management/division2/presentation/pages/view_division2.dart';
 import 'division1_detail_view.dart';
 
 class DivisionOneView extends ConsumerStatefulWidget {

@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/repositories/business_activity_repository.dart';
 import 'business_activity_notifier.dart';
 import 'business_activity_state.dart';
-import '../../data/business_activity_service/business_activity_service.dart';
-import '../../data/models/business_activity_model.dart';
 
 final businessActivityProvider =
     NotifierProvider<BusinessActivityNotifier, BusinessActivityState>(
@@ -13,13 +13,13 @@ final businessActivityProvider =
 /// Provider to fetch a single BusinessActivity by id
 final businessActivityByIdProvider =
     FutureProvider.family<BusinessActivity, int>((ref, id) async {
-      final service = ref.read(businessActivityServiceProvider);
-      return service.getActivityById(id);
+      final repository = ref.read(businessActivityRepositoryProvider);
+      return repository.getActivityById(id);
     });
 
-/// Provider that constructs the service using the centralized Dio client.
-final businessActivityServiceProvider = Provider<BusinessActivityService>((
+/// Provider that constructs the repository using the centralized Dio client.
+final businessActivityRepositoryProvider = Provider<BusinessActivityRepository>((
   ref,
 ) {
-  return BusinessActivityService(ref.read(dioClientProvider));
+  return BusinessActivityRepository(ref.read(dioClientProvider));
 });

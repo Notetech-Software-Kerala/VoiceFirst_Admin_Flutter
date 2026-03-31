@@ -1,5 +1,5 @@
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 
 class BusinessActivityState {
   /// Data returned from API

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_filter.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/update_activity_request.dart';
-import '../../data/business_activity_service/business_activity_service.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/update_activity_request.dart';
+import 'package:voice_first_admin/features/business_activity/data/repositories/business_activity_repository.dart';
 import 'business_activity_provider.dart';
 import 'business_activity_state.dart';
 
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
-  late final BusinessActivityService _service;
+  late final BusinessActivityRepository _repository;
 
   @override
   BusinessActivityState build() {
-    _service = ref.read(businessActivityServiceProvider);
+    _repository = ref.read(businessActivityRepositoryProvider);
     return BusinessActivityState.initial();
   }
 
@@ -71,21 +71,21 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
         '[Notifier] loadAll: apiFilter=${apiFilter.toQueryParams()} page=$currentPage',
       );
 
-      final response = await _service.getAllActivities(apiFilter);
+      final response = await _repository.getAllActivities(apiFilter);
 
       debugPrint(
         '[Notifier] loadAll: received ${response.items.length} items, totalCount=${response.totalCount}',
       );
 
-     state = state.copyWith(
-  items: response.items,
-  totalCount: response.totalCount,
-  totalPages: response.totalPages,
-  currentPage: response.currentPage,
-  hasMoreData: response.currentPage < response.totalPages,
-  isLoading: false,
-  error: null,
-);
+      state = state.copyWith(
+        items: response.items,
+        totalCount: response.totalCount,
+        totalPages: response.totalPages,
+        currentPage: response.currentPage,
+        hasMoreData: response.currentPage < response.totalPages,
+        isLoading: false,
+        error: null,
+      );
     } catch (e) {
       debugPrint('[Notifier] loadAll error: ${e.toString()}');
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -100,7 +100,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
   Future<String?> add(String name, {List<int>? customFieldIds}) async {
     try {
       debugPrint('[Notifier] add: name=$name customFieldIds=$customFieldIds');
-      await _service.createActivity(name, customFieldIds: customFieldIds);
+      await _repository.createActivity(name, customFieldIds: customFieldIds);
       debugPrint('[Notifier] add: createActivity succeeded for name=$name');
       // Reload to respect sort order and pagination
       await loadAll();
@@ -133,7 +133,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
       debugPrint('[Notifier] update: id=$id request=${request.toJson()}');
 
-      final updated = await _service.updateActivity(id, request);
+      final updated = await _repository.updateActivity(id, request);
 
       debugPrint(
         '[Notifier] update: received updated activity id=${updated.activityId}',
@@ -155,7 +155,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
   Future<String?> delete(int id) async {
     try {
       debugPrint('[Notifier] delete: id=$id');
-      final deleted = await _service.deleteActivity(id);
+      final deleted = await _repository.deleteActivity(id);
 
       debugPrint(
         '[Notifier] delete: received deleted activity id=${deleted.activityId}',
@@ -177,7 +177,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
   Future<String?> recover(int id) async {
     try {
       debugPrint('[Notifier] recover: id=$id');
-      final updated = await _service.recoverActivity(id);
+      final updated = await _repository.recoverActivity(id);
 
       debugPrint(
         '[Notifier] recover: received activity id=${updated.activityId}',
@@ -201,7 +201,7 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
 
     try {
       debugPrint('[Notifier] deleteSelected: ids=${state.selectedIds}');
-      await _service.bulkDelete(state.selectedIds.toList());
+      await _repository.bulkDelete(state.selectedIds.toList());
       debugPrint('[Notifier] deleteSelected: bulkDelete succeeded');
       await loadAll();
       return null;
