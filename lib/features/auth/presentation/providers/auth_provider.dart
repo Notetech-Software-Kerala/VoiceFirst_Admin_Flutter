@@ -141,9 +141,13 @@ class AuthNotifier extends Notifier<AuthState> {
 
       final tokens = await _repository.login(request);
 
-      // Save securely
+      // Save securely — keys must match what DioClient reads
       await _storage.write(key: 'access_token', value: tokens.accessToken);
       await _storage.write(key: 'refresh_token', value: tokens.refreshToken);
+      await _storage.write(
+        key: 'token_expiration',
+        value: tokens.accessTokenExpiresAtUtc.toIso8601String(),
+      );
 
       final decodedToken = JwtDecoder.decode(tokens.accessToken);
       debugPrint("DECODED JWT PAYLOAD: $decodedToken");
@@ -170,6 +174,7 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true);
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
+    await _storage.delete(key: 'token_expiration');
     state = const AuthState(); // Reset state to completely logged out
   }
 }
