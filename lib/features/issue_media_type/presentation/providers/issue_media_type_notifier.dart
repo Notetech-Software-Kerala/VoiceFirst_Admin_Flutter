@@ -1,17 +1,15 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_filter.dart';
-import 'package:voice_first_admin/features/issue_media_type/data/service/media_type_service.dart';
-// dio client is accessed via service providers; notifier shouldn't read dio directly
-import 'issue_media_type_state.dart';
+import 'package:voice_first_admin/features/issue_media_type/data/repositories/media_type_repository.dart';
+import 'package:voice_first_admin/features/issue_media_type/presentation/providers/issue_media_type_state.dart';
 
 class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
-  late final MediaTypeService _service;
+  late final MediaTypeRepository _repository;
 
   @override
   IssueMediaTypeState build() {
-    _service = ref.read(issueMediaTypeServiceProvider);
+    _repository = ref.read(issueMediaTypeRepositoryProvider);
     return IssueMediaTypeState.initial();
   }
 
@@ -41,7 +39,7 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
     }
 
     try {
-      final response = await _service.getAll(appliedFilter);
+      final response = await _repository.getAll(appliedFilter);
 
       final safePage = response.pageNumber > response.totalPages
           ? response.totalPages
@@ -88,7 +86,7 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
   }
 
   Future<String> add(String name) async {
-    final (_, message) = await _service.createMediaType(name);
+    final (_, message) = await _repository.createMediaType(name);
     await loadAll();
     return message;
   }
@@ -99,7 +97,7 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
     bool? active,
   }) async {
     try {
-      final updated = await _service.updateMediaType(
+      final updated = await _repository.updateMediaType(
         id: id,
         issueMediaType: issueMediaType,
         active: active,
@@ -119,7 +117,7 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
 
   Future<String?> delete(int id) async {
     try {
-      final deleted = await _service.deleteMediaType(id);
+      final deleted = await _repository.deleteMediaType(id);
       state = state.copyWith(
         items: state.items
             .map((e) => e.issueMediaTypeId == id ? deleted : e)
@@ -134,7 +132,7 @@ class IssueMediaTypeNotifier extends Notifier<IssueMediaTypeState> {
 
   Future<String?> recover(int id) async {
     try {
-      final recovered = await _service.recoverMediaType(id);
+      final recovered = await _repository.recoverMediaType(id);
       state = state.copyWith(
         items: state.items
             .map((e) => e.issueMediaTypeId == id ? recovered : e)

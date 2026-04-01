@@ -9,12 +9,12 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/pages/edit_place_page.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/place_empty_places.dart';
-import '../../data/models/place_requests.dart';
-import '../providers/place_provider.dart';
-import 'add_place_page.dart';
-import 'place_detail_page.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_requests.dart';
+import 'package:voice_first_admin/features/place_management/presentation/pages/add_place_page.dart';
+import 'package:voice_first_admin/features/place_management/presentation/pages/edit_place_page.dart';
+import 'package:voice_first_admin/features/place_management/presentation/pages/place_detail_page.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_provider.dart';
+import 'package:voice_first_admin/features/place_management/widgets/place_empty_places.dart';
 
 class ViewPlacePage extends ConsumerStatefulWidget {
   const ViewPlacePage({super.key});
@@ -248,14 +248,4 @@ class _ViewPlacePageState extends ConsumerState<ViewPlacePage> {
       ],
     );
   }
-}
-
-String _fmtDate(DateTime? dt) {
-  if (dt == null) return 'N/A';
-  final day = dt.day.toString().padLeft(2, '0');
-  final month = dt.month.toString().padLeft(2, '0');
-  final year = dt.year.toString();
-  final hour = dt.hour.toString().padLeft(2, '0');
-  final minute = dt.minute.toString().padLeft(2, '0');
-  return '$day/$month/$year $hour:$minute';
 }

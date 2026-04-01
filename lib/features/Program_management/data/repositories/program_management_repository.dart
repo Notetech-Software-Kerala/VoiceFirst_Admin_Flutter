@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/create_program_request.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/update_program_request.dart';
+import 'package:voice_first_admin/features/program_management/data/models/create_program_request.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_filter.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_management/data/models/update_program_request.dart';
 
-class ProgramManagementService {
+class ProgramManagementRepository {
   static const String _path = '/program';
 
   final Dio _dio;
-  ProgramManagementService(this._dio);
+  ProgramManagementRepository(this._dio);
 
   Future<PaginatedResponse<ProgramModel>> getAll(ProgramFilter filter) async {
     debugPrint('API REQUEST: GET $_path');
@@ -158,8 +158,8 @@ class ProgramManagementService {
   }
 }
 
-final programManagementServiceProvider = Provider<ProgramManagementService>((
+final programManagementServiceProvider = Provider<ProgramManagementRepository>((
   ref,
 ) {
-  return ProgramManagementService(ref.read(dioClientProvider));
+  return ProgramManagementRepository(ref.read(dioClientProvider));
 });

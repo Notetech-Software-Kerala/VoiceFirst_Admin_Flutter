@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 
 void main() {
   group('BusinessActivity Model', () {

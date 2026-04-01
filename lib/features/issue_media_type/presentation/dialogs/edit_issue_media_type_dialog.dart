@@ -65,6 +65,7 @@ class EditIssueMediaTypeDialog {
                   return;
                 }
 
+                // ignore: unused_result
                 ref.refresh(
                   issueMediaTypeDetailProvider(mediaType.issueMediaTypeId),
                 );

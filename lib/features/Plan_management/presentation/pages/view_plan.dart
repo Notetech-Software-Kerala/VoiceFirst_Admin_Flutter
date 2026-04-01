@@ -9,11 +9,11 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Plan_management/data/models/plan_model.dart';
-import 'package:voice_first_admin/features/Plan_management/presentation/pages/add_plan.dart';
-import 'package:voice_first_admin/features/Plan_management/presentation/pages/plan_detail_page.dart';
-import 'package:voice_first_admin/features/Plan_management/presentation/providers/plan_provider.dart';
-import 'package:voice_first_admin/features/Plan_management/data/models/plan_filter.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_model.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/pages/add_plan.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/pages/plan_detail_page.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/providers/plan_provider.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_filter.dart';
 
 class ViewPlanPage extends ConsumerStatefulWidget {
   const ViewPlanPage({super.key});
@@ -152,7 +152,7 @@ class _ViewPlanPageState extends ConsumerState<ViewPlanPage> {
                   Transform.scale(
                     scale: 0.85,
                     child: Switch(
-                      value: _localStatus[plan.planId] ?? (plan.active ?? true),
+                      value: _localStatus[plan.planId] ?? (plan.active),
                       activeThumbColor: Colors.green,
                       onChanged: isDeleted
                           ? null

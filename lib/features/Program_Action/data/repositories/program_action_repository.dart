@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/program_action_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/program_action_model.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/program_action_filter.dart';
+import 'package:voice_first_admin/features/program_action/data/models/program_action_model.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 
-class ProgramActionService {
+class ProgramActionRepository {
   final Dio _dio;
 
-  ProgramActionService(this._dio);
+  ProgramActionRepository(this._dio);
 
   Future<PaginatedResponse<ProgramActionModel>> getAll(
     ProgramActionFilter filter,
@@ -143,6 +143,6 @@ class ProgramActionService {
   }
 }
 
-final programActionServiceProvider = Provider<ProgramActionService>((ref) {
-  return ProgramActionService(ref.read(dioClientProvider));
+final programActionRepositoryProvider = Provider<ProgramActionRepository>((ref) {
+  return ProgramActionRepository(ref.read(dioClientProvider));
 });

@@ -1,34 +1,27 @@
 import 'package:flutter/material.dart';
-import '../../data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 
 class ActivityIdentityCard extends StatelessWidget {
-
   final BusinessActivity activity;
 
-  const ActivityIdentityCard({
-    super.key,
-    required this.activity,
-  });
+  const ActivityIdentityCard({super.key, required this.activity});
 
   @override
   Widget build(BuildContext context) {
-
     final statusColor = activity.isDeleted
         ? Colors.red
         : activity.active
-            ? Colors.green
-            : Colors.orange;
+        ? Colors.green
+        : Colors.orange;
 
     final statusText = activity.isDeleted
         ? "Deleted"
         : activity.active
-            ? "Active"
-            : "Suspended";
+        ? "Active"
+        : "Suspended";
 
     return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
 
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -36,16 +29,13 @@ class ActivityIdentityCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       const Text(
                         "ACTIVITY NAME",
                         style: TextStyle(
@@ -76,7 +66,7 @@ class ActivityIdentityCard extends StatelessWidget {
                   ),
 
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(40),
                   ),
 
@@ -99,7 +89,7 @@ class ActivityIdentityCard extends StatelessWidget {
               padding: const EdgeInsets.all(14),
 
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: Colors.blue.withAlpha(25),
                 borderRadius: BorderRadius.circular(10),
               ),
 
@@ -115,7 +105,7 @@ class ActivityIdentityCard extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

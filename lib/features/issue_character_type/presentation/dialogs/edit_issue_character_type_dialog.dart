@@ -51,6 +51,7 @@ class EditIssueCharacterTypeDialog {
 
           // Ensure detail pages using issueCharacterTypeDetailProvider
           // also see the latest data.
+          // ignore: unused_result
           ref.refresh(
             issueCharacterTypeDetailProvider(
               characterType.issueCharacterTypeId,

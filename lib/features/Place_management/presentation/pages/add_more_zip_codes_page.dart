@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/providers/editPlaceFormProvider.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
+import 'package:voice_first_admin/features/place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/edit_place_form_provider.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/lookup/lookup_provider.dart';
 import 'package:voice_first_admin/core/widgets/paginated_search_dropdown.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/place_form_label.dart';
+import 'package:voice_first_admin/features/place_management/widgets/place_form_label.dart';
 
 class AddMoreZipCodesPage extends ConsumerStatefulWidget {
   final int placeId;
@@ -143,10 +143,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       _isLoadingCountries = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getCountriesPaginated(
+      final response = await repository.getCountriesPaginated(
         pageNumber: _countryPage,
         searchText: _countrySearchText.isEmpty ? null : _countrySearchText,
       );
@@ -185,10 +185,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       _isLoadingDivOne = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getDivisionOnePaginated(
+      final response = await repository.getDivisionOnePaginated(
         countryId: countryId,
         pageNumber: _divOnePage,
         searchText: _divOneSearchText.isEmpty ? null : _divOneSearchText,
@@ -228,10 +228,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       _isLoadingDivTwo = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getDivisionTwoPaginated(
+      final response = await repository.getDivisionTwoPaginated(
         divOneId: divOneId,
         pageNumber: _divTwoPage,
         searchText: _divTwoSearchText.isEmpty ? null : _divTwoSearchText,
@@ -271,10 +271,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       _isLoadingDivThree = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getDivisionThreePaginated(
+      final response = await repository.getDivisionThreePaginated(
         divTwoId: divTwoId,
         pageNumber: _divThreePage,
         searchText: _divThreeSearchText.isEmpty ? null : _divThreeSearchText,
@@ -338,10 +338,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       _isLoadingPostOffices = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getPostOfficesPaginated(
+      final response = await repository.getPostOfficesPaginated(
         countryId: countryId,
         divOneId: divOneId,
         divTwoId: divTwoId,
@@ -360,9 +360,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
         _isLoadingPostOffices = false;
       });
     } catch (e) {
-      debugPrint(
-        '[AddMoreZipCodes] Error loading post offices: $e',
-      );
+      debugPrint('[AddMoreZipCodes] Error loading post offices: $e');
       setState(() {
         _isLoadingPostOffices = false;
       });
@@ -379,10 +377,10 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
       _isLoadingZipByOffice[officeId] = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final zips = await service.getZipCodesByPostOfficeIds(
+      final zips = await repository.getZipCodesByPostOfficeIds(
         postOfficeIds: [officeId],
       );
 
@@ -391,9 +389,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
         _isLoadingZipByOffice[officeId] = false;
       });
     } catch (e) {
-      debugPrint(
-        '[AddMoreZipCodes] Error loading zip codes for office $officeId: $e',
-      );
+      debugPrint('[AddMoreZipCodes] Error loading zip codes for office $officeId: $e');
       setState(() {
         _isLoadingZipByOffice[officeId] = false;
       });
@@ -903,7 +899,7 @@ class _AddMoreZipCodesPageState extends ConsumerState<AddMoreZipCodesPage> {
                                       }
                                     },
                                   );
-                                }).toList(),
+                                }),
                             ],
                           ),
                         );

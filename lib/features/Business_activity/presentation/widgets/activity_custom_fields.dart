@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/models/activity_custom_field.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/activity_custom_field.dart';
 
 class ActivityCustomFields extends StatelessWidget {
 
@@ -62,7 +62,7 @@ class ActivityCustomFields extends StatelessWidget {
                         ),
 
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue.withAlpha(25),
                           borderRadius: BorderRadius.circular(30),
                         ),
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
-import '../providers/country_provider.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/country_management/country/presentation/providers/country_provider.dart';
 
 class CountryDetailPage extends ConsumerWidget {
   final int countryId;
@@ -238,38 +238,6 @@ class _Label extends StatelessWidget {
   }
 }
 
-class _GridItem extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _GridItem({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 class _RowItem extends StatelessWidget {
   final String label;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/program_action_model.dart';
-import '../providers/program_action_provider.dart';
+import 'package:voice_first_admin/features/program_action/data/models/program_action_model.dart';
+import 'package:voice_first_admin/features/program_action/presentation/providers/program_action_provider.dart';
 
 class EditProgramActionDialog {
   static void show(

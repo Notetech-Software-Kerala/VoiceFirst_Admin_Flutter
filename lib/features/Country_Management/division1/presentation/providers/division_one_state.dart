@@ -1,5 +1,5 @@
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/models/division1_model.dart';
 
 class DivisionOneState {
   final List<DivisionOneModel> items;

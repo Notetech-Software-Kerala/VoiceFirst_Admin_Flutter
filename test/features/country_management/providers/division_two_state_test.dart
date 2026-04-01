@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/presentation/providers/division_two_state.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
+import 'package:voice_first_admin/features/country_management/division2/presentation/providers/division_two_state.dart';
 
 void main() {
   group('DivisionTwoState', () {

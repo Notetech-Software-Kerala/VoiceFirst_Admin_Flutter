@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Place_management/data/models/post_office_lookup_filter.dart';
+import 'package:voice_first_admin/features/place_management/data/models/post_office_lookup_filter.dart';
 
 /// ================= STATE =================
 

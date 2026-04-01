@@ -26,10 +26,12 @@ class DivisionThreeFilter extends BaseFilterModel {
       'divisionTwoId': divisionTwoId.toString(),
     };
 
-    if (searchText != null && searchText!.isNotEmpty)
+    if (searchText != null && searchText!.isNotEmpty) {
       params['SearchText'] = searchText!;
-    if (searchBy != null && searchBy!.isNotEmpty)
+    }
+    if (searchBy != null && searchBy!.isNotEmpty) {
       params['SearchBy'] = searchBy!;
+    }
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['SortBy'] = sortBy!;
       params['SortOrder'] = sortOrder;

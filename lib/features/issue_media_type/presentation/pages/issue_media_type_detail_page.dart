@@ -155,8 +155,10 @@ class IssueMediaTypeDetailPage extends ConsumerWidget {
                                     .recover(updated.issueMediaTypeId);
 
                                 if (error == null) {
+                                  // ignore: unused_result
                                   ref.refresh(issueMediaTypeDetailProvider(id));
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message:
                                         '${updated.issueMediaType} recovered successfully',
@@ -164,6 +166,7 @@ class IssueMediaTypeDetailPage extends ConsumerWidget {
                                   );
                                 } else {
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message: error,
                                     type: SnackBarType.error,
@@ -186,8 +189,10 @@ class IssueMediaTypeDetailPage extends ConsumerWidget {
                                     .delete(updated.issueMediaTypeId);
 
                                 if (error == null) {
+                                  // ignore: unused_result
                                   ref.refresh(issueMediaTypeDetailProvider(id));
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message:
                                         '${updated.issueMediaType} deleted successfully',
@@ -195,6 +200,7 @@ class IssueMediaTypeDetailPage extends ConsumerWidget {
                                   );
                                 } else {
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message: error,
                                     type: SnackBarType.error,

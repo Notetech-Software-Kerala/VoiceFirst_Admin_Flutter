@@ -4,8 +4,8 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-import '../../data/models/plan_model.dart';
-import '../providers/plan_provider.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_model.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/providers/plan_provider.dart';
 
 class PlanDetailPage extends ConsumerStatefulWidget {
   final Plan plan;
@@ -527,30 +527,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     );
   }
 
-  ////////////////////////////////////////////////////////
-
-  List<Widget> _buildPrograms(Plan? detail) {
-    final list = detail?.programPlanDetails;
-    if (list == null || list.isEmpty) {
-      return [
-        const Center(
-          child: Padding(
-            padding: EdgeInsets.all(12),
-            child: Text("No linked programs"),
-          ),
-        ),
-      ];
-    }
-
-    return list
-        .map(
-          (p) => _GridItem(
-            label: p.programName,
-            value: "${p.actions.length} actions",
-          ),
-        )
-        .toList();
-  }
+ 
 
   String _fmtDate(DateTime? dt) {
     if (dt == null) return "N/A";
@@ -564,121 +541,6 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   }
 }
 
-////////////////////////////////////////////////////////////
-/// REUSABLE ADMIN COMPONENTS
-////////////////////////////////////////////////////////////
-
-class _ExpandableAdminCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final bool initiallyExpanded;
-  final List<Widget> children;
-
-  const _ExpandableAdminCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    this.initiallyExpanded = false,
-    required this.children,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded,
-        shape: const Border(),
-        collapsedShape: const Border(),
-        leading: Icon(icon),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        children: [
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.6,
-            children: children,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-////////////////////////////////////////////////////////////
-
-class _GridItem extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _GridItem({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label.toUpperCase(), style: const TextStyle(fontSize: 10)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
-      ),
-    );
-  }
-}
-
-////////////////////////////////////////////////////////////
-
-class _StatusChip extends StatelessWidget {
-  final bool active;
-  final bool deleted;
-
-  const _StatusChip({required this.active, required this.deleted});
-
-  @override
-  Widget build(BuildContext context) {
-    Color color;
-    String text;
-
-    if (deleted) {
-      color = Colors.red;
-      text = "Deleted";
-    } else if (active) {
-      color = Colors.green;
-      text = "Active";
-    } else {
-      color = Colors.orange;
-      text = "Suspended";
-    }
-
-    return Chip(
-      label: Text(text),
-      backgroundColor: color.withValues(alpha: 0.12),
-      labelStyle: TextStyle(color: color),
-      side: BorderSide.none,
-    );
-  }
-}
 
 ////////////////////////////////////////////////////////////
 

@@ -62,26 +62,33 @@ class ProgramFilter extends BaseFilterModel {
       'PageSize': limit.toString(),
     };
     if (searchBy != null && searchBy!.isNotEmpty) params['SearchBy'] = searchBy;
-    if (searchText != null && searchText!.isNotEmpty)
+    if (searchText != null && searchText!.isNotEmpty) {
       params['SearchText'] = searchText;
+    }
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['SortBy'] = sortBy;
       if (sortOrder.isNotEmpty) params['SortOrder'] = sortOrder;
     }
     if (active != null) params['Active'] = active.toString().toLowerCase();
     if (deleted != null) params['Deleted'] = deleted.toString().toLowerCase();
-    if (createdFromDate != null)
+    if (createdFromDate != null) {
       params['CreatedFromDate'] = createdFromDate!.toIso8601String();
-    if (createdToDate != null)
+    }
+    if (createdToDate != null) {
       params['CreatedToDate'] = createdToDate!.toIso8601String();
-    if (updatedFromDate != null)
+    }
+    if (updatedFromDate != null) {
       params['UpdatedFromDate'] = updatedFromDate!.toIso8601String();
-    if (updatedToDate != null)
+    }
+    if (updatedToDate != null) {
       params['UpdatedToDate'] = updatedToDate!.toIso8601String();
-    if (deletedFromDate != null)
+    }
+    if (deletedFromDate != null) {
       params['DeletedFromDate'] = deletedFromDate!.toIso8601String();
-    if (deletedToDate != null)
+    }
+    if (deletedToDate != null) {
       params['DeletedToDate'] = deletedToDate!.toIso8601String();
+    }
     return params;
   }
 }

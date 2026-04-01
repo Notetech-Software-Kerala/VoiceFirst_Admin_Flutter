@@ -1,5 +1,5 @@
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
 
 class CountryState {
   final List<CountryModel> items;

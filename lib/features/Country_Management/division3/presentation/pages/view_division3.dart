@@ -8,12 +8,12 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/data/models/division3_filter.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/presentation/pages/division3_detail_view.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/presentation/providers/division_three_provider.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
+import 'package:voice_first_admin/features/country_management/division3/data/models/division3_filter.dart';
+import 'package:voice_first_admin/features/country_management/division3/presentation/pages/division3_detail_view.dart';
+import 'package:voice_first_admin/features/country_management/division3/presentation/providers/division_three_provider.dart';
 
 class DivisionThreeView extends ConsumerStatefulWidget {
   final CountryModel country;
@@ -55,7 +55,7 @@ class _DivisionThreeViewState extends ConsumerState<DivisionThreeView> {
           onApply: (base) {
             Navigator.pop(context);
             try {
-              final b = base as BaseFilterModel;
+              final b = base;
               notifier.loadAll(
                 filter: DivisionThreeFilter(
                   divisionTwoId: widget.divisionTwo.id,

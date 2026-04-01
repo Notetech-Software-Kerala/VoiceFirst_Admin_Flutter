@@ -4,12 +4,12 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/place_detail_widgets.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/place_post_office_tile.dart';
-import '../../data/models/place_model.dart';
-import '../providers/place_provider.dart';
-import '../providers/place_state.dart';
-import 'edit_place_page.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_model.dart';
+import 'package:voice_first_admin/features/place_management/presentation/pages/edit_place_page.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_provider.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_state.dart';
+import 'package:voice_first_admin/features/place_management/widgets/place_detail_widgets.dart';
+import 'package:voice_first_admin/features/place_management/widgets/place_post_office_tile.dart';
 
 class PlaceDetailPage extends ConsumerStatefulWidget {
   final int placeId;
@@ -301,6 +301,7 @@ class _PlaceDetailPageState extends ConsumerState<PlaceDetailPage> {
                           );
                           if (result == true && mounted) {
                             CustomSnackbar.show(
+                              // ignore: use_build_context_synchronously
                               context,
                               message: 'Place updated successfully',
                               type: SnackBarType.success,

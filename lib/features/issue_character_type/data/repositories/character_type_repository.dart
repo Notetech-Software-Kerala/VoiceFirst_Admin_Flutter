@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 import 'package:voice_first_admin/features/issue_character_type/data/models/issue_charactertype_model.dart';
 import 'package:voice_first_admin/features/issue_character_type/data/models/issue_character_type_filter.dart';
 
-class CharacterTypeService {
+class CharacterTypeRepository {
   final Dio _dio;
-  CharacterTypeService(this._dio);
+  CharacterTypeRepository(this._dio);
 
   static const String _path = '/issue-character-type';
 
@@ -122,8 +122,9 @@ class CharacterTypeService {
     }
 
     final Map<String, dynamic> body = {};
-    if (issueCharacterType != null)
+    if (issueCharacterType != null) {
       body['issueCharacterType'] = issueCharacterType;
+    }
     if (active != null) body['active'] = active;
 
     debugPrint('API REQUEST: PATCH $_path/$id');
@@ -204,6 +205,8 @@ class CharacterTypeService {
   }
 }
 
-final issueCharacterTypeServiceProvider = Provider<CharacterTypeService>((ref) {
-  return CharacterTypeService(ref.read(dioClientProvider));
+final issueCharacterTypeServiceProvider = Provider<CharacterTypeRepository>((
+  ref,
+) {
+  return CharacterTypeRepository(ref.read(dioClientProvider));
 });
