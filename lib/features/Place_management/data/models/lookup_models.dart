@@ -7,7 +7,7 @@ class CountryLookup extends Equatable {
   final String? divisionTwoLabel;
   final String? divisionThreeLabel;
 
-  CountryLookup({
+  const CountryLookup({
     required this.id,
     required this.name,
     this.divisionOneLabel,
@@ -39,7 +39,7 @@ class DivisionOneLookup extends Equatable {
   final int id;
   final String name;
 
-  DivisionOneLookup({required this.id, required this.name});
+  const DivisionOneLookup({required this.id, required this.name});
 
   factory DivisionOneLookup.fromJson(Map<String, dynamic> json) {
     return DivisionOneLookup(
@@ -57,7 +57,7 @@ class DivisionTwoLookup extends Equatable {
   final int id;
   final String name;
 
-  DivisionTwoLookup({required this.id, required this.name});
+  const DivisionTwoLookup({required this.id, required this.name});
 
   factory DivisionTwoLookup.fromJson(Map<String, dynamic> json) {
     return DivisionTwoLookup(
@@ -74,7 +74,7 @@ class DivisionThreeLookup extends Equatable {
   final int id;
   final String name;
 
-  DivisionThreeLookup({required this.id, required this.name});
+  const DivisionThreeLookup({required this.id, required this.name});
 
   factory DivisionThreeLookup.fromJson(Map<String, dynamic> json) {
     return DivisionThreeLookup(
@@ -92,7 +92,7 @@ class PostOfficeLookup extends Equatable {
   final String postOfficeName;
   final List<ZipCodeLookup> zipCodes;
 
-  PostOfficeLookup({
+  const PostOfficeLookup({
     required this.postOfficeId,
     required this.postOfficeName,
     required this.zipCodes,
@@ -117,7 +117,7 @@ class ZipCodeLookup extends Equatable {
   final String zipCode;
   final bool active;
 
-  ZipCodeLookup({
+  const ZipCodeLookup({
     required this.zipCodeLinkId,
     required this.zipCode,
     required this.active,

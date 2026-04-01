@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_filter.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/business_activity_model.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/custom_field_lookup_model.dart';
-import 'package:voice_first_admin/features/Business_activity/data/models/update_activity_request.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_filter.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/custom_field_lookup_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/update_activity_request.dart';
 
 class PaginatedResponse<T> {
   final List<T> items;
@@ -39,9 +39,9 @@ class PaginatedResponse<T> {
   }
 }
 
-class BusinessActivityService {
+class BusinessActivityRepository {
   final Dio _dio;
-  BusinessActivityService(this._dio);
+  BusinessActivityRepository(this._dio);
 
   static const String _path = '/activity';
   Future<BusinessActivity> createActivity(

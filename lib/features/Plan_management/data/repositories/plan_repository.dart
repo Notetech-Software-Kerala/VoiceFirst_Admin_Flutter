@@ -1,12 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_model.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/program_action_link_lookup.dart';
 
-import '../models/plan_model.dart';
-import '../models/program_action_link_lookup.dart';
 
 /// PAGINATED RESPONSE
 
@@ -44,18 +43,18 @@ class PaginatedResponse<T> {
   }
 }
 
-final planServiceProvider = Provider<PlanService>((ref) {
-  return PlanService(ref.read(dioClientProvider));
+final planRepositoryProvider = Provider<PlanRepository>((ref) {
+  return PlanRepository(ref.read(dioClientProvider));
 });
 
 ////////////////////////////////////////////////////////////
 /// SERVICE
 ////////////////////////////////////////////////////////////
 
-class PlanService {
+class PlanRepository {
   final Dio _dio;
 
-  PlanService(this._dio);
+  PlanRepository(this._dio);
 
   ////////////////////////////////////////////////////////////
   /// GET ALL

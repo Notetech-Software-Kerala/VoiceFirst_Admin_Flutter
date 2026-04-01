@@ -1,20 +1,20 @@
 import 'package:dio/dio.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/data/models/division_three_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/data/models/division3_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division2_filter.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
 
-class DivisionThreeService {
+class DivisionTwoRepository {
   final Dio _dio;
 
-  DivisionThreeService(this._dio);
+  DivisionTwoRepository(this._dio);
 
-  Future<PaginatedResponse<DivisionThreeModel>> getAll(
-    DivisionThreeFilter filter,
+  Future<PaginatedResponse<DivisionTwoModel>> getAll(
+    DivisionTwoFilter filter,
   ) async {
     final response = await _dio.get(
-      '/division/three',
+      '/division/two',
       queryParameters: filter.toQueryParams(),
     );
 
@@ -23,7 +23,7 @@ class DivisionThreeService {
         response.statusCode! >= 300) {
       final jsonBody = response.data;
       throw Exception(
-        'Failed to load division three: ${response.statusCode} - ${jsonBody?['message'] ?? response.statusMessage}',
+        'Failed to load division two: ${response.statusCode} - ${jsonBody?['message'] ?? response.statusMessage}',
       );
     }
 
@@ -32,7 +32,7 @@ class DivisionThreeService {
 
     if (data is List) {
       final items = data
-          .map((e) => DivisionThreeModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => DivisionTwoModel.fromJson(e as Map<String, dynamic>))
           .toList();
       return PaginatedResponse(
         items: items,
@@ -45,7 +45,7 @@ class DivisionThreeService {
 
     return PaginatedResponse(
       items: (data['items'] as List)
-          .map((e) => DivisionThreeModel.fromJson(e))
+          .map((e) => DivisionTwoModel.fromJson(e))
           .toList(),
       totalCount: data['totalCount'],
       pageNumber: data['pageNumber'],
@@ -55,6 +55,6 @@ class DivisionThreeService {
   }
 }
 
-final divisionThreeServiceProvider = Provider<DivisionThreeService>((ref) {
-  return DivisionThreeService(ref.read(dioClientProvider));
+final divisionTwoRepositoryProvider = Provider<DivisionTwoRepository>((ref) {
+  return DivisionTwoRepository(ref.read(dioClientProvider));
 });

@@ -9,11 +9,11 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/program_action_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/providers/program_action_provider.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/add_program_action_dialog.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/dialogs/edit_program_action_dialog.dart';
-import 'program_action_detail_view.dart';
+import 'package:voice_first_admin/features/program_action/data/models/program_action_filter.dart';
+import 'package:voice_first_admin/features/program_action/presentation/pages/program_action_detail_view.dart';
+import 'package:voice_first_admin/features/program_action/presentation/providers/program_action_provider.dart';
+import 'package:voice_first_admin/features/program_action/presentation/dialogs/add_program_action_dialog.dart';
+import 'package:voice_first_admin/features/program_action/presentation/dialogs/edit_program_action_dialog.dart';
 
 class ProgramActionView extends ConsumerStatefulWidget {
   const ProgramActionView({super.key});

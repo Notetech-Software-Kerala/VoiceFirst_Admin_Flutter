@@ -51,7 +51,7 @@ class DivisionOneFilter extends BaseFilterModel {
     // 🔽 Sorting (safe handling)
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['SortBy'] = sortBy!;
-      params['SortOrder'] = sortOrder ?? 'asc';
+      params['SortOrder'] = sortOrder;
     }
 
     // ✅ Status filters

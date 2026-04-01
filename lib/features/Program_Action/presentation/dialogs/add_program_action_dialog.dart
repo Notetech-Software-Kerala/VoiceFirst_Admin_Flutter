@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
-import '../providers/program_action_provider.dart';
+import 'package:voice_first_admin/features/program_action/presentation/providers/program_action_provider.dart';
 
 class AddProgramActionDialog {
   static void show(BuildContext context, WidgetRef ref) {

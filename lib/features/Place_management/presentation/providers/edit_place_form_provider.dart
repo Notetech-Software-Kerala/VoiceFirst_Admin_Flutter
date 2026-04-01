@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/post_office_lookup_filter.dart';
-import '../../data/models/place_model.dart';
-import '../../data/models/lookup_models.dart';
-import 'add_place_provider.dart';
+import 'package:voice_first_admin/features/place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_model.dart';
+import 'package:voice_first_admin/features/place_management/data/models/post_office_lookup_filter.dart';
+
 
 /// ================= DIFF MODEL =================
 
@@ -232,6 +232,7 @@ class EditPlaceFormNotifier extends Notifier<EditPlaceFormState> {
   }
 
   /// Get items for a specific office
+  // ignore: unused_element
   List<EditZipCodeItem> _itemsForOffice(int officeId) {
     return state.zipCodeItems
         .where((item) => item.postOfficeId == officeId)

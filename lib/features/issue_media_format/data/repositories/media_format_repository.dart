@@ -1,49 +1,48 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
-import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_model.dart';
-import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_filter.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_model.dart';
+import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_filter.dart';
 
-class MediaTypeService {
+class MediaFormatRepository {
   final Dio _dio;
-  static const String _path = '/issue-media-type';
+  MediaFormatRepository(this._dio);
 
-  MediaTypeService(this._dio);
+  static const String _path = '/issue-media-format';
 
-  Future<(IssueMediaTypeModel, String)> createMediaType(String name) async {
+  Future<(IssueMediaFormatModel, String)> createMediaFormat(String name) async {
     debugPrint('API REQUEST: POST $_path');
-    debugPrint('Request Body: {"issueMediaType":"$name"}');
+    debugPrint('Request Body: {"issueMediaFormat":"$name"}');
 
-    final response = await _dio.post(_path, data: {'issueMediaType': name});
+    final response = await _dio.post(_path, data: {'issueMediaFormat': name});
 
     debugPrint('API RESPONSE: POST $_path -> ${response.statusCode}');
 
     final jsonBody = response.data as Map<String, dynamic>;
-    final message =
-        jsonBody['message']?.toString() ??
-        (response.statusCode != null &&
-                response.statusCode! >= 200 &&
-                response.statusCode! < 300
-            ? 'Issue media type created successfully'
-            : 'Failed to create issue media type');
 
     if (response.statusCode == null ||
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (createMediaType): status=${response.statusCode}, body=$jsonBody',
+        'API ERROR (createMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
-      throw Exception(message);
+      final errorMessage =
+          jsonBody['message']?.toString() ??
+          'Failed to create issue media format';
+      throw Exception(errorMessage);
     }
 
+    final message =
+        jsonBody['message']?.toString() ??
+        'Issue media format created successfully';
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return (IssueMediaTypeModel.fromJson(data), message);
+    return (IssueMediaFormatModel.fromJson(data), message);
   }
 
-  Future<PaginatedResponse<IssueMediaTypeModel>> getAll(
-    IssueMediaTypeFilter filter,
+  Future<PaginatedResponse<IssueMediaFormatModel>> getAll(
+    IssueMediaFormatFilter filter,
   ) async {
     debugPrint('API REQUEST: GET $_path');
 
@@ -59,20 +58,21 @@ class MediaTypeService {
     if (response.statusCode == null ||
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
-      debugPrint('API ERROR BODY (GET issue media types): $jsonBody');
+      debugPrint('API ERROR BODY (GET issue media formats): $jsonBody');
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to load issue media types';
+          jsonBody['message']?.toString() ??
+          'Failed to load issue media formats';
       throw Exception(message);
     }
-    debugPrint('API MESSAGE (GET issue media types): ${jsonBody['message']}');
+    debugPrint('API MESSAGE (GET issue media formats): ${jsonBody['message']}');
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     final itemsJson = data['items'] as List<dynamic>? ?? <dynamic>[];
     final items = itemsJson
-        .map((e) => IssueMediaTypeModel.fromJson(e as Map<String, dynamic>))
+        .map((e) => IssueMediaFormatModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    return PaginatedResponse<IssueMediaTypeModel>(
+    return PaginatedResponse<IssueMediaFormatModel>(
       items: items,
       totalCount: data['totalCount'] as int? ?? items.length,
       pageNumber: data['pageNumber'] as int? ?? filter.pageNumber,
@@ -81,7 +81,7 @@ class MediaTypeService {
     );
   }
 
-  Future<IssueMediaTypeModel> getById(int id) async {
+  Future<IssueMediaFormatModel> getById(int id) async {
     debugPrint('API REQUEST: GET $_path/$id');
 
     final response = await _dio.get('$_path/$id');
@@ -93,31 +93,31 @@ class MediaTypeService {
     if (response.statusCode == null ||
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
-      debugPrint('API ERROR BODY (GET issue media type by id): $jsonBody');
+      debugPrint('API ERROR BODY (GET issue media format by id): $jsonBody');
       final message =
-          jsonBody['message']?.toString() ?? 'Failed to load issue media type';
+          jsonBody['message']?.toString() ??
+          'Failed to load issue media format';
       throw Exception(message);
     }
     debugPrint(
-      'API MESSAGE (GET issue media type by id): ${jsonBody['message']}',
+      'API MESSAGE (GET issue media format by id): ${jsonBody['message']}',
     );
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueMediaTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 
-  Future<IssueMediaTypeModel> updateMediaType({
+  Future<IssueMediaFormatModel> updateMediaFormat({
     required int id,
-    String? issueMediaType,
+    String? issueMediaFormat,
     bool? active,
   }) async {
-    if (issueMediaType == null && active == null) {
+    if (issueMediaFormat == null && active == null) {
       throw Exception('Nothing to update');
     }
 
     final Map<String, dynamic> body = {};
-
-    if (issueMediaType != null) body['issueMediaType'] = issueMediaType;
+    if (issueMediaFormat != null) body['issueMediaFormat'] = issueMediaFormat;
     if (active != null) body['active'] = active;
 
     debugPrint('API REQUEST: PATCH $_path/$id');
@@ -133,19 +133,19 @@ class MediaTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (updateMediaType): status=${response.statusCode}, body=$jsonBody',
+        'API ERROR (updateMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
       final message =
           jsonBody['message']?.toString() ??
-          'Failed to update issue media type';
+          'Failed to update issue media format';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueMediaTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 
-  Future<IssueMediaTypeModel> deleteMediaType(int id) async {
+  Future<IssueMediaFormatModel> deleteMediaFormat(int id) async {
     debugPrint('API REQUEST: DELETE $_path/$id');
 
     final response = await _dio.delete('$_path/$id');
@@ -153,24 +153,24 @@ class MediaTypeService {
     debugPrint('API RESPONSE: DELETE $_path/$id -> ${response.statusCode}');
 
     final jsonBody = response.data as Map<String, dynamic>;
+    final message =
+        jsonBody['message']?.toString() ??
+        'Failed to delete issue media format';
 
     if (response.statusCode == null ||
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (deleteMediaType): status=${response.statusCode}, body=$jsonBody',
+        'API ERROR (deleteMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
-      final message =
-          jsonBody['message']?.toString() ??
-          'Failed to delete issue media type';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueMediaTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 
-  Future<IssueMediaTypeModel> recoverMediaType(int id) async {
+  Future<IssueMediaFormatModel> recoverMediaFormat(int id) async {
     debugPrint('API REQUEST: PATCH $_path/recover/$id');
 
     final response = await _dio.patch('$_path/recover/$id');
@@ -185,19 +185,20 @@ class MediaTypeService {
         response.statusCode! < 200 ||
         response.statusCode! >= 300) {
       debugPrint(
-        'API ERROR (recoverMediaType): status=${response.statusCode}, body=$jsonBody',
+        'API ERROR (recoverMediaFormat): status=${response.statusCode}, body=$jsonBody',
       );
       final message =
           jsonBody['message']?.toString() ??
-          'Failed to recover issue media type';
+          'Failed to recover issue media format';
       throw Exception(message);
     }
-
     final data = jsonBody['data'] as Map<String, dynamic>;
-    return IssueMediaTypeModel.fromJson(data);
+    return IssueMediaFormatModel.fromJson(data);
   }
 }
 
-final issueMediaTypeServiceProvider = Provider<MediaTypeService>((ref) {
-  return MediaTypeService(ref.read(dioClientProvider));
+final issueMediaFormatRepositoryProvider = Provider<MediaFormatRepository>((
+  ref,
+) {
+  return MediaFormatRepository(ref.read(dioClientProvider));
 });

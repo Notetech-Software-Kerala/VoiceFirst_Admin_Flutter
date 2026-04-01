@@ -3,18 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/arrow_breadcrumb.dart';
 import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
-import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/data/models/division1_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/models/division_two_model.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/data/models/division2_filter.dart';
-import 'package:voice_first_admin/features/Country_Management/division3/presentation/pages/view_division3.dart';
-import 'package:voice_first_admin/features/Country_Management/division2/presentation/pages/division2_detail_view.dart';
-import '../providers/division_two_provider.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
+import 'package:voice_first_admin/features/country_management/division1/data/models/division1_model.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
+import 'package:voice_first_admin/features/country_management/division2/data/models/division2_filter.dart';
+import 'package:voice_first_admin/features/country_management/division2/presentation/providers/division_two_provider.dart';
+import 'package:voice_first_admin/features/country_management/division3/presentation/pages/view_division3.dart';
+import 'package:voice_first_admin/features/country_management/division2/presentation/pages/division2_detail_view.dart';
 
 class DivisionTwoView extends ConsumerStatefulWidget {
   final CountryModel country;
@@ -71,7 +70,7 @@ class _DivisionTwoViewState extends ConsumerState<DivisionTwoView> {
           onApply: (base) {
             Navigator.pop(context);
             try {
-              final b = base as BaseFilterModel;
+              final b = base ;
               notifier.loadAll(
                 filter: DivisionTwoFilter(
                   divisionOneId: widget.divisionOne.id,

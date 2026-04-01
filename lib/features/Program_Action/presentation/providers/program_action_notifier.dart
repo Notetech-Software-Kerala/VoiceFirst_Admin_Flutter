@@ -1,15 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/program_action_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/program_action_service/program_action_service.dart';
-import 'program_action_state.dart';
+import 'package:voice_first_admin/features/program_action/data/models/program_action_filter.dart';
+import 'package:voice_first_admin/features/program_action/data/repositories/program_action_repository.dart' show ProgramActionRepository, programActionServiceProvider, programActionRepositoryProvider;
+import 'package:voice_first_admin/features/program_action/presentation/providers/program_action_state.dart';
+
 
 class ProgramActionNotifier extends Notifier<ProgramActionState> {
-  late final ProgramActionService _service;
+  late final ProgramActionRepository _repository;
 
   @override
   ProgramActionState build() {
-    _service = ref.read(programActionServiceProvider);
+    _repository = ref.read(programActionRepositoryProvider);
     return ProgramActionState.initial();
   }
 
@@ -33,7 +34,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      final response = await _service.getAll(effectiveFilter);
+      final response = await _repository.getAll(effectiveFilter);
 
       state = state.copyWith(
         actions: response.items,
@@ -55,7 +56,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
   Future<String?> recover(int actionId) async {
     try {
       // Call API
-      await _service.recover(actionId);
+      await _repository.recover(actionId);
 
       // ✅ Update state locally (NO reload)
       state = state.copyWith(
@@ -85,8 +86,8 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     debugPrint('Starting add operation for: "$name"');
 
     try {
-      debugPrint('Calling service.create...');
-      await _service.create(name);
+      debugPrint('Calling repository.create...');
+      await _repository.create(name);
 
       // Reload the current page to get fresh data with proper pagination
       await loadAll(
@@ -108,7 +109,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
 
   Future<String?> update(int id, String name) async {
     try {
-      await _service.updateAction(id, name: name);
+      await _repository.updateAction(id, name: name);
 
       // Reload the current page to get fresh data
       await loadAll(
@@ -149,7 +150,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     );
 
     try {
-      await _service.updateAction(id, active: active);
+      await _repository.updateAction(id, active: active);
 
       debugPrint('✅ Status toggled');
       return null;
@@ -168,7 +169,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
   // Delete
   Future<String?> delete(int id) async {
     try {
-      await _service.delete(id);
+      await _repository.delete(id);
 
       // Reload the current page to get fresh data
       await loadAll(
@@ -191,7 +192,7 @@ class ProgramActionNotifier extends Notifier<ProgramActionState> {
     if (state.selectedIds.isEmpty) return 'No items selected';
 
     try {
-      await _service.bulkDelete(state.selectedIds.toList());
+      await _repository.bulkDelete(state.selectedIds.toList());
 
       // Clear selection first
       state = state.copyWith(selectedIds: {}, isMultiSelect: false);

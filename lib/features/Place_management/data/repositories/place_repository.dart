@@ -24,14 +24,14 @@ class PaginatedResponse<T> {
   bool get hasNextPage => currentPage < totalPages;
 }
 
-final placeServiceProvider = Provider<PlaceService>((ref) {
-  return PlaceService(ref.read(dioClientProvider));
+final placeRepositoryProvider = Provider<PlaceRepository>((ref) {
+  return PlaceRepository(ref.read(dioClientProvider));
 });
 
-class PlaceService {
+class PlaceRepository {
   final Dio _dio;
 
-  PlaceService(this._dio);
+  PlaceRepository(this._dio);
 
   Future<PaginatedResponse<PlaceModel>> getPlaces({
     int page = 1,
@@ -99,7 +99,7 @@ class PlaceService {
   Future<PlaceModel> updatePlace(int id, UpdatePlaceRequest request) async {
     final payload = request.toJson();
     if (payload.isEmpty) {
-      debugPrint('[PlaceService] update skipped, empty payload for id=$id');
+      debugPrint('[PlaceRepository] update skipped, empty payload for id=$id');
       return getPlaceById(id);
     }
     debugPrint('[updatePlace] API REQUEST: PATCH /place/$id');

@@ -21,6 +21,7 @@ class IssueMediaTypeFilter extends BaseFilterModel {
     super.deletedToDate,
   });
 
+  @override
   IssueMediaTypeFilter copyWith({
     int? pageNumber,
     int? pageSize,
@@ -74,8 +75,8 @@ class IssueMediaTypeFilter extends BaseFilterModel {
 
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['SortBy'] = sortBy!;
-      if (sortOrder != null && sortOrder!.isNotEmpty) {
-        params['SortOrder'] = sortOrder!;
+      if (sortOrder.isNotEmpty) {
+        params['SortOrder'] = sortOrder;
       }
     }
 

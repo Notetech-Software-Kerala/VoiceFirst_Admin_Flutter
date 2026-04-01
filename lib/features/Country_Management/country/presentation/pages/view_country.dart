@@ -5,12 +5,12 @@ import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
 import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
-import 'package:voice_first_admin/features/Country_Management/division1/presentation/pages/view_division1.dart';
-import '../providers/country_provider.dart';
+import 'package:voice_first_admin/features/country_management/country/presentation/pages/country_detail_view.dart';
+import 'package:voice_first_admin/features/country_management/country/presentation/providers/country_provider.dart';
+import 'package:voice_first_admin/features/country_management/division1/presentation/pages/view_division1.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
-import 'package:voice_first_admin/features/Country_Management/country/data/models/country_filter.dart';
-import 'country_detail_view.dart';
+import 'package:voice_first_admin/features/country_management/country/data/models/country_filter.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 // Only listing + navigation to Division 1 required
 
@@ -72,7 +72,7 @@ class _CountryViewState extends ConsumerState<CountryView> {
           onApply: (base) {
             Navigator.pop(context);
             try {
-              final b = base as BaseFilterModel;
+              final b = base;
               ref
                   .read(countryProvider.notifier)
                   .loadAll(

@@ -1,5 +1,5 @@
-import '../../data/models/plan_model.dart';
-import '../../data/models/plan_filter.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_filter.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_model.dart';
 
 class PlanState {
   final List<Plan> plans;

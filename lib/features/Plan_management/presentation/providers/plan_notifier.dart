@@ -1,17 +1,16 @@
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/plan_model.dart';
-import '../../data/plan_service/plan_service.dart';
-import '../../data/models/plan_filter.dart';
-import 'plan_state.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_filter.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_model.dart';
+import 'package:voice_first_admin/features/plan_management/data/repositories/plan_repository.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/providers/plan_state.dart';
 
 class PlanNotifier extends Notifier<PlanState> {
-  late final PlanService _service;
-
+  late final PlanRepository _repository;
 
   @override
   PlanState build() {
-    _service = ref.read(planServiceProvider);
+    _repository = ref.read(planRepositoryProvider);
     return const PlanState();
   }
 
@@ -39,7 +38,7 @@ class PlanNotifier extends Notifier<PlanState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final response = await _service.getPlans(
+      final response = await _repository.getPlans(
         queryParams: effectiveFilter.toQueryParams(),
       );
 
@@ -75,7 +74,7 @@ class PlanNotifier extends Notifier<PlanState> {
     state = state.copyWith(isDetailLoading: true, error: null);
 
     try {
-      final detail = await _service.getPlanById(id);
+      final detail = await _repository.getPlanById(id);
 
       state = state.copyWith(
         selectedPlan: detail,
@@ -93,7 +92,7 @@ class PlanNotifier extends Notifier<PlanState> {
 
   Future<bool> deletePlan(int id) async {
     try {
-      final updated = await _service.deletePlan(id);
+      final updated = await _repository.deletePlan(id);
       _sync(updated);
       return true;
     } catch (e) {
@@ -112,7 +111,7 @@ class PlanNotifier extends Notifier<PlanState> {
 
   Future<bool> recoverPlan(int id) async {
     try {
-      final updated = await _service.recoverPlan(id);
+      final updated = await _repository.recoverPlan(id);
       _sync(updated);
       return true;
     } catch (e) {

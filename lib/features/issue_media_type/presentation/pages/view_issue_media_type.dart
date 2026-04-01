@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
@@ -10,7 +9,6 @@ import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/dialogs/add_issue_media_type_dialog.dart';
-import 'package:voice_first_admin/features/issue_media_type/data/models/issue_media_type_filter.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/dialogs/edit_issue_media_type_dialog.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/pages/issue_media_type_detail_page.dart';
 import 'package:voice_first_admin/features/issue_media_type/presentation/providers/issue_media_type_provider.dart';
@@ -52,7 +50,6 @@ class _ViewIssueMediaTypePageState
         currentFilter: ref.read(issueMediaTypeProvider).filter,
         onApply: (base) {
           Navigator.pop(context);
-          if (base is! BaseFilterModel) return;
 
           final applied = ref
               .read(issueMediaTypeProvider)
@@ -220,6 +217,7 @@ class _ViewIssueMediaTypePageState
                                   type: SnackBarType.error,
                                 );
                               } else {
+                                // ignore: unused_result
                                 ref.refresh(
                                   issueMediaTypeDetailProvider(
                                     item.issueMediaTypeId,
@@ -275,6 +273,7 @@ class _ViewIssueMediaTypePageState
                                 type: SnackBarType.error,
                               );
                             } else {
+                              // ignore: unused_result
                               ref.refresh(
                                 issueMediaTypeDetailProvider(
                                   item.issueMediaTypeId,

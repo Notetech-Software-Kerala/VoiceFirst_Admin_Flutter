@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/place_management/data/models/lookup_models.dart';
 
 class PaginatedLookupResponse<T> {
   final List<T> items;
@@ -33,10 +33,10 @@ class PaginatedLookupResponse<T> {
   }
 }
 
-class PlaceLookupService {
+class PlaceLookupRepository {
   final Dio _dio;
 
-  PlaceLookupService(this._dio);
+  PlaceLookupRepository(this._dio);
 
   dynamic _decode(Response response) {
     if (response.statusCode != null &&
@@ -232,8 +232,9 @@ class PlaceLookupService {
     if (countryId == null ||
         divOneId == null ||
         divTwoId == null ||
-        divThreeId == null)
+        divThreeId == null) {
       return [];
+    }
 
     debugPrint('[getPostOffices] API REQUEST: GET /post-office/lookup');
     final response = await _dio.get(
@@ -274,8 +275,9 @@ class PlaceLookupService {
       'Limit': limit.toString(),
     };
     if (placeId != null) queryParameters['PlaceId'] = placeId.toString();
-    if (searchText != null && searchText.isNotEmpty)
+    if (searchText != null && searchText.isNotEmpty) {
       queryParameters['SearchText'] = searchText;
+    }
 
     final response = await _dio.get(
       '/post-office/lookup',

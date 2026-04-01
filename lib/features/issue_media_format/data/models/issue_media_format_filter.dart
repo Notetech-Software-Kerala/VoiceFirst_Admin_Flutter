@@ -40,8 +40,8 @@ class IssueMediaFormatFilter extends BaseFilterModel {
 
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['SortBy'] = sortBy!;
-      if (sortOrder != null && sortOrder!.isNotEmpty) {
-        params['SortOrder'] = sortOrder!;
+      if (sortOrder.isNotEmpty) {
+        params['SortOrder'] = sortOrder;
       }
     }
 

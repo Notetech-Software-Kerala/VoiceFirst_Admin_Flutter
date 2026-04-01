@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/providers/program_state.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/program_management/presentation/providers/program_state.dart';
 
 void main() {
   group('ProgramState', () {

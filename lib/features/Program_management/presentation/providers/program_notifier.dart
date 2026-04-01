@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/create_program_request.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/update_program_request.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/providers/program_state.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_filter.dart';
-import 'package:voice_first_admin/features/Program_management/data/program_management_service/program_management_service.dart';
+import 'package:voice_first_admin/features/program_management/data/models/create_program_request.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/program_management/data/models/update_program_request.dart';
+import 'package:voice_first_admin/features/program_management/data/repositories/program_management_repository.dart';
+import 'package:voice_first_admin/features/program_management/presentation/providers/program_state.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_filter.dart';
 
 class ProgramNotifier extends Notifier<ProgramState> {
-  late final ProgramManagementService _service;
+  late final ProgramManagementRepository _repository;
 
   @override
   ProgramState build() {
-    _service = ref.read(programManagementServiceProvider);
+    _repository = ref.read(programManagementServiceProvider);
     debugPrint('[ProgramNotifier] build() -> initial state');
     return ProgramState.initial();
   }
@@ -31,7 +31,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      final response = await _service.getAll(effectiveFilter);
+      final response = await _repository.getAll(effectiveFilter);
 
       state = state.copyWith(
         all: response.items,
@@ -98,7 +98,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
         actionIds: program.activeActionIds,
       );
 
-      final created = await _service.create(request);
+      final created = await _repository.create(request);
 
       /// replace temp
       final newList = state.all.map((p) {
@@ -168,7 +168,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
     );
 
     try {
-      final saved = await _service.update(updated.sysProgramId!, request);
+      final saved = await _repository.update(updated.sysProgramId!, request);
 
       /// Replace optimistic with REAL backend object
       final newList = [...state.all];
@@ -208,7 +208,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
       debugPrint(
         '[ProgramNotifier] toggleStatus() -> PATCH payload: ${request.toJson()}',
       );
-      await _service.update(id, request);
+      await _repository.update(id, request);
 
       final updatedList = state.all.map((p) {
         if (p.sysProgramId == id) {
@@ -234,7 +234,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
 
   Future<void> delete(int id) async {
     debugPrint('[ProgramNotifier] delete() -> id: $id');
-    final deleted = await _service.delete(id);
+    final deleted = await _repository.delete(id);
     debugPrint(
       '[ProgramNotifier] delete() -> backend returned deleted id: ${deleted.sysProgramId}, deleted=${deleted.deleted}',
     );
@@ -256,7 +256,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
     try {
       debugPrint('[ProgramNotifier] recover() -> id: $id');
 
-      final recovered = await _service.recover(id);
+      final recovered = await _repository.recover(id);
       debugPrint(
         '[ProgramNotifier] recover() -> backend returned id: ${recovered.sysProgramId}, deleted=${recovered.deleted}',
       );
@@ -283,7 +283,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
 
     debugPrint('[ProgramNotifier] deleteSelected() -> ids: $ids');
 
-    await _service.bulkDelete(ids);
+    await _repository.bulkDelete(ids);
     debugPrint('[ProgramNotifier] deleteSelected() -> bulk delete completed');
     state = state.copyWith(selectedIds: {}, isMultiSelect: false);
     await loadAll(filter: state.filter.copyWith(pageNumber: state.currentPage));

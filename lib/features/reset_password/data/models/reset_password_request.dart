@@ -1,4 +1,3 @@
-
 class ResetPasswordRequest {
   final String newPassword;
   final String passwordResetGrant;
