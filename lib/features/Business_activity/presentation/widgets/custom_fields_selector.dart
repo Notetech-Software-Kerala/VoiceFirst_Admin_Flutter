@@ -97,7 +97,7 @@ Future<Set<int>?> showCustomFieldsBottomSheet(
                               final field = filtered[index];
 
                               final isChecked = tempSelected.contains(
-                                field.customFieldId,
+                                field.customFieldLinkId,
                               );
 
                               return CheckboxListTile(
@@ -110,9 +110,11 @@ Future<Set<int>?> showCustomFieldsBottomSheet(
                                 onChanged: (checked) {
                                   modalSetState(() {
                                     if (checked ?? false) {
-                                      tempSelected.add(field.customFieldId);
+                                      tempSelected.add(field.customFieldLinkId);
                                     } else {
-                                      tempSelected.remove(field.customFieldId);
+                                      tempSelected.remove(
+                                        field.customFieldLinkId,
+                                      );
                                     }
                                   });
                                 },

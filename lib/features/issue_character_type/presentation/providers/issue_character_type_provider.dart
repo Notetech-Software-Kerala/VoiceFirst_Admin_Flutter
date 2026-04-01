@@ -12,6 +12,6 @@ final issueCharacterTypeProvider =
 /// Detail provider to load a single IssueCharacterType by ID
 final issueCharacterTypeDetailProvider =
     FutureProvider.family<IssueCharacterTypeModel, int>((ref, id) async {
-      final repository = ref.read(issueCharacterTypeServiceProvider);
+      final repository = ref.read(characterTypeRepositoryProvider);
       return repository.getById(id);
     });

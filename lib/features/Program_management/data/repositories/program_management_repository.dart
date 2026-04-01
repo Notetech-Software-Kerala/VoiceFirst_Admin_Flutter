@@ -158,7 +158,7 @@ class ProgramManagementRepository {
   }
 }
 
-final programManagementServiceProvider = Provider<ProgramManagementRepository>((
+final programManagementRepositoryProvider = Provider<ProgramManagementRepository>((
   ref,
 ) {
   return ProgramManagementRepository(ref.read(dioClientProvider));

@@ -78,6 +78,8 @@ void main() {
         isLoading: false,
         isMultiSelect: true,
         selectedIds: {1, 2},
+        totalPages: 1,
+        error: '',
       );
 
       final newState = state.copyWith(totalCount: 20);

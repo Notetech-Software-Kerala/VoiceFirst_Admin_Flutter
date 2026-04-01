@@ -12,7 +12,7 @@ class ProgramNotifier extends Notifier<ProgramState> {
 
   @override
   ProgramState build() {
-    _repository = ref.read(programManagementServiceProvider);
+    _repository = ref.read(programManagementRepositoryProvider);
     debugPrint('[ProgramNotifier] build() -> initial state');
     return ProgramState.initial();
   }
