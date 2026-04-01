@@ -58,7 +58,7 @@ class _ViewIssueCharacterTypePageState
             onApply: (base) {
               Navigator.pop(ctx);
               try {
-                final b = base as BaseFilterModel;
+                final b = base;
                 notifier.loadAll(
                   filter: IssueCharacterTypeFilter(
                     pageNumber: 1,
@@ -226,6 +226,7 @@ class _ViewIssueCharacterTypePageState
                               } else {
                                 // Also refresh detail provider for this id
                                 // so an open detail page updates.
+                                // ignore: unused_result
                                 ref.refresh(
                                   issueCharacterTypeDetailProvider(
                                     item.issueCharacterTypeId,
@@ -282,6 +283,7 @@ class _ViewIssueCharacterTypePageState
                               );
                             } else {
                               // Keep any open detail page in sync
+                              // ignore: unused_result
                               ref.refresh(
                                 issueCharacterTypeDetailProvider(
                                   item.issueCharacterTypeId,

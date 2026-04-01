@@ -170,10 +170,12 @@ class IssueCharacterTypeDetailPage extends ConsumerWidget {
                                     .recover(updated.issueCharacterTypeId);
 
                                 if (error == null) {
+                                  // ignore: unused_result
                                   ref.refresh(
                                     issueCharacterTypeDetailProvider(id),
                                   );
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message:
                                         '${updated.issueCharacterType} recovered successfully',
@@ -181,6 +183,7 @@ class IssueCharacterTypeDetailPage extends ConsumerWidget {
                                   );
                                 } else {
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message: error,
                                     type: SnackBarType.error,
@@ -203,10 +206,12 @@ class IssueCharacterTypeDetailPage extends ConsumerWidget {
                                     .delete(updated.issueCharacterTypeId);
 
                                 if (error == null) {
+                                  // ignore: unused_result
                                   ref.refresh(
                                     issueCharacterTypeDetailProvider(id),
                                   );
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message:
                                         '${updated.issueCharacterType} deleted successfully',
@@ -214,6 +219,7 @@ class IssueCharacterTypeDetailPage extends ConsumerWidget {
                                   );
                                 } else {
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message: error,
                                     type: SnackBarType.error,

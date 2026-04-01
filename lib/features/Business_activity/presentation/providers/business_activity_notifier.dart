@@ -4,8 +4,9 @@ import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/business_activity/data/models/business_activity_filter.dart';
 import 'package:voice_first_admin/features/business_activity/data/models/update_activity_request.dart';
 import 'package:voice_first_admin/features/business_activity/data/repositories/business_activity_repository.dart';
-import 'business_activity_provider.dart';
-import 'business_activity_state.dart';
+import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_provider.dart';
+import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_state.dart';
+
 
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
   late final BusinessActivityRepository _repository;

@@ -55,7 +55,7 @@ class _DivisionThreeViewState extends ConsumerState<DivisionThreeView> {
           onApply: (base) {
             Navigator.pop(context);
             try {
-              final b = base as BaseFilterModel;
+              final b = base;
               notifier.loadAll(
                 filter: DivisionThreeFilter(
                   divisionTwoId: widget.divisionTwo.id,

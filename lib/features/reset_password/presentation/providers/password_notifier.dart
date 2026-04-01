@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/reset_password/data/models/change_password_request.dart';
 import 'package:voice_first_admin/features/reset_password/data/models/forgot_password_request.dart';
 import 'package:voice_first_admin/features/reset_password/data/models/reset_password_request.dart';
-import 'package:voice_first_admin/features/reset_password/data/reset_password_service/password_repository.dart';
-import 'password_state.dart';
+import 'package:voice_first_admin/features/reset_password/data/repositories/password_repository.dart';
+import 'package:voice_first_admin/features/reset_password/presentation/providers/password_state.dart';
 
 class PasswordNotifier extends Notifier<PasswordState> {
   late final PasswordRepository _service;

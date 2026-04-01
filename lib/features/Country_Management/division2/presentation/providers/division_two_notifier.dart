@@ -2,17 +2,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/country_management/division2/data/repositories/division_two_repository.dart';
 import 'package:voice_first_admin/features/country_management/division2/data/models/division2_filter.dart';
 import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
-import 'division_two_state.dart';
+import 'package:voice_first_admin/features/country_management/division2/presentation/providers/division_two_state.dart';
 
 class DivisionTwoNotifier extends Notifier<DivisionTwoState> {
   final int divisionOneId;
   DivisionTwoNotifier(this.divisionOneId);
 
-  late final DivisionTwoService _service;
+  late final DivisionTwoRepository _repository;
 
   @override
   DivisionTwoState build() {
-    _service = ref.read(divisionTwoServiceProvider);
+    _repository = ref.read(divisionTwoRepositoryProvider);
+
     // IMPORTANT: do not auto-call APIs from build(); UI should trigger loadAll
 
     return DivisionTwoState.initial();
@@ -51,7 +52,7 @@ class DivisionTwoNotifier extends Notifier<DivisionTwoState> {
     state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(appliedFilter);
+      final response = await _repository.getAll(appliedFilter);
 
       state = state.copyWith(
         items: response.items,

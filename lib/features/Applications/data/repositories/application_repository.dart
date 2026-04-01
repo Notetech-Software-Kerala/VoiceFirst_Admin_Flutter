@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../models/application_model.dart';
+import 'package:voice_first_admin/features/applications/data/models/application_model.dart';
 
 class ApplicationRepository {
   static const _path = '/platform/lookup';

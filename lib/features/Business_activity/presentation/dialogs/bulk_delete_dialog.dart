@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/business_activity_provider.dart';
-import '../../../../core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
+import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_provider.dart';
 
 class BulkDeleteDialog {
   static void show(BuildContext context, WidgetRef ref, int count) {

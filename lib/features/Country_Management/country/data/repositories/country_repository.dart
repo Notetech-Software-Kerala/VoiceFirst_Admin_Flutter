@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
 import 'package:voice_first_admin/features/country_management/country/data/models/country_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 
-class CountryService {
+class CountryRepository {
   final Dio _dio;
 
-  CountryService(this._dio);
+  CountryRepository(this._dio);
 
   Future<PaginatedResponse<CountryModel>> getAll(CountryFilter filter) async {
     final response = await _dio.get(
@@ -42,7 +42,7 @@ class CountryService {
 
     return PaginatedResponse(
       items: (data['items'] as List)
-          .map((e) => CountryModel.fromJson(e))
+          .map((e) => CountryModel.fromJson(e as Map<String, dynamic>))
           .toList(),
       totalCount: data['totalCount'],
       pageNumber: data['pageNumber'],

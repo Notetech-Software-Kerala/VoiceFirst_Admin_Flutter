@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Place_management/data/models/lookup_models.dart';
-import 'package:voice_first_admin/features/Place_management/data/models/post_office_lookup_filter.dart';
-import 'package:voice_first_admin/features/Place_management/data/place_service/place_lookup_service.dart';
+import 'package:voice_first_admin/features/place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/place_management/data/models/post_office_lookup_filter.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
+import 'package:voice_first_admin/features/place_management/data/repositories/place_lookup_repository.dart' show PlaceLookupRepository;
 
-/// SERVICE
-final placeLookupServiceProvider = Provider<PlaceLookupService>((ref) {
-  return PlaceLookupService(ref.read(dioClientProvider));
+/// REPOSITORY
+final placeLookupRepositoryProvider = Provider<PlaceLookupRepository>((ref) {
+  return PlaceLookupRepository(ref.read(dioClientProvider));
 });
 
 // ===============================
@@ -15,7 +15,7 @@ final placeLookupServiceProvider = Provider<PlaceLookupService>((ref) {
 final countryLookupProvider = FutureProvider.autoDispose<List<CountryLookup>>((
   ref,
 ) {
-  return ref.read(placeLookupServiceProvider).getCountries();
+  return ref.read(placeLookupRepositoryProvider).getCountries();
 });
 
 // ===============================
@@ -23,7 +23,7 @@ final countryLookupProvider = FutureProvider.autoDispose<List<CountryLookup>>((
 // ===============================
 final divisionOneLookupProvider = FutureProvider.autoDispose
     .family<List<DivisionOneLookup>, int>((ref, countryId) {
-      return ref.read(placeLookupServiceProvider).getDivisionOne(countryId);
+      return ref.read(placeLookupRepositoryProvider).getDivisionOne(countryId);
     });
 
 // ===============================
@@ -31,7 +31,7 @@ final divisionOneLookupProvider = FutureProvider.autoDispose
 // ===============================
 final divisionTwoLookupProvider = FutureProvider.autoDispose
     .family<List<DivisionTwoLookup>, int>((ref, divOneId) {
-      return ref.read(placeLookupServiceProvider).getDivisionTwo(divOneId);
+      return ref.read(placeLookupRepositoryProvider).getDivisionTwo(divOneId);
     });
 
 // ===============================
@@ -39,7 +39,7 @@ final divisionTwoLookupProvider = FutureProvider.autoDispose
 // ===============================
 final divisionThreeLookupProvider = FutureProvider.autoDispose
     .family<List<DivisionThreeLookup>, int>((ref, divTwoId) {
-      return ref.read(placeLookupServiceProvider).getDivisionThree(divTwoId);
+      return ref.read(placeLookupRepositoryProvider).getDivisionThree(divTwoId);
     });
 
 // ===============================
@@ -50,7 +50,7 @@ final postOfficeLookupProvider = FutureProvider.autoDispose
       if (!filter.isReady) return Future.value([]);
 
       return ref
-          .read(placeLookupServiceProvider)
+          .read(placeLookupRepositoryProvider)
           .getPostOffices(
             countryId: filter.countryId,
             divOneId: filter.divOneId,
@@ -69,7 +69,7 @@ final unlinkedZipCodesProvider = FutureProvider.autoDispose
       params,
     ) {
       return ref
-          .read(placeLookupServiceProvider)
+          .read(placeLookupRepositoryProvider)
           .getUnlinkedZipCodes(
             postOfficeIds: [params.postOfficeId],
             placeId: params.placeId,

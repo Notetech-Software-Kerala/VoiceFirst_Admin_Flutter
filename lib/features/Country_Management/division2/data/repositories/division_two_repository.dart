@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:voice_first_admin/features/country_management/division2/data/models/division2_filter.dart';
 import 'package:voice_first_admin/features/country_management/division2/data/models/division_two_model.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
 
-class DivisionTwoService {
+class DivisionTwoRepository {
   final Dio _dio;
 
-  DivisionTwoService(this._dio);
+  DivisionTwoRepository(this._dio);
 
   Future<PaginatedResponse<DivisionTwoModel>> getAll(
     DivisionTwoFilter filter,
@@ -55,6 +55,6 @@ class DivisionTwoService {
   }
 }
 
-final divisionTwoServiceProvider = Provider<DivisionTwoService>((ref) {
-  return DivisionTwoService(ref.read(dioClientProvider));
+final divisionTwoRepositoryProvider = Provider<DivisionTwoRepository>((ref) {
+  return DivisionTwoRepository(ref.read(dioClientProvider));
 });

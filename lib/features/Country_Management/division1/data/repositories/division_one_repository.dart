@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:voice_first_admin/features/country_management/division1/data/models/division1_model.dart';
 import 'package:voice_first_admin/features/country_management/division1/data/models/division1_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
 
-class DivisionOneService {
+class DivisionOneRepository {
   final Dio _dio;
 
-  DivisionOneService(this._dio);
+  DivisionOneRepository(this._dio);
 
   Future<PaginatedResponse<DivisionOneModel>> getAll(
     DivisionOneFilter filter,
@@ -55,6 +55,6 @@ class DivisionOneService {
   }
 }
 
-final divisionOneServiceProvider = Provider<DivisionOneService>((ref) {
-  return DivisionOneService(ref.read(dioClientProvider));
+final divisionOneRepositoryProvider = Provider<DivisionOneRepository>((ref) {
+  return DivisionOneRepository(ref.read(dioClientProvider));
 });

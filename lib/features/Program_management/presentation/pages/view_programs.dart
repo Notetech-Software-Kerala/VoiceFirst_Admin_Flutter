@@ -8,12 +8,11 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
-import 'package:voice_first_admin/features/applications/providers/application_provider.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/pages/add_program_page.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/pages/program_detail_page.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/providers/program_provider.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_filter.dart';
+import 'package:voice_first_admin/features/program_management/presentation/pages/add_program_page.dart';
+import 'package:voice_first_admin/features/program_management/presentation/pages/program_detail_page.dart';
+import 'package:voice_first_admin/features/program_management/presentation/providers/program_provider.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_filter.dart';
 
 class ProgramManagementView extends ConsumerStatefulWidget {
   const ProgramManagementView({super.key});
@@ -336,71 +335,7 @@ class _ProgramManagementViewState extends ConsumerState<ProgramManagementView> {
   }
 }
 
-class _ApplicationFilter extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(programProvider);
-    final notifier = ref.read(programProvider.notifier);
-    final appsAsync = ref.watch(applicationProvider);
 
-    return appsAsync.when(
-      data: (apps) {
-        return DropdownButtonFormField<int?>(
-          value: apps.any((a) => a.platformId == state.selectedApplicationId)
-              ? state.selectedApplicationId
-              : null,
-          decoration: const InputDecoration(
-            labelText: 'Application',
-            border: OutlineInputBorder(),
-            filled: true,
-          ),
-          items: [
-            const DropdownMenuItem<int?>(
-              value: null,
-              child: Text('All Applications'),
-            ),
-            ...apps.map(
-              (a) => DropdownMenuItem<int?>(
-                value: a.platformId,
-                child: Text(a.platformName),
-              ),
-            ),
-          ],
-          onChanged: notifier.setApplicationFilter,
-        );
-      },
-      loading: () => const SizedBox(height: 56),
-      error: (_, _) => const Text('Failed to load applications'),
-    );
-  }
-}
-
-class _CompanyFilter extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(programProvider);
-    final notifier = ref.read(programProvider.notifier);
-
-    return TextFormField(
-      initialValue: state.selectedCompanyId != null
-          ? '${state.selectedCompanyId}'
-          : '',
-      keyboardType: TextInputType.number,
-      decoration: const InputDecoration(
-        labelText: 'Company Id',
-        border: OutlineInputBorder(),
-        filled: true,
-      ),
-      onChanged: (value) {
-        if (value.trim().isEmpty) {
-          notifier.setCompanyFilter(null);
-        } else {
-          notifier.setCompanyFilter(int.tryParse(value.trim()));
-        }
-      },
-    );
-  }
-}
 
 // ignore: unused_element
 class _ProgramCard extends StatelessWidget {
@@ -421,8 +356,11 @@ class _ProgramCard extends StatelessWidget {
     required this.isActive,
     required this.selected,
     required this.showCheckbox,
+    // ignore: unused_element_parameter
     this.onTap,
+    // ignore: unused_element_parameter
     this.onDelete,
+    // ignore: unused_element_parameter
     this.onToggle,
   });
 

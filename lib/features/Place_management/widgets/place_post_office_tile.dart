@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_model.dart';
 
-import '../data/models/place_model.dart';
 
 class PlacePostOfficeTile extends StatelessWidget {
   final PlacePostOffice office;

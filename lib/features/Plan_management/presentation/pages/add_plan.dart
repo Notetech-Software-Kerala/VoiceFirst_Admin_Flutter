@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/paginated_search_dropdown.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
-import 'package:voice_first_admin/features/Plan_management/presentation/providers/program_action_link_lookup_provider.dart';
-import '../../data/models/program_action_link_lookup.dart';
-import '../providers/add_plan_provider.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/program_action_link_lookup.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/providers/add_plan_provider.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/providers/program_action_link_lookup_provider.dart';
 
 class SelectedAction {
   final int id;

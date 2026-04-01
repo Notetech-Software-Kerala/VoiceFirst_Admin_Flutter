@@ -1,17 +1,17 @@
 import 'dart:math' show min;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/place_model.dart';
-import '../../data/models/place_requests.dart';
-import '../../data/place_service/place_service.dart';
-import 'place_state.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_model.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_requests.dart';
+import 'package:voice_first_admin/features/place_management/data/repositories/place_repository.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_state.dart';
 
 
 class PlaceNotifier extends Notifier<PlaceState> {
-  late final PlaceService _service;
+  late final PlaceRepository _repository;
 
   @override
   PlaceState build() {
-    _service = ref.read(placeServiceProvider);
+    _repository = ref.read(placeRepositoryProvider);
     return const PlaceState();
   }
 
@@ -23,8 +23,9 @@ class PlaceNotifier extends Notifier<PlaceState> {
     final effectiveSearch = search ?? state.search;
 
     // Combined guard: avoid loading when already loading or requesting pages beyond known totalPages
-    if (state.isLoading || (state.totalPages > 0 && page > state.totalPages))
+    if (state.isLoading || (state.totalPages > 0 && page > state.totalPages)) {
       return;
+    }
 
     // Prevent duplicate calls when page/search unchanged (allow first load)
     if (page == state.currentPage &&
@@ -36,7 +37,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final response = await _service.getPlaces(
+      final response = await _repository.getPlaces(
         page: page,
         pageSize: pageSize,
         search: effectiveSearch, // ✅ FIXED
@@ -73,7 +74,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
 
     state = state.copyWith(isDetailLoading: true, error: null);
     try {
-      final detail = await _service.getPlaceById(id);
+      final detail = await _repository.getPlaceById(id);
       state = state.copyWith(
         selectedPlace: detail,
         isDetailLoading: false,
@@ -86,7 +87,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
 
   Future<PlaceModel> createPlace(CreatePlaceRequest request) async {
     try {
-      final created = await _service.createPlace(request);
+      final created = await _repository.createPlace(request);
       state = state.copyWith(places: [created, ...state.places]);
       return created;
     } catch (e) {
@@ -102,7 +103,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
 
     try {
-      final updated = await _service.updatePlace(id, request);
+      final updated = await _repository.updatePlace(id, request);
       _sync(updated);
       state = state.copyWith(selectedPlace: updated);
       return true;
@@ -131,7 +132,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
     }
 
     try {
-      final updated = await _service.deletePlace(id);
+      final updated = await _repository.deletePlace(id);
 
       // Sync with real backend response
       _sync(updated);
@@ -147,7 +148,7 @@ class PlaceNotifier extends Notifier<PlaceState> {
 
   Future<bool> recoverPlace(int id) async {
     try {
-      final updated = await _service.recoverPlace(id);
+      final updated = await _repository.recoverPlace(id);
       _sync(updated);
       return true;
     } catch (e) {

@@ -40,8 +40,8 @@ class IssueCharacterTypeFilter extends BaseFilterModel {
 
     if (sortBy != null && sortBy!.isNotEmpty) {
       params['SortBy'] = sortBy!;
-      if (sortOrder != null && sortOrder!.isNotEmpty) {
-        params['SortOrder'] = sortOrder!;
+      if (sortOrder.isNotEmpty) {
+        params['SortOrder'] = sortOrder;
       }
     }
 
@@ -58,6 +58,7 @@ class IssueCharacterTypeFilter extends BaseFilterModel {
     return params;
   }
 
+  @override
   IssueCharacterTypeFilter copyWith({
     int? pageNumber,
     int? pageSize,

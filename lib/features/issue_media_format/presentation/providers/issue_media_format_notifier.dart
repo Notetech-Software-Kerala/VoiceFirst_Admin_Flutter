@@ -1,16 +1,15 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_media_format/data/models/issue_media_format_filter.dart';
-import 'package:voice_first_admin/features/issue_media_format/data/service/media_format_service.dart';
-import 'issue_media_format_state.dart';
+import 'package:voice_first_admin/features/issue_media_format/data/repositories/media_format_repository.dart';
+import 'package:voice_first_admin/features/issue_media_format/presentation/providers/issue_media_format_state.dart';
 
 class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
-  late final MediaFormatService _service;
+  late final MediaFormatRepository _repository;
 
   @override
   IssueMediaFormatState build() {
-    _service = ref.read(issueMediaFormatServiceProvider);
+    _repository = ref.read(issueMediaFormatRepositoryProvider);
     return IssueMediaFormatState.initial();
   }
 
@@ -49,7 +48,7 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
     state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(appliedFilter);
+      final response = await _repository.getAll(appliedFilter);
 
       final safePage = response.pageNumber > response.totalPages
           ? response.totalPages
@@ -107,7 +106,7 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
   /// Returns the API success message on success.
   /// Throws an Exception with the API error message on failure.
   Future<String> add(String name) async {
-    final (_, message) = await _service.createMediaFormat(name);
+    final (_, message) = await _repository.createMediaFormat(name);
     await loadAll();
     return message;
   }
@@ -118,7 +117,7 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
     bool? active,
   }) async {
     try {
-      final updated = await _service.updateMediaFormat(
+      final updated = await _repository.updateMediaFormat(
         id: id,
         issueMediaFormat: issueMediaFormat,
         active: active,
@@ -141,7 +140,7 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
 
   Future<String?> delete(int id) async {
     try {
-      final deleted = await _service.deleteMediaFormat(id);
+      final deleted = await _repository.deleteMediaFormat(id);
 
       state = state.copyWith(
         items: state.items
@@ -162,7 +161,7 @@ class IssueMediaFormatNotifier extends Notifier<IssueMediaFormatState> {
 
   Future<String?> recover(int id) async {
     try {
-      final recovered = await _service.recoverMediaFormat(id);
+      final recovered = await _repository.recoverMediaFormat(id);
 
       state = state.copyWith(
         items: state.items

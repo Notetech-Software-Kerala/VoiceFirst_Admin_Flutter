@@ -7,11 +7,12 @@ class DivisionThreeNotifier extends Notifier<DivisionThreeState> {
   final int divisionTwoId;
   DivisionThreeNotifier(this.divisionTwoId);
 
-  late final DivisionThreeService _service;
+  late final DivisionThreeRepository _repository;
 
   @override
   DivisionThreeState build() {
-    _service = ref.read(divisionThreeServiceProvider);
+    _repository = ref.read(divisionThreeRepositoryProvider);
+
 
     // IMPORTANT: do not auto-call APIs from build(); UI should trigger loadAll
 
@@ -45,7 +46,7 @@ class DivisionThreeNotifier extends Notifier<DivisionThreeState> {
     state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(appliedFilter);
+      final response = await _repository.getAll(appliedFilter);
 
       state = state.copyWith(
         items: response.items,

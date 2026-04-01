@@ -7,11 +7,11 @@ import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
 import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart';
+import 'package:voice_first_admin/features/business_activity/presentation/pages/activity_detail_page.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/pages/add_activity.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/pages/edit_activity_page.dart';
-import '../providers/business_activity_provider.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
-import 'activity_detail_page.dart';
+import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_provider.dart';
 
 class ViewBusinessActivityPage extends ConsumerStatefulWidget {
   const ViewBusinessActivityPage({super.key});

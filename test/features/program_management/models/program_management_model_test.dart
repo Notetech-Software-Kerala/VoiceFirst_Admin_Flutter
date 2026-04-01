@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:voice_first_admin/features/Program_management/data/models/program_management_model.dart';
+import 'package:voice_first_admin/features/program_management/data/models/program_management_model.dart';
 
 void main() {
   group('ProgramActionSummary', () {

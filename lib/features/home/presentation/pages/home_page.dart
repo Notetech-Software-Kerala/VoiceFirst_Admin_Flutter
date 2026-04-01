@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/pages/view_business_activity.dart';
 import 'package:voice_first_admin/features/country_management/country/presentation/pages/view_country.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/pages/view_place.dart';
-import 'package:voice_first_admin/features/Plan_management/presentation/pages/view_plan.dart';
-import 'package:voice_first_admin/features/Program_Action/presentation/pages/view_program_action.dart';
-import 'package:voice_first_admin/features/Program_management/presentation/pages/view_programs.dart';
+import 'package:voice_first_admin/features/place_management/presentation/pages/view_place.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/pages/view_plan.dart';
+import 'package:voice_first_admin/features/program_action/presentation/pages/view_program_action.dart';
+import 'package:voice_first_admin/features/program_management/presentation/pages/view_programs.dart';
 import 'package:voice_first_admin/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:voice_first_admin/features/issue_character_type/presentation/pages/view_issue_character_type.dart';
 import 'package:voice_first_admin/features/issue_media_format/presentation/pages/view_issue_media_format.dart';

@@ -1,4 +1,4 @@
-import '../../data/models/place_model.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_model.dart';
 
 class PlaceState {
   final List<PlaceModel> places;

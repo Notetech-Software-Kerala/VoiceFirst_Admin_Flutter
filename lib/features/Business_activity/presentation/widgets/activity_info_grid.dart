@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../data/models/business_activity_model.dart';
+import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 
 class ActivityInfoGrid extends StatelessWidget {
 

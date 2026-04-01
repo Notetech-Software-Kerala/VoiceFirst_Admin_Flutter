@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/arrow_breadcrumb.dart';
 import 'package:voice_first_admin/core/widgets/global_filter_bottom_sheet.dart';
-import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/standard_icon_box.dart';
 import 'package:voice_first_admin/core/widgets/standard_list_card.dart';
 import 'package:voice_first_admin/core/widgets/standard_page_layout.dart';
@@ -11,9 +10,9 @@ import 'package:voice_first_admin/core/widgets/standard_pagination_controls.dart
 import 'package:voice_first_admin/features/country_management/country/data/models/country_model.dart';
 import 'package:voice_first_admin/features/country_management/division1/data/models/division1_model.dart';
 import 'package:voice_first_admin/features/country_management/division1/data/models/division1_filter.dart';
+import 'package:voice_first_admin/features/country_management/division1/presentation/pages/division1_detail_view.dart';
 import 'package:voice_first_admin/features/country_management/division1/presentation/providers/division_one_provider.dart';
 import 'package:voice_first_admin/features/country_management/division2/presentation/pages/view_division2.dart';
-import 'division1_detail_view.dart';
 
 class DivisionOneView extends ConsumerStatefulWidget {
   final CountryModel country;
@@ -62,7 +61,7 @@ class _DivisionOneViewState extends ConsumerState<DivisionOneView> {
           onApply: (base) {
             Navigator.pop(context);
             try {
-              final b = base as BaseFilterModel;
+              final b = base;
               notifier.loadAll(
                 filter: DivisionOneFilter(
                   countryId: widget.country.id,

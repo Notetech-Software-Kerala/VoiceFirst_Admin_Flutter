@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/program_action_link_lookup.dart';
-import '../../data/plan_service/plan_service.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/program_action_link_lookup.dart';
+import 'package:voice_first_admin/features/plan_management/data/repositories/plan_repository.dart';
 
 ////////////////////////////////////////////////////////////
 /// STATE
@@ -50,11 +50,11 @@ class ProgramLookupState {
 ////////////////////////////////////////////////////////////
 
 class ProgramLookupNotifier extends Notifier<ProgramLookupState> {
-  late final PlanService _service;
+  late final PlanRepository _repository;
 
   @override
   ProgramLookupState build() {
-    _service = ref.read(planServiceProvider);
+    _repository = ref.read(planRepositoryProvider);
     // UI triggers loading; do not auto-load here.
     return const ProgramLookupState();
   }
@@ -83,7 +83,7 @@ class ProgramLookupNotifier extends Notifier<ProgramLookupState> {
     state = state.copyWith(isLoading: true);
 
     try {
-      final response = await _service.getProgramActionLinkLookupPaginated(
+      final response = await _repository.getProgramActionLinkLookupPaginated(
         page: nextPage,
         pageSize: 10,
         search: state.searchText.isEmpty ? null : state.searchText,

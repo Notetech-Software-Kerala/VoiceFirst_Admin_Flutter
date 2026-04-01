@@ -1,11 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/issue_character_type/data/models/issue_character_type_filter.dart';
-import 'package:voice_first_admin/features/issue_character_type/data/service/character_type_service.dart';
-import 'issue_character_type_state.dart';
+import 'package:voice_first_admin/features/issue_character_type/data/repositories/character_type_repository.dart';
+import 'package:voice_first_admin/features/issue_character_type/presentation/providers/issue_character_type_state.dart';
+
 
 class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
-  late final CharacterTypeService _service;
+  late final CharacterTypeRepository _repository;
 
   IssueCharacterTypeNotifier() {
     // no-op
@@ -13,7 +14,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
   @override
   IssueCharacterTypeState build() {
-    _service = ref.read(issueCharacterTypeServiceProvider);
+    _repository = ref.read(issueCharacterTypeServiceProvider);
     return IssueCharacterTypeState.initial();
   }
 
@@ -30,9 +31,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
     // final currentPageSize = pageSize ?? _defaultPageSize;
     final currentPageSize =
         pageSize ??
-        (state.filter is IssueCharacterTypeFilter
-            ? (state.filter as IssueCharacterTypeFilter).pageSize
-            : _defaultPageSize);
+        ((state.filter).pageSize);
 
     final IssueCharacterTypeFilter appliedFilter =
         filter ??
@@ -56,7 +55,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
     state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(appliedFilter);
+      final response = await _repository.getAll(appliedFilter);
 
       state = state.copyWith(
         items: response.items,
@@ -103,7 +102,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
   /// Returns the API success message on success.
   /// Throws an Exception with the API error message on failure.
   Future<String> add(String name) async {
-    final (_, message) = await _service.createCharacterType(name);
+    final (_, message) = await _repository.createCharacterType(name);
     // Reload to respect pagination and any sorting the API applies
     await loadAll();
     return message;
@@ -115,7 +114,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
     bool? active,
   }) async {
     try {
-      final updated = await _service.updateCharacterType(
+      final updated = await _repository.updateCharacterType(
         id: id,
         issueCharacterType: issueCharacterType,
         active: active,
@@ -135,7 +134,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
   Future<String?> delete(int id) async {
     try {
-      final deleted = await _service.deleteCharacterType(id);
+      final deleted = await _repository.deleteCharacterType(id);
 
       state = state.copyWith(
         items: state.items
@@ -152,7 +151,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
   Future<String?> recover(int id) async {
     try {
-      final recovered = await _service.recoverCharacterType(id);
+      final recovered = await _repository.recoverCharacterType(id);
 
       state = state.copyWith(
         items: state.items

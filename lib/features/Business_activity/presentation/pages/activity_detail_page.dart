@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/pages/edit_activity_page.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_provider.dart';
-import '../../../../core/widgets/custom_snackbar.dart';
 
 class ActivityDetailPage extends ConsumerWidget {
   final int activityId;
@@ -86,63 +86,6 @@ class ActivityDetailPage extends ConsumerWidget {
         '${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
-
-/// PRIMARY INFO
-// class _PrimaryInfoCard extends StatelessWidget {
-//   final BusinessActivity activity;
-
-//   const _PrimaryInfoCard({required this.activity});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-
-//     final status = activity.isDeleted
-//         ? "Deleted"
-//         : activity.active
-//         ? "Active"
-//         : "Suspended";
-
-//     final statusColor = activity.isDeleted
-//         ? Colors.red
-//         : activity.active
-//         ? Colors.green
-//         : Colors.orange;
-
-//     return Container(
-//       padding: const EdgeInsets.all(18),
-//       decoration: BoxDecoration(
-//         color: theme.cardColor,
-//         borderRadius: BorderRadius.circular(14),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           const _SectionLabel("ACTIVITY NAME"),
-//           const SizedBox(height: 8),
-//           Text(
-//             activity.activityName,
-//             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
-//           ),
-//           const SizedBox(height: 12),
-//           Row(
-//             children: [
-//               const _SectionLabel("STATUS"),
-//               const Spacer(),
-//               Text(
-//                 status,
-//                 style: TextStyle(
-//                   fontWeight: FontWeight.bold,
-//                   color: statusColor,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
 
 /// PRIMARY INFO
 class _PrimaryInfoCard extends StatelessWidget {
@@ -317,6 +260,7 @@ class _FooterActions extends StatelessWidget {
                     if (error == null) {
                       ref.invalidate(businessActivityByIdProvider(activityId));
                       CustomSnackbar.show(
+                        // ignore: use_build_context_synchronously
                         context,
                         message:
                             '${activity.activityName} recovered successfully',
@@ -324,6 +268,7 @@ class _FooterActions extends StatelessWidget {
                       );
                     } else {
                       CustomSnackbar.show(
+                        // ignore: use_build_context_synchronously
                         context,
                         message: error,
                         type: SnackBarType.error,
@@ -363,6 +308,7 @@ class _FooterActions extends StatelessWidget {
                     if (error == null) {
                       ref.invalidate(businessActivityByIdProvider(activityId));
                       CustomSnackbar.show(
+                        // ignore: use_build_context_synchronously
                         context,
                         message:
                             '${activity.activityName} deleted successfully',
@@ -370,6 +316,7 @@ class _FooterActions extends StatelessWidget {
                       );
                     } else {
                       CustomSnackbar.show(
+                        // ignore: use_build_context_synchronously
                         context,
                         message: error,
                         type: SnackBarType.error,

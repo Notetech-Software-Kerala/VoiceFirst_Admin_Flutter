@@ -155,10 +155,12 @@ class IssueMediaFormatDetailPage extends ConsumerWidget {
                                     .recover(updated.issueMediaFormatId);
 
                                 if (error == null) {
+                                  // ignore: unused_result
                                   ref.refresh(
                                     issueMediaFormatDetailProvider(id),
                                   );
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message:
                                         '${updated.issueMediaFormat} recovered successfully',
@@ -166,6 +168,7 @@ class IssueMediaFormatDetailPage extends ConsumerWidget {
                                   );
                                 } else {
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message: error,
                                     type: SnackBarType.error,
@@ -188,10 +191,12 @@ class IssueMediaFormatDetailPage extends ConsumerWidget {
                                     .delete(updated.issueMediaFormatId);
 
                                 if (error == null) {
+                                  // ignore: unused_result
                                   ref.refresh(
                                     issueMediaFormatDetailProvider(id),
                                   );
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message:
                                         '${updated.issueMediaFormat} deleted successfully',
@@ -199,6 +204,7 @@ class IssueMediaFormatDetailPage extends ConsumerWidget {
                                   );
                                 } else {
                                   CustomSnackbar.show(
+                                    // ignore: use_build_context_synchronously
                                     context,
                                     message: error,
                                     type: SnackBarType.error,

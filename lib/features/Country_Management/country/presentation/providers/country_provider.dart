@@ -2,11 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/features/country_management/country/data/repositories/country_repository.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
 import 'package:voice_first_admin/features/country_management/country/data/models/country_filter.dart';
-import 'country_state.dart';
+import 'package:voice_first_admin/features/country_management/country/presentation/providers/country_state.dart';
 
-/// Provider that constructs the CountryService using the centralized Dio client.
-final countryServiceProvider = Provider<CountryService>((ref) {
-  return CountryService(ref.read(dioClientProvider));
+/// Provider that constructs the CountryRepository using the centralized Dio client.
+final countryRepositoryProvider = Provider<CountryRepository>((ref) {
+  return CountryRepository(ref.read(dioClientProvider));
 });
 
 final countryProvider = NotifierProvider<CountryNotifier, CountryState>(
@@ -14,11 +14,11 @@ final countryProvider = NotifierProvider<CountryNotifier, CountryState>(
 );
 
 class CountryNotifier extends Notifier<CountryState> {
-  late final CountryService _service;
+  late final CountryRepository _repository;
 
   @override
   CountryState build() {
-    _service = ref.read(countryServiceProvider);
+    _repository = ref.read(countryRepositoryProvider);
     // Do NOT call loadAll here! Initial load should be triggered from the widget's initState.
     return CountryState.initial();
   }
@@ -57,7 +57,7 @@ class CountryNotifier extends Notifier<CountryState> {
     state = state.copyWith(isLoading: true, filter: appliedFilter, error: null);
 
     try {
-      final response = await _service.getAll(appliedFilter);
+      final response = await _repository.getAll(appliedFilter);
 
       state = state.copyWith(
         items: response.items,

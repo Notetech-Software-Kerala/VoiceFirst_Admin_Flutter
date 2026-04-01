@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/Plan_management/presentation/providers/plan_provider.dart';
-import '../../data/models/plan_model.dart';
-import '../../data/plan_service/plan_service.dart';
+import 'package:voice_first_admin/features/plan_management/data/models/plan_model.dart';
+import 'package:voice_first_admin/features/plan_management/data/repositories/plan_repository.dart';
+import 'package:voice_first_admin/features/plan_management/presentation/providers/plan_provider.dart';
+
 
 ////////////////////////////////////////////////////////////
 /// STATE
@@ -44,11 +45,11 @@ class AddPlanState {
 ////////////////////////////////////////////////////////////
 
 class AddPlanNotifier extends Notifier<AddPlanState> {
-  late final PlanService _service;
+  late final PlanRepository _repository;
 
   @override
   AddPlanState build() {
-    _service = ref.read(planServiceProvider);
+    _repository = ref.read(planRepositoryProvider);
     return const AddPlanState();
   }
 
@@ -102,7 +103,7 @@ class AddPlanNotifier extends Notifier<AddPlanState> {
     state = state.copyWith(isSubmitting: true, error: null);
 
     try {
-      final created = await _service.createPlan(
+      final created = await _repository.createPlan(
         planName: name,
         actionIds: state.actionIds,
       );

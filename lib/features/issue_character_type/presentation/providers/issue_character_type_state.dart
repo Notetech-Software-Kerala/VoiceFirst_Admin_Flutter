@@ -1,4 +1,3 @@
-import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/features/issue_character_type/data/models/issue_character_type_filter.dart';
 import 'package:voice_first_admin/features/issue_character_type/data/models/issue_charactertype_model.dart';
 

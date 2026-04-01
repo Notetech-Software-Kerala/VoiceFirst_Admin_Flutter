@@ -4,9 +4,9 @@ import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/program_action_model.dart';
-import '../dialogs/edit_program_action_dialog.dart';
-import '../providers/program_action_provider.dart';
+import 'package:voice_first_admin/features/program_action/data/models/program_action_model.dart';
+import 'package:voice_first_admin/features/program_action/presentation/dialogs/edit_program_action_dialog.dart';
+import 'package:voice_first_admin/features/program_action/presentation/providers/program_action_provider.dart';
 
 class ProgramActionDetailView extends ConsumerWidget {
   final ProgramActionModel action;

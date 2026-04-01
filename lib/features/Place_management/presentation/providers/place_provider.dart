@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'place_notifier.dart';
-import 'place_state.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_notifier.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_state.dart';
 
 final placeProvider = NotifierProvider<PlaceNotifier, PlaceState>(
   PlaceNotifier.new,

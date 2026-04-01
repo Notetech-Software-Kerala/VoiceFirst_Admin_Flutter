@@ -1,14 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:voice_first_admin/features/country_management/division3/data/models/division_three_model.dart';
 import 'package:voice_first_admin/features/country_management/division3/data/models/division3_filter.dart';
-import 'package:voice_first_admin/features/Program_Action/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/network/dio_client.dart';
 
-class DivisionThreeService {
+class DivisionThreeRepository {
   final Dio _dio;
 
-  DivisionThreeService(this._dio);
+  DivisionThreeRepository(this._dio);
 
   Future<PaginatedResponse<DivisionThreeModel>> getAll(
     DivisionThreeFilter filter,
@@ -55,6 +55,8 @@ class DivisionThreeService {
   }
 }
 
-final divisionThreeServiceProvider = Provider<DivisionThreeService>((ref) {
-  return DivisionThreeService(ref.read(dioClientProvider));
+final divisionThreeRepositoryProvider = Provider<DivisionThreeRepository>((
+  ref,
+) {
+  return DivisionThreeRepository(ref.read(dioClientProvider));
 });

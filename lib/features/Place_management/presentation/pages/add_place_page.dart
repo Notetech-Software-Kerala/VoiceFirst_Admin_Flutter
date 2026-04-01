@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/providers/add_place_provider.dart';
-import 'package:voice_first_admin/features/Place_management/presentation/providers/lookup/lookup_provider.dart';
+import 'package:voice_first_admin/features/place_management/data/models/lookup_models.dart';
+import 'package:voice_first_admin/features/place_management/data/models/place_requests.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/add_place_provider.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/lookup/lookup_provider.dart';
 import 'package:voice_first_admin/core/widgets/paginated_search_dropdown.dart';
-import 'package:voice_first_admin/features/Place_management/widgets/place_form_label.dart';
-import '../../data/models/lookup_models.dart';
-import '../../data/models/place_requests.dart';
-import '../providers/place_provider.dart';
+import 'package:voice_first_admin/features/place_management/presentation/providers/place_provider.dart';
+import 'package:voice_first_admin/features/place_management/widgets/place_form_label.dart';
 
 // Minimal per-dropdown paging container to reduce duplication (file-local)
 class _Paging<T> {
@@ -109,8 +109,6 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
     _postOfficeScrollController.addListener(_onPostOfficeScroll);
   }
 
-  
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -137,10 +135,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _countryPaging.isLoading = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getCountriesPaginated(
+      final response = await repository.getCountriesPaginated(
         pageNumber: _countryPaging.page,
         searchText: _countryPaging.search.isEmpty
             ? null
@@ -177,10 +175,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _divOnePaging.isLoading = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getDivisionOnePaginated(
+      final response = await repository.getDivisionOnePaginated(
         countryId: countryId,
         pageNumber: _divOnePaging.page,
         searchText: _divOnePaging.search.isEmpty ? null : _divOnePaging.search,
@@ -216,10 +214,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _divTwoPaging.isLoading = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getDivisionTwoPaginated(
+      final response = await repository.getDivisionTwoPaginated(
         divOneId: divOneId,
         pageNumber: _divTwoPaging.page,
         searchText: _divTwoPaging.search.isEmpty ? null : _divTwoPaging.search,
@@ -255,10 +253,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _divThreePaging.isLoading = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getDivisionThreePaginated(
+      final response = await repository.getDivisionThreePaginated(
         divTwoId: divTwoId,
         pageNumber: _divThreePaging.page,
         searchText: _divThreePaging.search.isEmpty
@@ -315,10 +313,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _postOfficePaging.isLoading = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final response = await service.getPostOfficesPaginated(
+      final response = await repository.getPostOfficesPaginated(
         countryId: countryId,
         divOneId: divOneId,
         divTwoId: divTwoId,
@@ -355,10 +353,10 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
       _isLoadingZipByOffice[officeId] = true;
     });
 
-    final service = ref.read(placeLookupServiceProvider);
+    final repository = ref.read(placeLookupRepositoryProvider);
 
     try {
-      final zips = await service.getZipCodesByPostOfficeIds(
+      final zips = await repository.getZipCodesByPostOfficeIds(
         postOfficeIds: [officeId],
       );
 
@@ -367,9 +365,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
         _isLoadingZipByOffice[officeId] = false;
       });
     } catch (e) {
-      debugPrint(
-        '[AddPlace] Error loading zip codes for office $officeId: $e',
-      );
+      debugPrint('[AddPlace] Error loading zip codes for office $officeId: $e');
       setState(() {
         _isLoadingZipByOffice[officeId] = false;
       });
@@ -879,7 +875,7 @@ class _AddPlacePageState extends ConsumerState<AddPlacePage> {
                                       office: office,
                                     ),
                                   );
-                                }).toList(),
+                                }),
                             ],
                           ),
                         );
