@@ -68,7 +68,6 @@ class _PostOfficeListScreenState extends ConsumerState<PostOfficeListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     // Watch Provider
     final state = ref.watch(postOfficeProvider);
