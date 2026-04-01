@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:voice_first_admin/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:voice_first_admin/features/reset_password/presentation/pages/change_password_page.dart';
 import '../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../../../features/auth/presentation/pages/login_screen.dart';
@@ -43,59 +44,73 @@ class ProfilePage extends ConsumerWidget {
                   const SizedBox(height: 40),
 
                   // 2. Bento cards — stacked vertically so long text is always visible
-                  Column(
-                    children: [
-                      _BentoCard(
-                        category: 'Personal',
-                        icon: Icons.badge_outlined,
-                        iconColor: colors.tertiary,
-                        children: [
-                          _InfoRow(
-                            icon: Icons.male,
-                            label: 'Gender',
-                            value: 'Male',
-                          ),
-                          const SizedBox(height: 16),
-                          _InfoRow(
-                            icon: Icons.calendar_today_outlined,
-                            label: 'Birth Year',
-                            value: '1989',
-                          ),
-                          const SizedBox(height: 16),
-                          _InfoRow(
-                            icon: Icons.tag,
-                            label: 'User ID',
-                            value: '#${profileState.userId}',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      _BentoCard(
-                        category: 'Contact',
-                        icon: Icons.contact_mail_outlined,
-                        iconColor: colors.primary,
-                        children: [
-                          _InfoRow(
-                            icon: Icons.alternate_email,
-                            label: 'Email',
-                            value: profileState.userName,
-                          ),
-                          const SizedBox(height: 16),
-                          _InfoRow(
-                            icon: Icons.call_outlined,
-                            label: 'Platform',
-                            value: 'Admin Console',
-                          ),
-                          const SizedBox(height: 16),
-                          _InfoRow(
-                            icon: Icons.shield_outlined,
-                            label: 'Status',
-                            value: 'Active',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                  if (profileState.isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else
+                    Column(
+                      children: [
+                        _BentoCard(
+                          category: 'Personal',
+                          icon: Icons.badge_outlined,
+                          iconColor: colors.tertiary,
+                          children: [
+                            _InfoRow(
+                              icon: Icons.person_outline,
+                              label: 'Gender',
+                              value: profileState.gender.isNotEmpty
+                                  ? profileState.gender
+                                  : '—',
+                            ),
+                            const SizedBox(height: 16),
+                            _InfoRow(
+                              icon: Icons.calendar_today_outlined,
+                              label: 'Birth Year',
+                              value: profileState.birthYear.isNotEmpty
+                                  ? profileState.birthYear
+                                  : '—',
+                            ),
+                            const SizedBox(height: 16),
+                            _InfoRow(
+                              icon: Icons.tag,
+                              label: 'User ID',
+                              value: '#${profileState.userId}',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        _BentoCard(
+                          category: 'Contact',
+                          icon: Icons.contact_mail_outlined,
+                          iconColor: colors.primary,
+                          children: [
+                            _InfoRow(
+                              icon: Icons.alternate_email,
+                              label: 'Email',
+                              value: profileState.email.isNotEmpty
+                                  ? profileState.email
+                                  : '—',
+                            ),
+                            const SizedBox(height: 16),
+                            _InfoRow(
+                              icon: Icons.call_outlined,
+                              label: 'Phone',
+                              value: profileState.phoneNumber.isNotEmpty
+                                  ? profileState.phoneNumber
+                                  : '—',
+                            ),
+                            const SizedBox(height: 16),
+                            _InfoRow(
+                              icon: Icons.shield_outlined,
+                              label: 'Role',
+                              value: profileState.userRole.isNotEmpty
+                                  ? profileState.userRole
+                                  : '—',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
                   const SizedBox(height: 32),
 
                   // 3. Preferences section
@@ -328,7 +343,11 @@ class _ProfileHeader extends StatelessWidget {
               ),
               IconButton(
                 icon: Icon(Icons.edit, color: theme.colorScheme.primary),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                  );
+                },
               ),
             ],
           ),
