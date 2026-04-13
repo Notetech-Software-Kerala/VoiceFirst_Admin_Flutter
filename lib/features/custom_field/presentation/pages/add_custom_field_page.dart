@@ -32,7 +32,7 @@ class AddCustomFieldPage extends ConsumerStatefulWidget {
 class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
   final _fieldNameController = TextEditingController();
   final _fieldKeyController = TextEditingController();
-  String? _selectedDataType;
+  int? _selectedDataType;
   bool _isKeyManuallyEdited = false;
 
   // Validation rules list
@@ -40,14 +40,6 @@ class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
 
   // Dropdown options list
   final List<_DropdownOption> _dropdownOptions = [_DropdownOption()];
-
-  static const _dataTypes = [
-    ('text', 'Short Text'),
-    ('textarea', 'Long Text / Paragraph'),
-    ('number', 'Number'),
-    ('dropdown', 'Dropdown Selection'),
-    ('date', 'Date Picker'),
-  ];
 
   @override
   void initState() {
@@ -113,9 +105,13 @@ class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
     final field = CustomFieldModel(
       fieldName: name,
       fieldKey: key,
-      fieldDataType: _selectedDataType!,
-      validations: validations,
-      options: options,
+      fieldDataTypes: [
+        CustomFieldDataTypeModel(
+          fieldDataTypeId: _selectedDataType!,
+          validations: validations,
+          options: options,
+        ),
+      ],
     );
     final err = await ref.read(customFieldProvider.notifier).add(field);
     if (mounted) {
@@ -141,9 +137,7 @@ class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
         body: Column(
           children: [
             // ── Header ──────────────────────────────────────────────────────────
-            _AppHeader(
-              onMenuPressed: () => Scaffold.of(outerContext).openDrawer(),
-            ),
+            _AppHeader(onBackPressed: () => Navigator.maybePop(outerContext)),
 
             // ── Scrollable Body ─────────────────────────────────────────────────
             Expanded(
@@ -230,19 +224,43 @@ class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
                         _LabeledField(
                           label: 'Data Type',
                           required: true,
-                          child: _StyledDropdown(
-                            hint: 'Select Data Type',
-                            value: _selectedDataType,
-                            items: _dataTypes
-                                .map(
-                                  (e) => DropdownMenuItem(
-                                    value: e.$1,
-                                    child: Text(e.$2),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedDataType = v),
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final datatypesAsync = ref.watch(
+                                lookupDataTypesProvider,
+                              );
+                              return datatypesAsync.when(
+                                data: (datatypes) {
+                                  return _StyledDropdown<int>(
+                                    hint: 'Select Data Type',
+                                    value: _selectedDataType,
+                                    items: datatypes
+                                        .map(
+                                          (e) => DropdownMenuItem<int>(
+                                            value: e.id,
+                                            child: Text(e.label),
+                                          ),
+                                        )
+                                        .toList(),
+                                    onChanged: (v) {
+                                      setState(() {
+                                        _selectedDataType = v;
+                                        // Clear current validations if type changes
+                                        _validationRules.clear();
+                                        _validationRules.add(_ValidationRule());
+                                      });
+                                    },
+                                  );
+                                },
+                                loading: () => const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                                error: (e, st) => Text(
+                                  'Error loading datatypes: $e',
+                                  style: TextStyle(color: context.error),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -252,15 +270,40 @@ class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
                   const SizedBox(height: 24),
 
                   // Validation Rules
-                  _ValidationRulesSection(
-                    rules: _validationRules,
-                    onAddRule: () =>
-                        setState(() => _validationRules.add(_ValidationRule())),
-                    onRemoveRule: (i) =>
-                        setState(() => _validationRules.removeAt(i)),
-                  ),
+                  if (_selectedDataType != null)
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final rulesAsync = ref.watch(
+                          lookupValidationRulesProvider(_selectedDataType!),
+                        );
+                        return rulesAsync.when(
+                          data: (apiRules) {
+                            return _ValidationRulesSection(
+                              rules: _validationRules,
+                              apiRules: apiRules,
+                              onAddRule: () => setState(
+                                () => _validationRules.add(_ValidationRule()),
+                              ),
+                              onRemoveRule: (i) =>
+                                  setState(() => _validationRules.removeAt(i)),
+                            );
+                          },
+                          loading: () => const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                          error: (e, st) => Text(
+                            'Error loading rules',
+                            style: TextStyle(color: context.error),
+                          ),
+                        );
+                      },
+                    ),
 
-                  if (_selectedDataType == 'dropdown') ...[
+                  if (_selectedDataType != null) ...[
+                    // Option assumes ID 12 is dropdown etc, but showing for now based on if user adds options
                     const SizedBox(height: 24),
                     // Dropdown Options
                     _DropdownOptionsSection(
@@ -309,9 +352,9 @@ class _AddCustomFieldPageState extends ConsumerState<AddCustomFieldPage> {
 
 // ─── Header ───────────────────────────────────────────────────────────────────
 class _AppHeader extends StatelessWidget {
-  final VoidCallback onMenuPressed;
+  final VoidCallback onBackPressed;
 
-  const _AppHeader({required this.onMenuPressed});
+  const _AppHeader({required this.onBackPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -327,8 +370,8 @@ class _AppHeader extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                icon: Icon(Icons.menu, color: context.primary, size: 28),
-                onPressed: onMenuPressed,
+                icon: Icon(Icons.arrow_back, color: context.primary, size: 28),
+                onPressed: onBackPressed,
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -474,11 +517,11 @@ class _LabeledField extends StatelessWidget {
 }
 
 // ─── Styled Dropdown ──────────────────────────────────────────────────────────
-class _StyledDropdown extends StatelessWidget {
+class _StyledDropdown<T> extends StatelessWidget {
   final String hint;
-  final String? value;
-  final List<DropdownMenuItem<String>> items;
-  final ValueChanged<String?> onChanged;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
 
   const _StyledDropdown({
     required this.hint,
@@ -497,7 +540,7 @@ class _StyledDropdown extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
+        child: DropdownButton<T>(
           value: value,
           isExpanded: true,
           hint: Text(
@@ -524,11 +567,13 @@ class _ValidationRule {
 
 class _ValidationRulesSection extends StatelessWidget {
   final List<_ValidationRule> rules;
+  final List<LookupValidationRuleModel> apiRules;
   final VoidCallback onAddRule;
   final ValueChanged<int> onRemoveRule;
 
   const _ValidationRulesSection({
     required this.rules,
+    required this.apiRules,
     required this.onAddRule,
     required this.onRemoveRule,
   });
@@ -594,6 +639,7 @@ class _ValidationRulesSection extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: _RuleCard(
               rule: rule,
+              apiRules: apiRules,
               isDashed: !isFirst,
               canRemove: isFirst,
               onRemove: () => onRemoveRule(i),
@@ -605,19 +651,26 @@ class _ValidationRulesSection extends StatelessWidget {
   }
 }
 
-class _RuleCard extends StatelessWidget {
+class _RuleCard extends StatefulWidget {
   final _ValidationRule rule;
+  final List<LookupValidationRuleModel> apiRules;
   final bool isDashed;
   final bool canRemove;
   final VoidCallback onRemove;
 
   const _RuleCard({
     required this.rule,
+    required this.apiRules,
     required this.isDashed,
     required this.canRemove,
     required this.onRemove,
   });
 
+  @override
+  State<_RuleCard> createState() => _RuleCardState();
+}
+
+class _RuleCardState extends State<_RuleCard> {
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -626,11 +679,11 @@ class _RuleCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: isDashed
+            color: widget.isDashed
                 ? context.card.withValues(alpha: 0.6)
                 : context.card,
             borderRadius: BorderRadius.circular(20),
-            border: isDashed
+            border: widget.isDashed
                 ? Border.all(
                     color: context.border.withValues(alpha: 0.5),
                     style: BorderStyle.solid,
@@ -643,17 +696,48 @@ class _RuleCard extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _MiniField(
-                      label: 'Rule Name',
-                      controller: rule.nameCtrl,
-                      hint: 'e.g. minLength',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'RULE NAME',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                            color: context.muted,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        _StyledDropdown<String>(
+                          hint: 'Select Rule',
+                          value: widget.rule.nameCtrl.text.isEmpty
+                              ? null
+                              : widget.rule.nameCtrl.text,
+                          items: widget.apiRules
+                              .map(
+                                (r) => DropdownMenuItem(
+                                  value: r.ruleName,
+                                  child: Text(r.ruleName),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() {
+                                widget.rule.nameCtrl.text = v;
+                              });
+                            }
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _MiniField(
                       label: 'Value',
-                      controller: rule.valueCtrl,
+                      controller: widget.rule.valueCtrl,
                       hint: 'e.g. 10',
                     ),
                   ),
@@ -662,7 +746,7 @@ class _RuleCard extends StatelessWidget {
               const SizedBox(height: 16),
               _MiniField(
                 label: 'Custom Error Message',
-                controller: rule.errorCtrl,
+                controller: widget.rule.errorCtrl,
                 hint: 'Custom error msg',
               ),
             ],
@@ -670,12 +754,12 @@ class _RuleCard extends StatelessWidget {
         ),
 
         // Remove button
-        if (canRemove)
+        if (widget.canRemove)
           Positioned(
             top: -8,
             right: -8,
             child: GestureDetector(
-              onTap: onRemove,
+              onTap: widget.onRemove,
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(

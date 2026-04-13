@@ -16,27 +16,19 @@ class EditCustomFieldPage extends ConsumerStatefulWidget {
 class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _fieldNameController;
-  late String _selectedDataType;
+  late int? _selectedDataType;
 
   final List<_EditValidationRule> _validationRules = [];
   final List<_EditDropdownOption> _dropdownOptions = [];
-
-  static const _dataTypes = [
-    ('text', 'Short Text'),
-    ('textarea', 'Long Text / Paragraph'),
-    ('number', 'Number'),
-    ('dropdown', 'Dropdown Selection'),
-    ('date', 'Date Picker'),
-  ];
 
   @override
   void initState() {
     super.initState();
     final f = widget.field;
     _fieldNameController = TextEditingController(text: f.fieldName);
-    _selectedDataType = f.fieldDataType;
+    _selectedDataType = f.fieldDataTypes.isNotEmpty ? f.fieldDataTypes.first.fieldDataTypeId : null;
 
-    for (final v in f.validations) {
+    for (final v in f.primaryValidations) {
       _validationRules.add(_EditValidationRule(
         validationId: v.validationId,
         nameCtrl: TextEditingController(text: v.ruleName),
@@ -45,7 +37,7 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
       ));
     }
 
-    for (final o in f.options) {
+    for (final o in f.primaryOptions) {
       _dropdownOptions.add(_EditDropdownOption(
         optionId: o.optionId,
         labelCtrl: TextEditingController(text: o.label),
@@ -53,7 +45,6 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
       ));
     }
 
-    // empty trailing row for adding new items
     _dropdownOptions.add(_EditDropdownOption());
   }
 
@@ -87,7 +78,6 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
             ))
         .toList();
 
-    // exclude the empty trailing "add" row
     final options = _dropdownOptions
         .where((o) =>
             o.labelCtrl.text.trim().isNotEmpty ||
@@ -103,9 +93,15 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
       fieldId: widget.field.fieldId,
       fieldName: _fieldNameController.text.trim(),
       fieldKey: widget.field.fieldKey,
-      fieldDataType: _selectedDataType,
-      validations: validations,
-      options: options,
+      active: widget.field.active,
+      fieldDataTypes: [
+        CustomFieldDataTypeModel(
+          customFieldLinkId: widget.field.fieldDataTypes.isNotEmpty ? widget.field.fieldDataTypes.first.customFieldLinkId : null,
+          fieldDataTypeId: _selectedDataType!,
+          validations: validations,
+          options: options,
+        )
+      ],
     );
 
     final err = await notifier.edit(widget.field.fieldId!, updated);
@@ -161,27 +157,6 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: primary, width: 2),
-          ),
-        );
-
-    InputDecoration miniDec({required String hint}) => InputDecoration(
-          hintText: hint,
-          filled: true,
-          fillColor: bgColor,
-          hintStyle: TextStyle(color: mutedColor, fontSize: 13),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: borderColor),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: primary),
           ),
         );
 
@@ -255,13 +230,11 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
           children: [
-            // ── Basic Configuration ─────────────────────────────────────────
             sectionCard(
               'Basic Configuration',
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Field Name
                   Text(
                     'Field Name *',
                     style: TextStyle(
@@ -279,58 +252,6 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
                         v == null || v.trim().isEmpty ? 'Required' : null,
                   ),
                   const SizedBox(height: 16),
-
-                  // Field Key (read-only)
-                  Text(
-                    'Field Key',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: mutedColor,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Stack(
-                    alignment: Alignment.centerRight,
-                    children: [
-                      TextFormField(
-                        initialValue: widget.field.fieldKey,
-                        readOnly: true,
-                        style: TextStyle(
-                          color: mutedColor,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        decoration: inputDec(hint: '').copyWith(
-                          contentPadding:
-                              const EdgeInsets.fromLTRB(16, 14, 90, 14),
-                        ),
-                      ),
-                      Positioned(
-                        right: 12,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: bgColor,
-                            border: Border.all(color: borderColor),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'LOCKED',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: mutedColor,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Data Type
                   Text(
                     'Data Type *',
                     style: TextStyle(
@@ -340,155 +261,64 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: borderColor),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedDataType,
-                        isExpanded: true,
-                        dropdownColor: cardColor,
-                        style: TextStyle(color: textColor, fontSize: 14),
-                        icon: Icon(Icons.keyboard_arrow_down, color: mutedColor),
-                        onChanged: (v) {
-                          if (v != null) {
-                            setState(() => _selectedDataType = v);
-                          }
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final datatypesAsync = ref.watch(lookupDataTypesProvider);
+                      return datatypesAsync.when(
+                        data: (datatypes) {
+                          return _StyledDropdown<int>(
+                            hint: 'Select Data Type',
+                            value: _selectedDataType,
+                            items: datatypes
+                                .map(
+                                  (e) => DropdownMenuItem<int>(
+                                    value: e.id,
+                                    child: Text(e.label),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) {
+                              setState(() {
+                                _selectedDataType = v;
+                                _validationRules.clear();
+                                _validationRules.add(_EditValidationRule());
+                              });
+                            },
+                          );
                         },
-                        items: _dataTypes
-                            .map((e) => DropdownMenuItem(
-                                  value: e.$1,
-                                  child: Text(e.$2),
-                                ))
-                            .toList(),
-                      ),
-                    ),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Text('Error loading datatypes: $e', style: TextStyle(color: errorColor)),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // ── Validation Rules ────────────────────────────────────────────
-            Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'VALIDATION RULES',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1.5,
-                        color: mutedColor,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => setState(
-                          () => _validationRules.add(_EditValidationRule())),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(
-                              color: primary.withValues(alpha: 0.2)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.add, size: 16, color: primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              'ADD RULE',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ..._validationRules.asMap().entries.map((entry) {
-                  final i = entry.key;
-                  final rule = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: borderColor),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _mini(
-                                        'Rule Name', rule.nameCtrl,
-                                        'e.g. minLength', miniDec,
-                                        textColor, mutedColor),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _mini(
-                                        'Value', rule.valueCtrl,
-                                        'e.g. 10', miniDec,
-                                        textColor, mutedColor),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              _mini(
-                                  'Error Message', rule.errorCtrl,
-                                  'Custom error msg', miniDec,
-                                  textColor, mutedColor),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          top: -8,
-                          right: -8,
-                          child: GestureDetector(
-                            onTap: () =>
-                                setState(() => _validationRules.removeAt(i)),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: errorColor.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: errorColor.withValues(alpha: 0.3)),
-                              ),
-                              child:
-                                  Icon(Icons.close, size: 16, color: errorColor),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+            if (_selectedDataType != null)
+              Consumer(
+                builder: (context, ref, child) {
+                  final rulesAsync = ref.watch(lookupValidationRulesProvider(_selectedDataType!));
+                  return rulesAsync.when(
+                    data: (apiRules) {
+                      return _EditValidationRulesSection(
+                        rules: _validationRules,
+                        apiRules: apiRules,
+                        onAddRule: () =>
+                            setState(() => _validationRules.add(_EditValidationRule())),
+                        onRemoveRule: (i) =>
+                            setState(() => _validationRules.removeAt(i)),
+                      );
+                    },
+                    loading: () => const Center(child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: CircularProgressIndicator(),
+                    )),
+                    error: (e, st) => Text('Error loading rules', style: TextStyle(color: errorColor)),
                   );
-                }),
-              ],
-            ),
-
-            if (_selectedDataType == 'dropdown') ...[
+                },
+              ),
+            if (_selectedDataType != null) ...[
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(20),
@@ -538,8 +368,7 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
                                   enabled: !isLast,
                                   style: TextStyle(
                                       color: textColor, fontSize: 13),
-                                  decoration: miniDec(
-                                      hint: isLast ? 'Add Label...' : 'Label'),
+                                  decoration: InputDecoration(hintText: isLast ? 'Add Label...' : 'Label'),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -549,8 +378,7 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
                                   enabled: !isLast,
                                   style: TextStyle(
                                       color: textColor, fontSize: 13),
-                                  decoration: miniDec(
-                                      hint: isLast ? 'Add Value...' : 'Value'),
+                                  decoration: InputDecoration(hintText: isLast ? 'Add Value...' : 'Value'),
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -644,39 +472,126 @@ class _EditCustomFieldPageState extends ConsumerState<EditCustomFieldPage> {
       ),
     );
   }
+}
 
-  Widget _mini(
-    String label,
-    TextEditingController ctrl,
-    String hint,
-    InputDecoration Function({required String hint}) decFn,
-    Color textColor,
-    Color mutedColor,
-  ) {
+class _StyledDropdown<T> extends StatelessWidget {
+  final String hint;
+  final T? value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  const _StyledDropdown({
+    required this.hint,
+    this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          hint: Text(hint, style: TextStyle(color: theme.hintColor, fontSize: 14)),
+          dropdownColor: theme.cardColor,
+          style: TextStyle(color: theme.textTheme.bodyMedium?.color, fontSize: 14),
+          icon: Icon(Icons.keyboard_arrow_down, color: theme.hintColor),
+          items: items,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+}
+
+class _EditValidationRulesSection extends StatelessWidget {
+  final List<_EditValidationRule> rules;
+  final List<LookupValidationRuleModel> apiRules;
+  final VoidCallback onAddRule;
+  final ValueChanged<int> onRemoveRule;
+
+  const _EditValidationRulesSection({
+    required this.rules,
+    required this.apiRules,
+    required this.onAddRule,
+    required this.onRemoveRule,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1,
-            color: mutedColor,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('VALIDATION RULES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 1.5, color: theme.hintColor)),
+            GestureDetector(
+              onTap: onAddRule,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(50)),
+                child: Text('ADD RULE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: theme.primaryColor)),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
-        TextField(
-          controller: ctrl,
-          style: TextStyle(color: textColor, fontSize: 13),
-          decoration: decFn(hint: hint),
-        ),
+        const SizedBox(height: 12),
+        ...rules.asMap().entries.map((entry) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _EditRuleCard(rule: entry.value, apiRules: apiRules, onRemove: () => onRemoveRule(entry.key)),
+        )),
       ],
     );
   }
 }
 
-// ─── Local edit models ─────────────────────────────────────────────────────────
+class _EditRuleCard extends StatelessWidget {
+  final _EditValidationRule rule;
+  final List<LookupValidationRuleModel> apiRules;
+  final VoidCallback onRemove;
+
+  const _EditRuleCard({required this.rule, required this.apiRules, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: theme.dividerColor)),
+          child: Column(
+            children: [
+              _StyledDropdown<String>(
+                hint: 'Select Rule',
+                value: apiRules.any((r) => r.ruleName == rule.nameCtrl.text) ? rule.nameCtrl.text : null,
+                items: apiRules.map((r) => DropdownMenuItem(value: r.ruleName, child: Text(r.ruleName))).toList(),
+                onChanged: (v) => rule.nameCtrl.text = v ?? '',
+              ),
+              const SizedBox(height: 16),
+              TextField(controller: rule.valueCtrl, decoration: const InputDecoration(labelText: 'Value')),
+              const SizedBox(height: 16),
+              TextField(controller: rule.errorCtrl, decoration: const InputDecoration(labelText: 'Error Message')),
+            ],
+          ),
+        ),
+        Positioned(top: -8, right: -8, child: IconButton(onPressed: onRemove, icon: Icon(Icons.close, color: theme.colorScheme.error))),
+      ],
+    );
+  }
+}
+
 class _EditValidationRule {
   final int? validationId;
   final TextEditingController nameCtrl;
