@@ -67,6 +67,7 @@ class EditIssueMediaFormatDialog {
                 }
 
                 // Refresh detail view if open
+                // ignore: unused_result
                 ref.refresh(
                   issueMediaFormatDetailProvider(
                     mediaFormat.issueMediaFormatId,

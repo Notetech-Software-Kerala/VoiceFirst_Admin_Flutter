@@ -144,8 +144,9 @@ class _AddActivityPageState extends ConsumerState<AddActivityPage> {
                   data: (fields) {
                     final selected = fields
                         .where(
-                          (f) =>
-                              _selectedCustomFieldIds.contains(f.customFieldId),
+                          (f) => _selectedCustomFieldIds.contains(
+                            f.customFieldLinkId,
+                          ),
                         )
                         .toList();
 

@@ -158,11 +158,11 @@ class _PaginatedSearchDropdownState<T>
                   Expanded(
                     child: ValueListenableBuilder<int>(
                       valueListenable: _itemsVersion,
-                      builder: (context, _, __) {
+                      builder: (context, _, _) {
                         final asyncItems = widget.asyncItems;
                         return asyncItems.when(
                           loading: () => _buildLoading(),
-                          error: (_, __) => _buildError(theme),
+                          error: (_, _) => _buildError(theme),
                           data: (items) => _buildList(theme, items),
                         );
                       },
@@ -232,7 +232,7 @@ class _PaginatedSearchDropdownState<T>
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
             decoration: BoxDecoration(
               color: isSelected
-                  ? theme.colorScheme.primary.withOpacity(0.08)
+                  ? theme.colorScheme.primary.withAlpha(20)
                   : null,
             ),
             child: Row(

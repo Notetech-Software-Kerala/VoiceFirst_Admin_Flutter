@@ -7,7 +7,6 @@ import 'package:voice_first_admin/features/business_activity/data/repositories/b
 import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_provider.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_state.dart';
 
-
 class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
   late final BusinessActivityRepository _repository;
 
@@ -145,6 +144,9 @@ class BusinessActivityNotifier extends Notifier<BusinessActivityState> {
             .map((a) => a.activityId == id ? updated : a)
             .toList(),
       );
+
+      // Invalidate the by-id provider so detail page refreshes instantly
+      ref.invalidate(businessActivityByIdProvider(id));
 
       return null;
     } catch (e) {
