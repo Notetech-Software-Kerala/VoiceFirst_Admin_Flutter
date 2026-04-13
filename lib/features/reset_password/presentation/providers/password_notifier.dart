@@ -6,18 +6,18 @@ import 'package:voice_first_admin/features/reset_password/data/repositories/pass
 import 'package:voice_first_admin/features/reset_password/presentation/providers/password_state.dart';
 
 class PasswordNotifier extends Notifier<PasswordState> {
-  late final PasswordRepository _service;
+  late final PasswordRepository _repository;
 
   @override
   PasswordState build() {
-    _service = ref.read(passwordRepositoryProvider);
+    _repository = ref.read(passwordRepositoryProvider);
     return PasswordState.initial();
   }
 
   Future<void> forgotPassword(String email) async {
     state = state.copyWith(isLoading: true, errorMessage: null, success: false);
     try {
-      await _service.forgotPassword(ForgotPasswordRequest(email: email));
+      await _repository.forgotPassword(ForgotPasswordRequest(email: email));
       state = state.copyWith(isLoading: false, success: true);
     } catch (e) {
       state = state.copyWith(
@@ -35,7 +35,7 @@ class PasswordNotifier extends Notifier<PasswordState> {
     state = state.copyWith(isLoading: true, errorMessage: null, success: false);
 
     try {
-      await _service.resetPassword(
+      await _repository.resetPassword(
         ResetPasswordRequest(
           newPassword: newPassword,
           passwordResetGrant: grant,
@@ -58,7 +58,7 @@ class PasswordNotifier extends Notifier<PasswordState> {
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null, success: false);
     try {
-      await _service.changePassword(
+      await _repository.changePassword(
         ChangePasswordRequest(
           oldPassword: oldPassword,
           newPassword: newPassword,

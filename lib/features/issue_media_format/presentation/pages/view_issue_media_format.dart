@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/core/models/base_filter_model.dart';
 import 'package:voice_first_admin/core/widgets/advanced_search_header.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
@@ -57,7 +56,6 @@ class _ViewIssueMediaFormatPageState
           onApply: (base) {
             Navigator.pop(context);
             try {
-              if (base is! BaseFilterModel) return;
               final b = base;
               notifier.loadAll(
                 filter: IssueMediaFormatFilter(
@@ -222,6 +220,7 @@ class _ViewIssueMediaFormatPageState
                                   type: SnackBarType.error,
                                 );
                               } else {
+                                // ignore: unused_result
                                 ref.refresh(
                                   issueMediaFormatDetailProvider(
                                     item.issueMediaFormatId,
@@ -277,6 +276,7 @@ class _ViewIssueMediaFormatPageState
                                 type: SnackBarType.error,
                               );
                             } else {
+                              // ignore: unused_result
                               ref.refresh(
                                 issueMediaFormatDetailProvider(
                                   item.issueMediaFormatId,

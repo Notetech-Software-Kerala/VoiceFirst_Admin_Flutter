@@ -4,7 +4,6 @@ import 'package:voice_first_admin/features/issue_character_type/data/models/issu
 import 'package:voice_first_admin/features/issue_character_type/data/repositories/character_type_repository.dart';
 import 'package:voice_first_admin/features/issue_character_type/presentation/providers/issue_character_type_state.dart';
 
-
 class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
   late final CharacterTypeRepository _repository;
 
@@ -14,7 +13,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
   @override
   IssueCharacterTypeState build() {
-    _repository = ref.read(issueCharacterTypeServiceProvider);
+    _repository = ref.read(characterTypeRepositoryProvider);
     return IssueCharacterTypeState.initial();
   }
 
@@ -29,9 +28,7 @@ class IssueCharacterTypeNotifier extends Notifier<IssueCharacterTypeState> {
 
     final currentPage = page ?? state.currentPage;
     // final currentPageSize = pageSize ?? _defaultPageSize;
-    final currentPageSize =
-        pageSize ??
-        ((state.filter).pageSize);
+    final currentPageSize = pageSize ?? ((state.filter).pageSize);
 
     final IssueCharacterTypeFilter appliedFilter =
         filter ??

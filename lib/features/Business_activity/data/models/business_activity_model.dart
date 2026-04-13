@@ -31,12 +31,17 @@ class BusinessActivity {
   });
 
   factory BusinessActivity.fromJson(Map<String, dynamic> json) {
+    final rawFields =
+        json['activityCustomFieldLinks'] ?? json['activityCustomFields'];
     return BusinessActivity(
       activityId: json['activityId'] as int,
       activityName: json['activityName'] as String,
-      activityCustomFields: json['activityCustomFields'] != null
-          ? (json['activityCustomFields'] as List)
-                .map((e) => ActivityCustomField.fromJson(e))
+      activityCustomFields: rawFields != null
+          ? (rawFields as List)
+                .map(
+                  (e) =>
+                      ActivityCustomField.fromJson(e as Map<String, dynamic>),
+                )
                 .toList()
           : null,
       active: json['active'] as bool,

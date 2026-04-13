@@ -205,7 +205,7 @@ class CharacterTypeRepository {
   }
 }
 
-final issueCharacterTypeServiceProvider = Provider<CharacterTypeRepository>((
+final characterTypeRepositoryProvider = Provider<CharacterTypeRepository>((
   ref,
 ) {
   return CharacterTypeRepository(ref.read(dioClientProvider));

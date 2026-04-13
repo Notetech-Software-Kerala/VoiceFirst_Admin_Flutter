@@ -1,30 +1,77 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:voice_first_admin/core/widgets/custom_snackbar.dart';
 import 'package:voice_first_admin/core/widgets/delete_bottom_sheet.dart';
 import 'package:voice_first_admin/core/widgets/recovery_bottom_sheet.dart';
-import 'package:voice_first_admin/core/widgets/standard_detail_page_buttons.dart';
 import 'package:voice_first_admin/features/business_activity/data/models/business_activity_model.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/pages/edit_activity_page.dart';
 import 'package:voice_first_admin/features/business_activity/presentation/providers/business_activity_provider.dart';
+
+const _emerald = Color(0xFF10B981);
+
+String _formatAuditDate(DateTime dt) {
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+  final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+  final minute = dt.minute.toString().padLeft(2, '0');
+  final period = dt.hour < 12 ? 'AM' : 'PM';
+  return '${months[dt.month - 1]} ${dt.day}, ${dt.year} • $hour:$minute $period';
+}
 
 class ActivityDetailPage extends ConsumerWidget {
   final int activityId;
 
   const ActivityDetailPage({super.key, required this.activityId});
 
+  AppBar _simpleAppBar(ThemeData theme) => AppBar(
+    backgroundColor: theme.scaffoldBackgroundColor,
+    elevation: 0,
+    scrolledUnderElevation: 0,
+    centerTitle: true,
+    leading: const BackButton(),
+    title: const Text(
+      'Activity Details',
+      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    ),
+    bottom: PreferredSize(
+      preferredSize: const Size.fromHeight(1),
+      child: Container(color: theme.dividerColor, height: 1),
+    ),
+  );
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-
     final activityAsync = ref.watch(businessActivityByIdProvider(activityId));
 
     return activityAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (err, stack) => Scaffold(
-        appBar: AppBar(title: const Text('Activity Details')),
-        body: Center(child: Text('Failed to load activity: $err')),
+      loading: () => Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: _simpleAppBar(theme),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, _) => Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: _simpleAppBar(theme),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Failed to load activity: $err'),
+          ),
+        ),
       ),
       data: (activity) {
         final isDeleted = activity.isDeleted;
@@ -32,122 +79,235 @@ class ActivityDetailPage extends ConsumerWidget {
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           appBar: AppBar(
-            title: const Text('Activity Details'),
-            leading: const BackButton(),
+            backgroundColor: theme.scaffoldBackgroundColor,
             elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: true,
+            leading: const BackButton(),
+            title: const Text(
+              'Activity Details',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+              const SizedBox(width: 8),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(color: theme.dividerColor, height: 1),
+            ),
           ),
-          body: Stack(
-            children: [
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 448),
+              child: Stack(
                 children: [
-                  /// PRIMARY INFO CARD
-                  _PrimaryInfoCard(activity: activity),
+                  ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 100),
+                    children: [
+                      _SectionHeader('Basic Information'),
+                      const SizedBox(height: 12),
+                      _BasicInfoCard(activity: activity, isDeleted: isDeleted),
 
-                  const SizedBox(height: 20),
+                      if ((activity.activityCustomFields ?? []).isNotEmpty) ...[
+                        const SizedBox(height: 32),
+                        _SectionHeader('Custom Fields'),
+                        const SizedBox(height: 12),
+                        _CustomFieldsCard(activity: activity),
+                      ],
 
-                  /// CUSTOM FIELDS
-                  if ((activity.activityCustomFields ?? []).isNotEmpty)
-                    _CustomFieldsCard(activity: activity),
-
-                  const SizedBox(height: 20),
-
-                  /// HISTORY SECTION
-                  _HistorySection(
-                    activity: activity,
-                    isDeleted: isDeleted,
-                    formatDate: _format,
+                      const SizedBox(height: 32),
+                      _SectionHeader('Audit Trail'),
+                      const SizedBox(height: 12),
+                      _AuditTrailCard(activity: activity, isDeleted: isDeleted),
+                    ],
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: _FooterActions(
+                      activity: activity,
+                      isDeleted: isDeleted,
+                      activityId: activityId,
+                    ),
                   ),
                 ],
               ),
-
-              /// FOOTER ACTIONS
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: _FooterActions(
-                  activity: activity,
-                  activityId: activityId,
-                  ref: ref,
-                  isDeleted: isDeleted,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },
     );
   }
+}
 
-  static String _format(DateTime dt) {
-    return '${dt.day.toString().padLeft(2, '0')}/'
-        '${dt.month.toString().padLeft(2, '0')}/'
-        '${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+// ── Section Header ─────────────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader(this.title);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.0,
+          color: Colors.grey,
+        ),
+      ),
+    );
   }
 }
 
-/// PRIMARY INFO
-class _PrimaryInfoCard extends StatelessWidget {
-  final BusinessActivity activity;
+// ── Basic Info Card ────────────────────────────────────────────────────────────
 
-  const _PrimaryInfoCard({required this.activity});
+class _BasicInfoCard extends StatelessWidget {
+  final BusinessActivity activity;
+  final bool isDeleted;
+
+  const _BasicInfoCard({required this.activity, required this.isDeleted});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primary = theme.primaryColor;
 
-    final status = activity.isDeleted
-        ? "Deleted"
-        : activity.active
-        ? "Active"
-        : "Suspended";
+    final Color badgeColor;
+    final String badgeText;
+    final IconData badgeIcon;
 
-    final statusColor = activity.isDeleted
-        ? Colors.red
-        : activity.active
-        ? Colors.green
-        : Colors.orange;
+    if (isDeleted) {
+      badgeColor = Colors.red;
+      badgeText = 'DELETED';
+      badgeIcon = Icons.cancel_outlined;
+    } else if (activity.active) {
+      badgeColor = _emerald;
+      badgeText = 'ACTIVE';
+      badgeIcon = Icons.check_circle;
+    } else {
+      badgeColor = Colors.orange;
+      badgeText = 'INACTIVE';
+      badgeIcon = Icons.pause_circle_outlined;
+    }
 
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          /// ACTIVITY NAME ROW
-          Row(
-            children: [
-              const Expanded(child: _SectionLabel("Activity Name")),
-              Text(
-                activity.activityName,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+          // ── Gradient Banner ──────────────────────────────────────────
+          Container(
+            width: double.infinity,
+            height: 128,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  primary.withValues(alpha: 0.2),
+                  primary.withValues(alpha: 0.05),
+                ],
               ),
-            ],
+            ),
+            child: Center(
+              child: Icon(
+                Icons.local_activity_outlined,
+                size: 48,
+                color: primary.withValues(alpha: 0.4),
+              ),
+            ),
           ),
 
-          const SizedBox(height: 12),
-          Divider(height: 1),
-
-          const SizedBox(height: 12),
-
-          /// STATUS ROW
-          Row(
-            children: [
-              const Expanded(child: _SectionLabel("Status")),
-              Text(
-                status,
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
+          // ── Details ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ACTIVITY NAME',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[500],
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            activity.activityName,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              height: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withValues(alpha: 0.1),
+                        border: Border.all(
+                          color: badgeColor.withValues(alpha: 0.2),
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(badgeIcon, size: 14, color: badgeColor),
+                          const SizedBox(width: 4),
+                          Text(
+                            badgeText,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: badgeColor,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ],
       ),
@@ -155,7 +315,8 @@ class _PrimaryInfoCard extends StatelessWidget {
   }
 }
 
-/// CUSTOM FIELDS (Enterprise label/value layout)
+// ── Custom Fields Card ─────────────────────────────────────────────────────────
+
 class _CustomFieldsCard extends StatelessWidget {
   final BusinessActivity activity;
 
@@ -164,306 +325,394 @@ class _CustomFieldsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    final fields = activity.activityCustomFields!
-        .where((f) => f.active)
-        .toList();
+    final fields = activity.activityCustomFields!;
 
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel("Custom Fields"),
-          const SizedBox(height: 16),
-          Column(
-            children: fields
-                .map(
-                  (f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Row(
+          for (int i = 0; i < fields.length; i++) ...[
+            if (i > 0) Divider(color: theme.dividerColor, height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.text_fields_outlined,
+                      color: theme.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            f.fieldName,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: theme.textTheme.bodyLarge!.color,
-                            ),
+                        Text(
+                          fields[i].fieldName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
-                          // ignore: dead_code
-                          f.fieldDataType,
-                          style: TextStyle(color: theme.hintColor),
+                          fields[i].fieldDataType,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                )
-                .toList(),
-          ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: fields[i].active
+                          ? _emerald.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      fields[i].active ? 'Active' : 'Inactive',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: fields[i].active ? _emerald : Colors.orange,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// FOOTER BUTTONS
-class _FooterActions extends StatelessWidget {
+// ── Audit Trail Card ───────────────────────────────────────────────────────────
+
+class _AuditTrailCard extends StatelessWidget {
   final BusinessActivity activity;
-  final int activityId;
-  final WidgetRef ref;
   final bool isDeleted;
+
+  const _AuditTrailCard({required this.activity, required this.isDeleted});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.primaryColor;
+
+    final hasModified =
+        (activity.modifiedUser != null &&
+            activity.modifiedUser!.trim().isNotEmpty) ||
+        activity.modifiedDate != null;
+
+    final hasDeletedInfo =
+        isDeleted &&
+        ((activity.deletedUser != null &&
+                activity.deletedUser!.trim().isNotEmpty) ||
+            activity.deletedDate != null);
+
+    final rows = <Widget>[
+      _AuditRow(
+        title: 'Created By',
+        name: activity.createdUser,
+        date: _formatAuditDate(activity.createdDate),
+        icon: Icons.person_add_outlined,
+        iconColor: primary,
+        trailingIcon: Icons.history,
+      ),
+    ];
+
+    if (hasModified) {
+      rows.add(Divider(color: theme.dividerColor, height: 1));
+      rows.add(
+        _AuditRow(
+          title: 'Last Modified By',
+          name: activity.modifiedUser ?? 'Unknown',
+          date: activity.modifiedDate != null
+              ? _formatAuditDate(activity.modifiedDate!)
+              : 'N/A',
+          icon: Icons.edit_note_outlined,
+          iconColor: Colors.orange,
+          trailingIcon: Icons.update,
+        ),
+      );
+    }
+
+    if (hasDeletedInfo) {
+      rows.add(Divider(color: theme.dividerColor, height: 1));
+      rows.add(
+        _AuditRow(
+          title: 'Deleted By',
+          name: activity.deletedUser ?? 'Unknown',
+          date: activity.deletedDate != null
+              ? _formatAuditDate(activity.deletedDate!)
+              : 'N/A',
+          icon: Icons.delete_forever_outlined,
+          iconColor: Colors.red,
+          trailingIcon: Icons.cancel_outlined,
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Column(children: rows),
+    );
+  }
+}
+
+class _AuditRow extends StatelessWidget {
+  final String title;
+  final String name;
+  final String date;
+  final IconData icon;
+  final Color iconColor;
+  final IconData trailingIcon;
+
+  const _AuditRow({
+    required this.title,
+    required this.name,
+    required this.date,
+    required this.icon,
+    required this.iconColor,
+    required this.trailingIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          Icon(trailingIcon, size: 16, color: Colors.grey[400]),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Footer Actions ─────────────────────────────────────────────────────────────
+
+class _FooterActions extends ConsumerWidget {
+  final BusinessActivity activity;
+  final bool isDeleted;
+  final int activityId;
 
   const _FooterActions({
     required this.activity,
+    required this.isDeleted,
     required this.activityId,
-    required this.ref,
-    required this.isDeleted,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final primary = theme.primaryColor;
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 26),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            theme.scaffoldBackgroundColor,
-            theme.scaffoldBackgroundColor.withAlpha(100),
-            theme.scaffoldBackgroundColor.withAlpha(0),
-          ],
-        ),
-      ),
-      child: Row(
-        children: [
-          if (isDeleted)
-            Expanded(
-              child: StandardRecoveryButton(
-                label: 'Recover',
-                onPressed: () => showRecoveryBottomSheet(
-                  context: context,
-                  itemName: activity.activityName,
-                  onRecover: () async {
-                    final error = await ref
-                        .read(businessActivityProvider.notifier)
-                        .recover(activity.activityId);
-                    if (error == null) {
-                      ref.invalidate(businessActivityByIdProvider(activityId));
-                      CustomSnackbar.show(
-                        // ignore: use_build_context_synchronously
-                        context,
-                        message:
-                            '${activity.activityName} recovered successfully',
-                        type: SnackBarType.success,
-                      );
-                    } else {
-                      CustomSnackbar.show(
-                        // ignore: use_build_context_synchronously
-                        context,
-                        message: error,
-                        type: SnackBarType.error,
-                      );
-                    }
-                  },
-                ),
-              ),
-            )
-          else ...[
-            Expanded(
-              child: StandardEditButton(
-                label: 'Edit',
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => EditActivityPage(activity: activity),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+            border: Border(top: BorderSide(color: theme.dividerColor)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: isDeleted
+                ? ElevatedButton.icon(
+                    onPressed: () => showRecoveryBottomSheet(
+                      context: context,
+                      itemName: activity.activityName,
+                      onRecover: () async {
+                        final error = await ref
+                            .read(businessActivityProvider.notifier)
+                            .recover(activity.activityId);
+                        if (!context.mounted) return;
+                        if (error == null) {
+                          ref.invalidate(
+                            businessActivityByIdProvider(activityId),
+                          );
+                          CustomSnackbar.show(
+                            context,
+                            message:
+                                '${activity.activityName} recovered successfully',
+                            type: SnackBarType.success,
+                          );
+                        } else {
+                          CustomSnackbar.show(
+                            context,
+                            message: error,
+                            type: SnackBarType.error,
+                          );
+                        }
+                      },
                     ),
-                  );
-
-                  ref.invalidate(businessActivityByIdProvider(activityId));
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: StandardDeleteButton(
-                label: 'Delete',
-                onPressed: () => showDeleteBottomSheet(
-                  context: context,
-                  itemName: activity.activityName,
-                  onDelete: () async {
-                    final error = await ref
-                        .read(businessActivityProvider.notifier)
-                        .delete(activity.activityId);
-                    if (error == null) {
-                      ref.invalidate(businessActivityByIdProvider(activityId));
-                      CustomSnackbar.show(
-                        // ignore: use_build_context_synchronously
-                        context,
-                        message:
-                            '${activity.activityName} deleted successfully',
-                        type: SnackBarType.success,
-                      );
-                    } else {
-                      CustomSnackbar.show(
-                        // ignore: use_build_context_synchronously
-                        context,
-                        message: error,
-                        type: SnackBarType.error,
-                      );
-                    }
-                  },
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// HISTORY SECTION (Expandable Cards)
-class _HistorySection extends StatelessWidget {
-  final BusinessActivity activity;
-  final bool isDeleted;
-  final String Function(DateTime) formatDate;
-
-  const _HistorySection({
-    required this.activity,
-    required this.isDeleted,
-    required this.formatDate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _HistoryCard(
-          icon: Icons.flag,
-          title: "Created Info",
-          entries: [
-            _HistoryEntry("Created By", activity.createdUser),
-            _HistoryEntry("Created Date", formatDate(activity.createdDate)),
-          ],
-          expanded: true,
+                    icon: const Icon(Icons.restore_outlined, size: 20),
+                    label: const Text('Recover Activity'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _emerald,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 48),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 8,
+                      shadowColor: _emerald.withValues(alpha: 0.3),
+                      textStyle: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final updated = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EditActivityPage(activity: activity),
+                              ),
+                            );
+                            if (updated == true && context.mounted) {
+                              ref.invalidate(
+                                businessActivityByIdProvider(activityId),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          label: const Text('Edit Activity'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primary,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(0, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 8,
+                            shadowColor: primary.withValues(alpha: 0.3),
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: () => showDeleteBottomSheet(
+                          context: context,
+                          itemName: activity.activityName,
+                          onDelete: () async {
+                            final error = await ref
+                                .read(businessActivityProvider.notifier)
+                                .delete(activity.activityId);
+                            if (!context.mounted) return;
+                            if (error == null) {
+                              ref.invalidate(
+                                businessActivityByIdProvider(activityId),
+                              );
+                              CustomSnackbar.show(
+                                context,
+                                message:
+                                    '${activity.activityName} deleted successfully',
+                                type: SnackBarType.success,
+                              );
+                            } else {
+                              CustomSnackbar.show(
+                                context,
+                                message: error,
+                                type: SnackBarType.error,
+                              );
+                            }
+                          },
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: Colors.red.withValues(alpha: 0.2),
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
-        if (activity.modifiedUser != null)
-          _HistoryCard(
-            icon: Icons.edit,
-            title: "Modified Info",
-            entries: [
-              _HistoryEntry("Modified By", activity.modifiedUser ?? "Unknown"),
-              _HistoryEntry(
-                "Modified Date",
-                formatDate(activity.modifiedDate!),
-              ),
-            ],
-          ),
-        if (isDeleted)
-          _HistoryCard(
-            icon: Icons.delete,
-            title: "Deleted Info",
-            entries: [
-              _HistoryEntry("Deleted By", activity.deletedUser ?? "Unknown"),
-              _HistoryEntry("Deleted Date", formatDate(activity.deletedDate!)),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-class _HistoryCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final List<_HistoryEntry> entries;
-  final bool expanded;
-
-  const _HistoryCard({
-    required this.icon,
-    required this.title,
-    required this.entries,
-    this.expanded = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: ExpansionTile(
-        initiallyExpanded: expanded,
-        leading: Icon(icon, color: theme.colorScheme.primary),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        children: entries.map((e) {
-          final bool highlightValues =
-              title == "Created Info" ||
-              title == "Modified Info" ||
-              title == "Deleted Info";
-
-          final TextStyle defaultValueStyle = TextStyle(color: theme.hintColor);
-          final TextStyle highlightedStyle =
-              theme.textTheme.bodyLarge?.copyWith(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ) ??
-              const TextStyle(fontSize: 14, fontWeight: FontWeight.w700);
-
-          return ListTile(
-            title: Text(
-              e.label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-            trailing: Text(
-              e.value,
-              style: highlightValues ? highlightedStyle : defaultValueStyle,
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _HistoryEntry {
-  final String label;
-  final String value;
-
-  _HistoryEntry(this.label, this.value);
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String text;
-
-  const _SectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 15,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.bold,
-        color: theme.hintColor,
       ),
     );
   }
