@@ -209,8 +209,9 @@ class CustomFieldDetailPage extends ConsumerWidget {
                         ),
 
                   // ── Dropdown Options ─────────────────────────────────────
-                  if (displayField.fieldDataType.toLowerCase() == 'dropdown' &&
-                      displayField.options.isNotEmpty) ...[
+                  if (displayField.primaryDataTypeLabel.toLowerCase() ==
+                          'dropdown' &&
+                      displayField.primaryOptions.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     _DropdownOptionsCard(
                       field: displayField,
@@ -437,10 +438,10 @@ class _BasicConfigCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final typeLabel =
-        _dataTypeLabels[field.fieldDataType.toLowerCase()] ??
-        field.fieldDataType;
+        _dataTypeLabels[field.primaryDataTypeLabel.toLowerCase()] ??
+        field.primaryDataTypeLabel;
     final typeIcon =
-        _dataTypeIcons[field.fieldDataType.toLowerCase()] ?? Icons.input;
+        _dataTypeIcons[field.primaryDataTypeLabel.toLowerCase()] ?? Icons.input;
 
     return Container(
       padding: const EdgeInsets.all(28),
@@ -654,7 +655,7 @@ class _ValidationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rules = field.validations;
+    final rules = field.primaryValidations;
     final gradient = LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -849,7 +850,7 @@ class _DropdownOptionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final options = field.options;
+    final options = field.primaryOptions;
 
     return Container(
       decoration: BoxDecoration(

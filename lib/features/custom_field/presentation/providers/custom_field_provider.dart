@@ -20,3 +20,13 @@ final customFieldDetailProvider = FutureProvider.family<CustomFieldModel, int>((
   final repository = ref.read(customFieldRepositoryProvider);
   return repository.getById(id);
 });
+
+final lookupDataTypesProvider = FutureProvider<List<LookupDataTypeModel>>((ref) async {
+  final repository = ref.read(customFieldRepositoryProvider);
+  return repository.getDatatypes();
+});
+
+final lookupValidationRulesProvider = FutureProvider.family<List<LookupValidationRuleModel>, int>((ref, fieldDataTypeId) async {
+  final repository = ref.read(customFieldRepositoryProvider);
+  return repository.getValidationRules(fieldDataTypeId);
+});

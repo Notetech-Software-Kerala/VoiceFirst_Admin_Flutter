@@ -248,8 +248,8 @@ class _ViewCustomFieldsPageState
                                   return _FieldCard(
                                     field: field,
                                     color: color,
-                                    typeLabel: _typeLabel(field.fieldDataType),
-                                    typeIcon: _typeIcon(field.fieldDataType),
+                                    typeLabel: _typeLabel(field.primaryDataTypeLabel),
+                                    typeIcon: _typeIcon(field.primaryDataTypeLabel),
                                     onTap: () => _openDetailPage(context, field),
                                     onEdit: () =>
                                         _openEditPage(context, field),
@@ -398,7 +398,7 @@ class _FieldCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (field.validations.isNotEmpty) ...[
+                if (field.primaryValidations.isNotEmpty) ...[
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -410,7 +410,7 @@ class _FieldCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${field.validations.length} rule${field.validations.length == 1 ? '' : 's'}',
+                      '${field.primaryValidations.length} rule${field.primaryValidations.length == 1 ? '' : 's'}',
                       style: TextStyle(
                         fontSize: 11,
                         color: theme.textTheme.bodySmall?.color,
@@ -418,7 +418,7 @@ class _FieldCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (field.options.isNotEmpty) ...[
+                if (field.primaryOptions.isNotEmpty) ...[
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -430,7 +430,7 @@ class _FieldCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '${field.options.length} option${field.options.length == 1 ? '' : 's'}',
+                      '${field.primaryOptions.length} option${field.primaryOptions.length == 1 ? '' : 's'}',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Colors.teal,

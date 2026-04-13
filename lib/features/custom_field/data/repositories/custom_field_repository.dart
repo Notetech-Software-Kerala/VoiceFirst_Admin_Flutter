@@ -107,4 +107,33 @@ class CustomFieldRepository {
       throw Exception(message);
     }
   }
+  // ─── LOOKUPS ──────────────────────────────────────────────────────────────
+  Future<List<LookupDataTypeModel>> getDatatypes() async {
+    debugPrint('API REQUEST: GET $_path/lookup/datatype');
+    final response = await _dio.get('$_path/lookup/datatype');
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to load datatypes');
+    }
+
+    final jsonBody = response.data as Map<String, dynamic>;
+    final data = jsonBody['data'] as List<dynamic>? ?? <dynamic>[];
+    return data.map((e) => LookupDataTypeModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  Future<List<LookupValidationRuleModel>> getValidationRules(int fieldDataTypeId) async {
+    debugPrint('API REQUEST: GET $_path/lookup/validation-rule?FieldDataTypeId=$fieldDataTypeId');
+    final response = await _dio.get(
+      '$_path/lookup/validation-rule',
+      queryParameters: {'FieldDataTypeId': fieldDataTypeId},
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception('Failed to load validation rules');
+    }
+
+    final jsonBody = response.data as Map<String, dynamic>;
+    final itemsJson = (jsonBody['data']?['items'] as List<dynamic>?) ?? <dynamic>[];
+    return itemsJson.map((e) => LookupValidationRuleModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
 }
