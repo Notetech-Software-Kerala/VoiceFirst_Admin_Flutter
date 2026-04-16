@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_model.dart';
 import 'package:voice_first_admin/features/issue_type/data/models/issue_type_filter.dart';
-import 'package:voice_first_admin/features/program_actions/data/models/paginated_response.dart';
+import 'package:voice_first_admin/features/program_action/data/models/paginated_response.dart';
 
 class IssueTypeRepository {
   final Dio _dio;
