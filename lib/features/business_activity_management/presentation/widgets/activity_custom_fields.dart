@@ -12,7 +12,6 @@ class ActivityCustomFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final activeFields = fields.where((f) => f.active).toList();
 
     if (activeFields.isEmpty) return const SizedBox();
