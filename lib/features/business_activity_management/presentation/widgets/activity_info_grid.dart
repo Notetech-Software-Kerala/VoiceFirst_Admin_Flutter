@@ -2,20 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:voice_first_admin/features/business_activity_management/data/models/business_activity_model.dart';
 
 class ActivityInfoGrid extends StatelessWidget {
-
   final BusinessActivity activity;
 
-  const ActivityInfoGrid({
-    super.key,
-    required this.activity,
-  });
+  const ActivityInfoGrid({super.key, required this.activity});
 
   @override
   Widget build(BuildContext context) {
-
     return Row(
       children: [
-
         Expanded(
           child: _InfoCard(
             icon: Icons.history_edu,
@@ -41,7 +35,6 @@ class ActivityInfoGrid extends StatelessWidget {
 }
 
 class _InfoCard extends StatelessWidget {
-
   final IconData icon;
   final String title;
   final String user;
@@ -56,14 +49,12 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
 
         child: Column(
           children: [
-
             Icon(icon, color: Colors.grey),
 
             const SizedBox(height: 10),
@@ -79,21 +70,13 @@ class _InfoCard extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            Text(
-              user,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(user, style: const TextStyle(fontWeight: FontWeight.w600)),
 
             const SizedBox(height: 4),
 
             Text(
               date?.toString() ?? "N/A",
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
