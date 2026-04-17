@@ -11,6 +11,7 @@ class CustomFieldRepository {
   static const String _path = '/user-custom-field';
 
   // ─── CREATE ───────────────────────────────────────────────────────────────
+
   Future<(CustomFieldModel, String)> create(CustomFieldModel field) async {
     debugPrint('API REQUEST: POST $_path');
     final response = await _dio.post(_path, data: field.toCreateJson());
@@ -18,7 +19,8 @@ class CustomFieldRepository {
     debugPrint('API RESPONSE: POST $_path -> ${response.statusCode}');
 
     final jsonBody = response.data as Map<String, dynamic>;
-    final message = jsonBody['message']?.toString() ?? 'Custom field created successfully';
+    final message =
+        jsonBody['message']?.toString() ?? 'Custom field created successfully';
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(message);
@@ -29,22 +31,30 @@ class CustomFieldRepository {
   }
 
   // ─── READ ALL ─────────────────────────────────────────────────────────────
-  Future<PaginatedResponse<CustomFieldModel>> getAll(CustomFieldFilter filter) async {
+  Future<PaginatedResponse<CustomFieldModel>> getAll(
+    CustomFieldFilter filter,
+  ) async {
     debugPrint('API REQUEST: GET $_path');
-    final response = await _dio.get(_path, queryParameters: filter.toQueryParams());
+    final response = await _dio.get(
+      _path,
+      queryParameters: filter.toQueryParams(),
+    );
 
     debugPrint('API RESPONSE: GET $_path -> ${response.statusCode}');
 
     final jsonBody = response.data as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final message = jsonBody['message']?.toString() ?? 'Failed to load custom fields';
+      final message =
+          jsonBody['message']?.toString() ?? 'Failed to load custom fields';
       throw Exception(message);
     }
 
     final data = jsonBody['data'] as Map<String, dynamic>;
     final itemsJson = data['items'] as List<dynamic>? ?? <dynamic>[];
-    final items = itemsJson.map((e) => CustomFieldModel.fromJson(e as Map<String, dynamic>)).toList();
+    final items = itemsJson
+        .map((e) => CustomFieldModel.fromJson(e as Map<String, dynamic>))
+        .toList();
 
     return PaginatedResponse<CustomFieldModel>(
       items: items,
@@ -65,7 +75,8 @@ class CustomFieldRepository {
     final jsonBody = response.data as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final message = jsonBody['message']?.toString() ?? 'Failed to load custom field';
+      final message =
+          jsonBody['message']?.toString() ?? 'Failed to load custom field';
       throw Exception(message);
     }
 
@@ -86,7 +97,8 @@ class CustomFieldRepository {
     final jsonBody = response.data as Map<String, dynamic>;
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final message = jsonBody['message']?.toString() ?? 'Failed to update custom field';
+      final message =
+          jsonBody['message']?.toString() ?? 'Failed to update custom field';
       throw Exception(message);
     }
 
@@ -103,10 +115,12 @@ class CustomFieldRepository {
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       final jsonBody = response.data as Map<String, dynamic>;
-      final message = jsonBody['message']?.toString() ?? 'Failed to delete custom field';
+      final message =
+          jsonBody['message']?.toString() ?? 'Failed to delete custom field';
       throw Exception(message);
     }
   }
+
   // ─── LOOKUPS ──────────────────────────────────────────────────────────────
   Future<List<LookupDataTypeModel>> getDatatypes() async {
     debugPrint('API REQUEST: GET $_path/lookup/datatype');
@@ -118,22 +132,51 @@ class CustomFieldRepository {
 
     final jsonBody = response.data as Map<String, dynamic>;
     final data = jsonBody['data'] as List<dynamic>? ?? <dynamic>[];
-    return data.map((e) => LookupDataTypeModel.fromJson(e as Map<String, dynamic>)).toList();
+    return data
+        .map((e) => LookupDataTypeModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  Future<List<LookupValidationRuleModel>> getValidationRules(int fieldDataTypeId) async {
-    debugPrint('API REQUEST: GET $_path/lookup/validation-rule?FieldDataTypeId=$fieldDataTypeId');
-    final response = await _dio.get(
-      '$_path/lookup/validation-rule',
-      queryParameters: {'FieldDataTypeId': fieldDataTypeId},
+  Future<List<LookupValidationRuleModel>> getValidationRules(
+    int fieldDataTypeId,
+  ) async {
+    debugPrint(
+      'API REQUEST: GET $_path/lookup/validation-rule?FieldDataTypeId=$fieldDataTypeId',
     );
+    try {
+      final response = await _dio.get(
+        '$_path/lookup/validation-rule',
+        queryParameters: {'FieldDataTypeId': fieldDataTypeId},
+      );
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Failed to load validation rules');
+      final jsonBody = response.data as Map<String, dynamic>;
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        final message =
+            jsonBody['message']?.toString() ??
+            'Failed to load validation rules';
+        throw Exception(message);
+      }
+      final dataNode = jsonBody['data'];
+      List<dynamic> itemsJson = [];
+
+      if (dataNode is List) {
+        itemsJson = dataNode;
+      } else if (dataNode is Map && dataNode['items'] is List) {
+        itemsJson = dataNode['items'] as List<dynamic>;
+      } else if (dataNode != null) {
+        debugPrint('UNEXPECTED VALIDATION RULE DATA NODE: $dataNode');
+      }
+
+      return itemsJson
+          .map(
+            (e) =>
+                LookupValidationRuleModel.fromJson(e as Map<String, dynamic>),
+          )
+          .toList();
+    } catch (e, st) {
+      debugPrint('ERROR in getValidationRules: $e\n$st');
+      rethrow;
     }
-
-    final jsonBody = response.data as Map<String, dynamic>;
-    final itemsJson = (jsonBody['data']?['items'] as List<dynamic>?) ?? <dynamic>[];
-    return itemsJson.map((e) => LookupValidationRuleModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 }

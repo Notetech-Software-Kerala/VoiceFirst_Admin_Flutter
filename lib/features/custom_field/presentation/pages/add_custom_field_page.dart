@@ -716,7 +716,7 @@ class _RuleCardState extends State<_RuleCard> {
                               : widget.rule.nameCtrl.text,
                           items: widget.apiRules
                               .map(
-                                (r) => DropdownMenuItem(
+                                (r) => DropdownMenuItem<String>(
                                   value: r.ruleName,
                                   child: Text(r.ruleName),
                                 ),
