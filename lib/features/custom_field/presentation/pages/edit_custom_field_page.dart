@@ -576,7 +576,7 @@ class _EditRuleCard extends StatelessWidget {
               _StyledDropdown<String>(
                 hint: 'Select Rule',
                 value: apiRules.any((r) => r.ruleName == rule.nameCtrl.text) ? rule.nameCtrl.text : null,
-                items: apiRules.map((r) => DropdownMenuItem(value: r.ruleName, child: Text(r.ruleName))).toList(),
+                items: apiRules.map((r) => DropdownMenuItem<String>(value: r.ruleName, child: Text(r.ruleName))).toList(),
                 onChanged: (v) => rule.nameCtrl.text = v ?? '',
               ),
               const SizedBox(height: 16),
