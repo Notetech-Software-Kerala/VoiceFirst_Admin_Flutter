@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:voice_first_admin/features/business_activity/presentation/pages/view_business_activity.dart';
+import 'package:voice_first_admin/features/business_activity_management/presentation/pages/view_business_activity.dart';
 import 'package:voice_first_admin/features/country_management/country/presentation/pages/view_country.dart';
 import 'package:voice_first_admin/features/place_management/presentation/pages/view_place.dart';
 import 'package:voice_first_admin/features/plan_management/presentation/pages/view_plan.dart';

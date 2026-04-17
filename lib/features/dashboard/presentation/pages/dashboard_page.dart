@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:voice_first_admin/features/business_activity/presentation/pages/view_business_activity.dart';
+import 'package:voice_first_admin/features/business_activity_management/presentation/pages/view_business_activity.dart';
 import 'package:voice_first_admin/features/program_action/presentation/pages/view_program_action.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
